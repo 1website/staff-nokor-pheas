@@ -2824,6 +2824,13 @@ def export_finance_excel_route():
     )
 
 
+@app.route('/static/<path:filename>')
+def serve_custom_static(filename):
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    return send_from_directory(static_dir, filename)
+
+
+
 # Runner entry point
 if __name__ == "__main__":
     init_db()
