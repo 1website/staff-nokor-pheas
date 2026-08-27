@@ -1,6 +1,7 @@
 """
 Database Initialization and Seed Data for Nokor Pheas Commune Staff Management System
 (ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិករដ្ឋបាលឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប)
+Optimized for high-concurrency serverless performance and connection reuse.
 """
 
 import os
@@ -24,6 +25,15 @@ if IS_VERCEL and not DATABASE_URL:
             pass
 else:
     DB_PATH = ORIGINAL_DB_PATH
+
+# Precomputed standard password hashes for instant zero-CPU startup
+PRECOMPUTED_USER_HASHES = {
+    "admin": "scrypt:32768:8:1$GLepOfOiJYkRrfq6$ec4e634a39fda35c2ba257b048af73424bc1dedc01ee242568508b4e18dd42ff9c128883439cc232ffec1b6fac730c6b7665781168c7fa883b618b4bd8582984",  # admin123
+    "clerk": "scrypt:32768:8:1$otPMOcvJ6cCzMc8C$40d64a239b3d79d9f2ef2b322b28858102d80d2b697e0c82db168c188217d285fa12e1f8d6c40a5d36f44605ec6ee51d5c373ffe58e3b21e814587b2f5cfa990",  # clerk123
+    "it_admin": "scrypt:32768:8:1$c4CqU6v0YCgLAIwL$175599774948f0365bf2c0ea61205ab11dc2a91d8fa661bcb584c13aea71b133642e2af5b5f5ff890ba0d35d49794c73e2711d2c90c6a0bbbc2633ef4923e043",  # it123
+    "staff": "scrypt:32768:8:1$wNgB0aaTmDN1hk3H$a34a4deb95f7006962d33199b319b4b319fac2ffbc6c9932b3e4a83b3f876bb26b09e35531ed2193986b54b13c59acaf5535db35bd5d30b4d1d29b722e007367",  # staff123
+    "village_chief": "scrypt:32768:8:1$RDWrj5Bqwb3Fwy3V$bfbd35e6fe20ff4fbf2aebcac944ba65e2b516499818a8469deffcfa20a396c987d87941865583b22ca3e312130c79cade5ee88fedb5c010328c4e54e587fd96"  # village123
+}
 
 
 class PgRow(dict):
@@ -130,7 +140,10 @@ class PostgresCursorWrapper:
         return self.cur.description
 
     def close(self):
-        return self.cur.close()
+        try:
+            return self.cur.close()
+        except Exception:
+            pass
 
 
 class PostgresConnectionWrapper:
@@ -152,55 +165,137 @@ class PostgresConnectionWrapper:
         return self.conn.rollback()
 
     def close(self):
-        return self.conn.close()
+        # In Flask request context, keep connection open until teardown
+        try:
+            from flask import g, has_request_context
+            if has_request_context() and getattr(g, 'db', None) is self:
+                return
+        except ImportError:
+            pass
+        self._real_close()
+
+    def _real_close(self):
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
     def execute(self, query, params=None):
         cur = self.cursor()
         return cur.execute(query, params)
 
 
-def get_db():
-    if DATABASE_URL:
-        # Try 1: pure Python pg8000 (100% compatible with Vercel Serverless)
+class SqliteConnectionWrapper:
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def cursor(self):
+        return self._conn.cursor()
+
+    def execute(self, *args, **kwargs):
+        return self._conn.execute(*args, **kwargs)
+
+    def executemany(self, *args, **kwargs):
+        return self._conn.executemany(*args, **kwargs)
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        # In Flask request context, keep connection open until teardown
         try:
-            import ssl
-            from urllib.parse import urlparse
-            import pg8000.dbapi
-            
-            parsed = urlparse(DATABASE_URL.strip())
-            ssl_ctx = ssl.create_default_context()
-            ssl_ctx.check_hostname = False
-            ssl_ctx.verify_mode = ssl.CERT_NONE
-            
-            conn = pg8000.dbapi.connect(
-                user=parsed.username,
-                password=parsed.password,
-                host=parsed.hostname,
-                port=parsed.port or 5432,
-                database=parsed.path.lstrip("/"),
-                ssl_context=ssl_ctx
-            )
-            conn.autocommit = True
-            return PostgresConnectionWrapper(conn, is_pg8000=True)
-        except Exception as e_pg8000:
-            print(f"[DB Warning] pg8000 connect failed: {e_pg8000}. Trying psycopg2...")
-            # Try 2: psycopg2
+            from flask import g, has_request_context
+            if has_request_context() and getattr(g, 'db', None) is self:
+                return
+        except ImportError:
+            pass
+        self._real_close()
+
+    def _real_close(self):
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+
+def _raw_create_connection():
+    """Create a raw underlying database connection (PostgreSQL or SQLite)."""
+    if DATABASE_URL:
+        # Priority 1: psycopg2 (5x-10x faster C-extension)
+        try:
+            import psycopg2
+            import psycopg2.extras
+            url = DATABASE_URL.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            raw_conn = psycopg2.connect(url, sslmode="require", connect_timeout=5)
+            raw_conn.autocommit = True
+            return PostgresConnectionWrapper(raw_conn, is_pg8000=False)
+        except Exception as e_psycopg:
+            # Priority 2: pure Python pg8000 fallback
             try:
-                import psycopg2
-                import psycopg2.extras
-                url = DATABASE_URL.strip()
-                if url.startswith("postgres://"):
-                    url = url.replace("postgres://", "postgresql://", 1)
-                raw_conn = psycopg2.connect(url, sslmode="require")
-                raw_conn.autocommit = True
-                return PostgresConnectionWrapper(raw_conn, is_pg8000=False)
-            except Exception as e_psycopg:
-                print(f"[DB Warning] psycopg2 connect failed: {e_psycopg}. Using SQLite fallback.")
+                import ssl
+                from urllib.parse import urlparse
+                import pg8000.dbapi
+                
+                parsed = urlparse(DATABASE_URL.strip())
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+                
+                conn = pg8000.dbapi.connect(
+                    user=parsed.username,
+                    password=parsed.password,
+                    host=parsed.hostname,
+                    port=parsed.port or 5432,
+                    database=parsed.path.lstrip("/"),
+                    ssl_context=ssl_ctx,
+                    timeout=5
+                )
+                conn.autocommit = True
+                return PostgresConnectionWrapper(conn, is_pg8000=True)
+            except Exception as e_pg8000:
+                print(f"[DB Warning] Cloud PostgreSQL connect failed: {e_pg8000}. Using SQLite fallback.")
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
+    conn.execute("PRAGMA cache_size = -64000")
+    return SqliteConnectionWrapper(conn)
+
+
+def get_db():
+    """Returns request-scoped DB connection if within Flask request, else creates new connection."""
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            if not hasattr(g, 'db') or g.db is None:
+                g.db = _raw_create_connection()
+            return g.db
+    except ImportError:
+        pass
+    return _raw_create_connection()
+
+
+def close_db_connection(e=None):
+    """Closes the request-scoped DB connection during Flask app teardown."""
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            db = getattr(g, 'db', None)
+            if db is not None:
+                g.db = None
+                db._real_close()
+    except ImportError:
+        pass
 
 
 def init_db():
@@ -476,6 +571,33 @@ def init_db():
     except Exception:
         pass
 
+    # High-Performance Database Indexes
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_staff_category ON staff(category)",
+        "CREATE INDEX IF NOT EXISTS idx_staff_status ON staff(status)",
+        "CREATE INDEX IF NOT EXISTS idx_staff_village ON staff(village)",
+        "CREATE INDEX IF NOT EXISTS idx_staff_officer_code ON staff(officer_code)",
+        "CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)",
+        "CREATE INDEX IF NOT EXISTS idx_attendance_staff_date ON attendance(staff_id, date)",
+        "CREATE INDEX IF NOT EXISTS idx_attendance_status ON attendance(status)",
+        "CREATE INDEX IF NOT EXISTS idx_leave_status ON leave_requests(status)",
+        "CREATE INDEX IF NOT EXISTS idx_leave_staff ON leave_requests(staff_id)",
+        "CREATE INDEX IF NOT EXISTS idx_finance_date ON finance_transactions(transaction_date)",
+        "CREATE INDEX IF NOT EXISTS idx_finance_type ON finance_transactions(type)",
+        "CREATE INDEX IF NOT EXISTS idx_finance_category ON finance_transactions(category)",
+        "CREATE INDEX IF NOT EXISTS idx_events_date ON commune_events(event_date)",
+        "CREATE INDEX IF NOT EXISTS idx_events_type ON commune_events(event_type)",
+        "CREATE INDEX IF NOT EXISTS idx_payroll_month ON payroll(month_year)",
+        "CREATE INDEX IF NOT EXISTS idx_payroll_staff_month ON payroll(staff_id, month_year)",
+        "CREATE INDEX IF NOT EXISTS idx_documents_staff ON documents(staff_id)",
+        "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)"
+    ]
+    for idx_sql in indexes:
+        try:
+            cursor.execute(idx_sql)
+        except Exception:
+            pass
+
     # Seed sample commune events if table is empty
     cursor.execute("SELECT COUNT(*) FROM commune_events")
     if cursor.fetchone()[0] == 0:
@@ -560,7 +682,6 @@ def init_db():
         """, sample_finance)
 
     conn.commit()
-    conn.close()
 
 
 def reset_and_seed_data():
@@ -576,7 +697,6 @@ def reset_and_seed_data():
     for t in tables:
         cursor.execute(f"DROP TABLE IF EXISTS {t}")
     conn.commit()
-    conn.close()
 
     init_db()
     seed_data()
@@ -747,27 +867,21 @@ def seed_data():
     staff_rows = cursor.fetchall()
     staff_map = {row["officer_code"]: row["id"] for row in staff_rows}
 
-    # Seed and guarantee User Accounts exist with correct password hashes
-    users_data = [
-        ("admin", generate_password_hash("admin123"), "ស៊ូ វណ្ណា (មេឃុំ)", "admin", staff_map.get("NP-001")),
-        ("clerk", generate_password_hash("clerk123"), "ហេង ចាន់រិទ្ធ (ស្មៀនឃុំ)", "clerk", staff_map.get("NP-006")),
-        ("it_admin", generate_password_hash("it123"), "សេង ដារ៉ា (មន្ត្រី IT)", "admin", staff_map.get("NP-008")),
-        ("staff", generate_password_hash("staff123"), "លាង ស្រីម៉ៅ (ជំនួយការឃុំ)", "staff", staff_map.get("NP-007")),
-        ("village_chief", generate_password_hash("village123"), "ព្រំ សុខា (មេភូមិរមៀត)", "staff", staff_map.get("NP-010")),
-    ]
-    for u in users_data:
-        cursor.execute("SELECT id FROM users WHERE username = ?", (u[0],))
-        existing_u = cursor.fetchone()
-        if not existing_u:
-            cursor.execute(
-                "INSERT INTO users (username, password_hash, full_name, role, staff_id) VALUES (?, ?, ?, ?, ?)",
-                u
-            )
-        else:
-            cursor.execute(
-                "UPDATE users SET password_hash = ?, full_name = ?, role = ?, is_active = 1 WHERE username = ?",
-                (u[1], u[2], u[3], u[0])
-            )
+    # Seed User Accounts if users table is empty (0ms hash calculation via precomputed hashes)
+    cursor.execute("SELECT COUNT(*) FROM users")
+    users_count = cursor.fetchone()[0]
+    if users_count == 0:
+        users_data = [
+            ("admin", PRECOMPUTED_USER_HASHES["admin"], "ស៊ូ វណ្ណា (មេឃុំ)", "admin", staff_map.get("NP-001")),
+            ("clerk", PRECOMPUTED_USER_HASHES["clerk"], "ហេង ចាន់រិទ្ធ (ស្មៀនឃុំ)", "clerk", staff_map.get("NP-006")),
+            ("it_admin", PRECOMPUTED_USER_HASHES["it_admin"], "សេង ដារ៉ា (មន្ត្រី IT)", "admin", staff_map.get("NP-008")),
+            ("staff", PRECOMPUTED_USER_HASHES["staff"], "លាង ស្រីម៉ៅ (ជំនួយការឃុំ)", "staff", staff_map.get("NP-007")),
+            ("village_chief", PRECOMPUTED_USER_HASHES["village_chief"], "ព្រំ សុខា (មេភូមិរមៀត)", "staff", staff_map.get("NP-010")),
+        ]
+        cursor.executemany(
+            "INSERT INTO users (username, password_hash, full_name, role, staff_id) VALUES (?, ?, ?, ?, ?)",
+            users_data
+        )
 
     if not has_staff:
         # Seed Sample Documents for Staff
@@ -794,7 +908,6 @@ def seed_data():
 
             for s_code, s_id in staff_map.items():
                 if s_code in ["NP-001", "NP-002", "NP-003", "NP-006", "NP-007", "NP-008", "NP-009"]:
-                    # Commune hall daily officers
                     status = "present"
                     check_in = "07:45"
                     check_out = "17:05"
@@ -871,11 +984,7 @@ def seed_data():
                 cursor.execute("SELECT base_salary, position_allowance, family_allowance FROM staff WHERE id = ?", (s_id,))
                 staff_info = cursor.fetchone()
                 base = staff_info["base_salary"] or 0
-                
-                # ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ៖ បើកតែខែមេសា (04)
                 pos_all = (staff_info["position_allowance"] or 0) if m_num == "04" else 0
-                
-                # ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ៖ បើកតែខែតុលា (10)
                 fam_all = (staff_info["family_allowance"] or 0) if m_num == "10" else 0
 
                 gross = base + pos_all + fam_all
@@ -924,8 +1033,6 @@ def seed_data():
         """, achievements_data)
 
     conn.commit()
-    conn.close()
-    print("Database successfully initialized and seeded with Nokor Pheas Commune 10 villages data!")
 
 
 if __name__ == "__main__":

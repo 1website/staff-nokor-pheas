@@ -15,7 +15,7 @@ from flask import (
     flash, session, send_file, jsonify, abort, send_from_directory
 )
 
-from database import get_db, init_db, seed_data
+from database import get_db, init_db, seed_data, close_db_connection
 from utils.helpers import (
     to_khmer_num, format_khmer_date, format_currency,
     calculate_age, format_khmer_age, KHMER_MONTHS,
@@ -46,9 +46,15 @@ try:
 except Exception:
     pass
 
+@app.teardown_appcontext
+def teardown_db(exception=None):
+    close_db_connection(exception)
+
 # Ensure database tables and baseline seed data exist
 @app.before_request
 def ensure_database_ready():
+    if request.path.startswith('/static') or request.path == '/favicon.ico':
+        return
     if not getattr(app, '_db_ready', False):
         try:
             init_db()
@@ -63,15 +69,16 @@ def inject_global_vars():
     today = date.today()
     khmer_today = format_khmer_date(today)
     
-    # Unread/pending counts for navbar badges
+    # Unread/pending counts for navbar badges (skip for static files or guest sessions)
     pending_leaves_count = 0
-    if session.get("user_id"):
+    if session.get("user_id") and not (request.path.startswith('/static') or request.path == '/favicon.ico'):
         try:
             conn = get_db()
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM leave_requests WHERE status = 'pending'")
-            pending_leaves_count = cur.fetchone()[0]
-            conn.close()
+            row = cur.fetchone()
+            if row:
+                pending_leaves_count = row[0]
         except Exception:
             pass
 
@@ -186,24 +193,25 @@ def dashboard():
     today_str = date.today().strftime("%Y-%m-%d")
     current_month_str = date.today().strftime("%Y-%m")
 
-    # 1. Staff Statistics
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active'")
-    total_staff = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active' AND category = 'council'")
-    council_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active' AND category = 'clerk'")
-    clerk_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active' AND category = 'contract'")
-    contract_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active' AND category = 'village'")
-    village_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM staff WHERE status = 'active' AND gender = 'ស្រី'")
-    female_staff_count = cursor.fetchone()[0]
+    # 1. Staff Statistics (Combined single query)
+    cursor.execute("""
+        SELECT 
+            COUNT(*) as total_staff,
+            COUNT(CASE WHEN category = 'council' THEN 1 END) as council_count,
+            COUNT(CASE WHEN category = 'clerk' THEN 1 END) as clerk_count,
+            COUNT(CASE WHEN category = 'contract' THEN 1 END) as contract_count,
+            COUNT(CASE WHEN category = 'village' THEN 1 END) as village_count,
+            COUNT(CASE WHEN gender = 'ស្រី' THEN 1 END) as female_staff_count
+        FROM staff 
+        WHERE status = 'active'
+    """)
+    staff_stats = cursor.fetchone()
+    total_staff = staff_stats["total_staff"] if staff_stats else 0
+    council_count = staff_stats["council_count"] if staff_stats else 0
+    clerk_count = staff_stats["clerk_count"] if staff_stats else 0
+    contract_count = staff_stats["contract_count"] if staff_stats else 0
+    village_count = staff_stats["village_count"] if staff_stats else 0
+    female_staff_count = staff_stats["female_staff_count"] if staff_stats else 0
 
     # 2. Today's Attendance Breakdown
     cursor.execute("""
@@ -2845,7 +2853,9 @@ def export_finance_excel_route():
 @app.route('/static/<path:filename>')
 def serve_custom_static(filename):
     static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    return send_from_directory(static_dir, filename)
+    resp = send_from_directory(static_dir, filename)
+    resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return resp
 
 
 @app.route('/status')
