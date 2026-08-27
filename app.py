@@ -15,7 +15,7 @@ from flask import (
     flash, session, send_file, jsonify, abort, send_from_directory
 )
 
-from database import get_db, init_db, seed_data, close_db_connection
+from database import get_db, init_db, seed_data, close_db_connection, clear_all_demo_data
 from utils.helpers import (
     to_khmer_num, format_khmer_date, format_currency,
     calculate_age, format_khmer_age, KHMER_MONTHS,
@@ -2882,6 +2882,19 @@ def system_status():
     except Exception as e:
         status["db_connection"] = f"error: {e}"
     return jsonify(status)
+
+
+@app.route('/settings/clear-demo-data', methods=["POST"])
+@login_required
+def admin_clear_demo_data():
+    if session.get("role") != "admin":
+        flash("អ្នកមិនមានសិទ្ធិអនុវត្តសកម្មភាពនេះទេ!", "danger")
+        return redirect(url_for("settings_profile"))
+    
+    conn = get_db()
+    clear_all_demo_data(conn)
+    flash("បានសម្អាតទិន្នន័យ Demo ទាំងអស់ដោយជោគជ័យ! ប្រព័ន្ធរួចរាល់សម្រាប់ការបញ្ចូលទិន្នន័យជាក់ស្តែង។", "success")
+    return redirect(url_for("dashboard"))
 
 
 @app.errorhandler(500)

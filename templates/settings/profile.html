@@ -62,4 +62,26 @@
     </form>
   </div>
 </div>
+
+{% if session.role == 'admin' %}
+<div class="card" style="max-width: 650px; margin: 24px auto 0; border: 1px solid #fecaca;">
+  <div class="card-header" style="border-bottom-color: #fee2e2; background: rgba(220, 38, 38, 0.05);">
+    <div class="card-title" style="color: #dc2626; font-size: 14px;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>សម្អាតទិន្នន័យគំរូ (Clear Demo Data)</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 18px 20px;">
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6;">
+      មុខងារនេះនឹងលុបទិន្នន័យគំរូទាំងអស់ (បុគ្គលិក, វត្តមាន, ការសុំច្បាប់, បេសកកម្ម, បៀវត្សរ៍, ហិរញ្ញវត្ថុ, ប្រតិទិន) ដោយរក្សាទុកគណនី Admin និងភូមិទាំង១០ ឱ្យនៅដដែល ដើម្បីឱ្យអ្នកអាចចាប់ផ្តើមបញ្ចូលទិន្នន័យពិតជាក់ស្តែង។
+    </p>
+    <form method="POST" action="{{ url_for('admin_clear_demo_data') }}"
+      onsubmit="return confirm('⚠️ តើអ្នកពិតជាចង់សម្អាតទិន្នន័យ Demo ទាំងអស់មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានឡើយ។');">
+      <button type="submit" class="btn btn-danger btn-sm">
+        <i class="fa-solid fa-trash-can"></i> សម្អាតទិន្នន័យ Demo ទាំងអស់
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
