@@ -109,18 +109,22 @@ class PostgresConnectionWrapper:
 
 def get_db():
     if DATABASE_URL:
-        import psycopg2
-        import psycopg2.extras
-        url = DATABASE_URL
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
-        raw_conn = psycopg2.connect(url, sslmode="require")
-        return PostgresConnectionWrapper(raw_conn)
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        return conn
+        try:
+            import psycopg2
+            import psycopg2.extras
+            url = DATABASE_URL.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            raw_conn = psycopg2.connect(url, sslmode="require")
+            raw_conn.autocommit = True
+            return PostgresConnectionWrapper(raw_conn)
+        except Exception as e:
+            print(f"[DB Warning] Could not connect to PostgreSQL via DATABASE_URL: {e}. Using SQLite fallback.")
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 
 def init_db():
@@ -387,12 +391,12 @@ def init_db():
 
     # Safe migration for existing DB
     try:
-        cursor.execute("ALTER TABLE missions ADD COLUMN attachment TEXT")
+        cursor.execute("ALTER TABLE missions ADD COLUMN IF NOT EXISTS attachment TEXT")
     except Exception:
         pass
 
     try:
-        cursor.execute("ALTER TABLE villages ADD COLUMN female_population INTEGER DEFAULT 0")
+        cursor.execute("ALTER TABLE villages ADD COLUMN IF NOT EXISTS female_population INTEGER DEFAULT 0")
     except Exception:
         pass
 

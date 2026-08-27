@@ -123,6 +123,20 @@ def login():
     if "user_id" in session:
         return redirect(url_for("dashboard"))
 
+    # Lazy-init database tables & seed data if first time connecting to cloud database
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users")
+        cursor.fetchone()
+        conn.close()
+    except Exception:
+        try:
+            init_db()
+            seed_data()
+        except Exception:
+            pass
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
