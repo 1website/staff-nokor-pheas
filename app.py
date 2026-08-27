@@ -46,12 +46,16 @@ try:
 except Exception:
     pass
 
-# Auto initialize database and seed baseline data if needed
-try:
-    init_db()
-    seed_data()
-except Exception as e:
-    pass
+# Ensure database tables and baseline seed data exist
+@app.before_request
+def ensure_database_ready():
+    if not getattr(app, '_db_ready', False):
+        try:
+            init_db()
+            seed_data()
+            app._db_ready = True
+        except Exception as e:
+            print(f"[Startup Notice] Database initialization: {e}")
 
 # Register Jinja context processors & filters
 @app.context_processor

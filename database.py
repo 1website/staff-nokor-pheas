@@ -197,23 +197,19 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
 
-    # 1. Users Table (គណនីប្រើប្រាស់)
+    # 1. Villages Table (បញ្ជីភូមិក្នុងឃុំនគរភាស - No Foreign Keys)
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS villages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        full_name TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'staff', -- 'admin', 'clerk', 'staff'
-        staff_id INTEGER,
-        avatar TEXT,
-        is_active INTEGER DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (staff_id) REFERENCES staff (id) ON DELETE SET NULL
+        village_name_kh TEXT UNIQUE NOT NULL,
+        village_name_en TEXT NOT NULL,
+        total_population INTEGER DEFAULT 0,
+        female_population INTEGER DEFAULT 0,
+        total_families INTEGER DEFAULT 0
     )
     """)
 
-    # 2. Staff Table (ព័ត៌មានមន្ត្រី និងបុគ្គលិក)
+    # 2. Staff Table (ព័ត៌មានមន្ត្រី និងបុគ្គលិក - Primary entity)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS staff (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -249,7 +245,23 @@ def init_db():
     )
     """)
 
-    # 3. Documents Table (ឯកសារភ្ជាប់ស្កេន)
+    # 3. Users Table (គណនីប្រើប្រាស់ - References staff)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'staff', -- 'admin', 'clerk', 'staff'
+        staff_id INTEGER,
+        avatar TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (staff_id) REFERENCES staff (id) ON DELETE SET NULL
+    )
+    """)
+
+    # 4. Documents Table (ឯកសារភ្ជាប់ស្កេន)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS documents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -265,7 +277,7 @@ def init_db():
     )
     """)
 
-    # 4. Attendance Table (វត្តមានប្រចាំថ្ងៃ)
+    # 5. Attendance Table (វត្តមានប្រចាំថ្ងៃ)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS attendance (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -282,7 +294,7 @@ def init_db():
     )
     """)
 
-    # 5. Leave Requests Table (ការសុំច្បាប់)
+    # 6. Leave Requests Table (ការសុំច្បាប់)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS leave_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -302,7 +314,7 @@ def init_db():
     )
     """)
 
-    # 6. Missions Table (កត់ត្រាបេសកកម្ម)
+    # 7. Missions Table (កត់ត្រាបេសកកម្ម)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS missions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -323,7 +335,7 @@ def init_db():
     )
     """)
 
-    # 7. Mission Participants Table
+    # 8. Mission Participants Table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS mission_participants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -336,7 +348,7 @@ def init_db():
     )
     """)
 
-    # 8. Payroll Table (ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ)
+    # 9. Payroll Table (ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS payroll (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -363,7 +375,7 @@ def init_db():
     )
     """)
 
-    # 9. Trainings Table (វគ្គបណ្តុះបណ្តាល)
+    # 10. Trainings Table (វគ្គបណ្តុះបណ្តាល)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS trainings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -382,7 +394,7 @@ def init_db():
     )
     """)
 
-    # 10. Achievements Table (ស្នាដៃ និងគ្រឿងឥស្សរិយយស)
+    # 11. Achievements Table (ស្នាដៃ និងគ្រឿងឥស្សរិយយស)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS achievements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -395,18 +407,6 @@ def init_db():
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (staff_id) REFERENCES staff (id) ON DELETE CASCADE
-    )
-    """)
-
-    # 11. Villages Table (បញ្ជីភូមិក្នុងឃុំនគរភាស)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS villages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        village_name_kh TEXT UNIQUE NOT NULL,
-        village_name_en TEXT NOT NULL,
-        total_population INTEGER DEFAULT 0,
-        female_population INTEGER DEFAULT 0,
-        total_families INTEGER DEFAULT 0
     )
     """)
 
