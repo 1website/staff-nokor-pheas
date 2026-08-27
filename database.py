@@ -26,10 +26,27 @@ else:
     DB_PATH = ORIGINAL_DB_PATH
 
 
+class PgRow(dict):
+    """Row wrapper allowing both dict key and integer index access like sqlite3.Row"""
+    def __init__(self, cols, vals):
+        super().__init__(zip(cols, vals))
+        self._vals = list(vals)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._vals[key]
+        return super().__getitem__(key)
+
+    def get(self, key, default=None):
+        if isinstance(key, int) and 0 <= key < len(self._vals):
+            return self._vals[key]
+        return super().get(key, default)
+
+
 class PostgresCursorWrapper:
-    """Wrapper to make psycopg2 cursor compatible with sqlite3 cursor semantics"""
-    def __init__(self, raw_cursor):
+    def __init__(self, raw_cursor, is_pg8000=False):
         self.cur = raw_cursor
+        self.is_pg8000 = is_pg8000
         self.lastrowid = None
 
     def execute(self, query, params=None):
@@ -40,7 +57,6 @@ class PostgresCursorWrapper:
         trimmed = pg_query.strip()
         is_insert = trimmed.upper().startswith("INSERT INTO")
         if is_insert and "RETURNING" not in trimmed.upper():
-            # Append RETURNING id if table has id
             clean_q = trimmed.rstrip(";")
             pg_query = f"{clean_q} RETURNING id;"
 
@@ -63,14 +79,37 @@ class PostgresCursorWrapper:
         pg_query = pg_query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         return self.cur.executemany(pg_query, params_seq)
 
+    def _wrap_row(self, row):
+        if row is None:
+            return None
+        if not self.cur.description:
+            return row
+        if hasattr(row, 'keys'):
+            return row
+        cols = [d[0] for d in self.cur.description]
+        return PgRow(cols, row)
+
     def fetchone(self):
-        return self.cur.fetchone()
+        row = self.cur.fetchone()
+        return self._wrap_row(row)
 
     def fetchall(self):
-        return self.cur.fetchall()
+        rows = self.cur.fetchall()
+        if not rows:
+            return []
+        if not self.cur.description or hasattr(rows[0], 'keys'):
+            return rows
+        cols = [d[0] for d in self.cur.description]
+        return [PgRow(cols, r) for r in rows]
 
     def fetchmany(self, size=None):
-        return self.cur.fetchmany(size) if size else self.cur.fetchmany()
+        rows = self.cur.fetchmany(size) if size else self.cur.fetchmany()
+        if not rows:
+            return []
+        if not self.cur.description or hasattr(rows[0], 'keys'):
+            return rows
+        cols = [d[0] for d in self.cur.description]
+        return [PgRow(cols, r) for r in rows]
 
     @property
     def rowcount(self):
@@ -85,13 +124,16 @@ class PostgresCursorWrapper:
 
 
 class PostgresConnectionWrapper:
-    """Wrapper to make psycopg2 connection compatible with sqlite3 connection semantics"""
-    def __init__(self, raw_conn):
+    def __init__(self, raw_conn, is_pg8000=False):
         self.conn = raw_conn
+        self.is_pg8000 = is_pg8000
 
     def cursor(self):
-        import psycopg2.extras
-        return PostgresCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
+        if self.is_pg8000:
+            return PostgresCursorWrapper(self.conn.cursor(), is_pg8000=True)
+        else:
+            import psycopg2.extras
+            return PostgresCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor), is_pg8000=False)
 
     def commit(self):
         return self.conn.commit()
@@ -109,17 +151,41 @@ class PostgresConnectionWrapper:
 
 def get_db():
     if DATABASE_URL:
+        # Try 1: pure Python pg8000 (100% compatible with Vercel Serverless)
         try:
-            import psycopg2
-            import psycopg2.extras
-            url = DATABASE_URL.strip()
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql://", 1)
-            raw_conn = psycopg2.connect(url, sslmode="require")
-            raw_conn.autocommit = True
-            return PostgresConnectionWrapper(raw_conn)
-        except Exception as e:
-            print(f"[DB Warning] Could not connect to PostgreSQL via DATABASE_URL: {e}. Using SQLite fallback.")
+            import ssl
+            from urllib.parse import urlparse
+            import pg8000.dbapi
+            
+            parsed = urlparse(DATABASE_URL.strip())
+            ssl_ctx = ssl.create_default_context()
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+            
+            conn = pg8000.dbapi.connect(
+                user=parsed.username,
+                password=parsed.password,
+                host=parsed.hostname,
+                port=parsed.port or 5432,
+                database=parsed.path.lstrip("/"),
+                ssl_context=ssl_ctx
+            )
+            conn.autocommit = True
+            return PostgresConnectionWrapper(conn, is_pg8000=True)
+        except Exception as e_pg8000:
+            print(f"[DB Warning] pg8000 connect failed: {e_pg8000}. Trying psycopg2...")
+            # Try 2: psycopg2
+            try:
+                import psycopg2
+                import psycopg2.extras
+                url = DATABASE_URL.strip()
+                if url.startswith("postgres://"):
+                    url = url.replace("postgres://", "postgresql://", 1)
+                raw_conn = psycopg2.connect(url, sslmode="require")
+                raw_conn.autocommit = True
+                return PostgresConnectionWrapper(raw_conn, is_pg8000=False)
+            except Exception as e_psycopg:
+                print(f"[DB Warning] psycopg2 connect failed: {e_psycopg}. Using SQLite fallback.")
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row

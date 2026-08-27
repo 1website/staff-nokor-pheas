@@ -2844,6 +2844,37 @@ def serve_custom_static(filename):
     return send_from_directory(static_dir, filename)
 
 
+@app.route('/status')
+def system_status():
+    db_mode = "PostgreSQL (Neon)" if os.environ.get("DATABASE_URL") else "SQLite"
+    status = {"status": "ok", "db_mode": db_mode, "time": datetime.now().isoformat()}
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM users")
+        status["users_count"] = cur.fetchone()[0]
+        conn.close()
+        status["db_connection"] = "connected"
+    except Exception as e:
+        status["db_connection"] = f"error: {e}"
+    return jsonify(status)
+
+
+@app.errorhandler(500)
+def handle_internal_error(e):
+    import traceback
+    err = traceback.format_exc()
+    return f"""
+    <div style="font-family: system-ui, -apple-system, sans-serif; padding: 30px; max-width: 800px; margin: 40px auto; background: #fff1f2; border: 1px solid #fda4af; border-radius: 12px; color: #9f1239;">
+        <h2 style="margin-top:0;">⚠️ ប្រព័ន្ធបានជួបប្រទះបញ្ហាបច្ចេកទេស (Internal Error)</h2>
+        <p>ព័ត៌មានលម្អិតនៃបញ្ហា (Error Traceback)៖</p>
+        <pre style="background: #ffffff; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12.5px; color: #1e293b; border: 1px solid #e2e8f0;">{err}</pre>
+        <a href="/login" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: #be123c; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">ត្រឡប់ទៅផ្ទាំង Login</a>
+    </div>
+    """, 500
+
+
+
 
 # Runner entry point
 if __name__ == "__main__":
