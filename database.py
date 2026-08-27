@@ -4,11 +4,25 @@ Database Initialization and Seed Data for Nokor Pheas Commune Staff Management S
 """
 
 import os
+import shutil
 import sqlite3
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "staff_management.db")
+# Support Vercel serverless environment (where root is read-only)
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ORIGINAL_DB_PATH = os.path.join(BASE_DIR, "staff_management.db")
+
+if IS_VERCEL:
+    DB_PATH = os.path.join("/tmp", "staff_management.db")
+    if not os.path.exists(DB_PATH) and os.path.exists(ORIGINAL_DB_PATH):
+        try:
+            shutil.copy2(ORIGINAL_DB_PATH, DB_PATH)
+        except Exception:
+            pass
+else:
+    DB_PATH = ORIGINAL_DB_PATH
 
 
 def get_db():

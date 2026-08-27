@@ -34,10 +34,17 @@ from utils.export_excel import (
 
 app = Flask(__name__)
 app.secret_key = "nokor_pheas_commune_secure_secret_key_2026"
-app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "static", "uploads")
+if os.environ.get("VERCEL"):
+    app.config["UPLOAD_FOLDER"] = os.path.join("/tmp", "uploads")
+else:
+    app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "static", "uploads")
+
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+try:
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+except Exception:
+    pass
 
 # Auto initialize database and seed baseline data if needed
 try:
