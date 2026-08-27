@@ -32,8 +32,9 @@ from utils.export_excel import (
     export_finance_excel
 )
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = "nokor_pheas_commune_secure_secret_key_2026"
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=365)
 if os.environ.get("VERCEL"):
     app.config["UPLOAD_FOLDER"] = os.path.join("/tmp", "uploads")
 else:
