@@ -51,6 +51,12 @@ except Exception:
 def teardown_db(exception=None):
     close_db_connection(exception)
 
+@app.after_request
+def add_cache_headers(response):
+    if request.path.startswith('/static') or request.path == '/favicon.ico':
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return response
+
 # Ensure database tables and baseline seed data exist
 @app.before_request
 def ensure_database_ready():
@@ -2849,14 +2855,6 @@ def export_finance_excel_route():
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-
-@app.route('/static/<path:filename>')
-def serve_custom_static(filename):
-    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    resp = send_from_directory(static_dir, filename)
-    resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-    return resp
 
 
 @app.route('/status')
