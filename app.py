@@ -501,12 +501,13 @@ def staff_detail(staff_id):
     recent_attendance = cursor.fetchall()
 
     # 3. Attendance Summary (Total Days this year)
+    cur_year = str(date.today().year)
     cursor.execute("""
         SELECT status, COUNT(*) as count 
         FROM attendance 
-        WHERE staff_id = ? AND strftime('%Y', date) = strftime('%Y', 'now')
+        WHERE staff_id = ? AND substr(date, 1, 4) = ?
         GROUP BY status
-    """, (staff_id,))
+    """, (staff_id, cur_year))
     att_counts = {r["status"]: r["count"] for r in cursor.fetchall()}
 
     # 4. Leave History
@@ -1036,7 +1037,7 @@ def attendance_monthly():
     cursor.execute("""
         SELECT staff_id, date, status, check_in_time
         FROM attendance
-        WHERE strftime('%Y-%m', date) = ?
+        WHERE substr(date, 1, 7) = ?
     """, (month_year,))
     att_records = cursor.fetchall()
     conn.close()
@@ -1496,7 +1497,7 @@ def mission_list():
     missions = cursor.fetchall()
 
     # Get available years from missions in database
-    cursor.execute("SELECT DISTINCT CAST(strftime('%Y', start_date) AS INTEGER) as yr FROM missions WHERE start_date IS NOT NULL ORDER BY yr DESC")
+    cursor.execute("SELECT DISTINCT CAST(substr(start_date, 1, 4) AS INTEGER) as yr FROM missions WHERE start_date IS NOT NULL AND start_date != '' ORDER BY yr DESC")
     available_years = [r[0] for r in cursor.fetchall() if r[0]]
     if today.year not in available_years:
         available_years.insert(0, today.year)

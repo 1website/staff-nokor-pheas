@@ -60,7 +60,12 @@ class PostgresCursorWrapper:
         self.lastrowid = None
 
     def _transform_query(self, query):
-        pg_query = query.replace("?", "%s")
+        if not self.is_pg8000:
+            # psycopg2 treats % as format specifiers, so literal % must be escaped to %% before converting ? to %s
+            pg_query = query.replace("%", "%%").replace("?", "%s")
+        else:
+            pg_query = query.replace("?", "%s")
+            
         pg_query = pg_query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         
         # Translate SQLite "INSERT OR IGNORE INTO ..." to PostgreSQL "INSERT INTO ... ON CONFLICT DO NOTHING"

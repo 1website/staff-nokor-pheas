@@ -176,7 +176,7 @@ def export_monthly_attendance_excel(month_year):
         # Fetch attendance for this staff for the month
         cursor.execute("""
             SELECT date, status FROM attendance
-            WHERE staff_id = ? AND strftime('%Y-%m', date) = ?
+            WHERE staff_id = ? AND substr(date, 1, 7) = ?
         """, (s["id"], month_year))
         att_map = {row["date"]: row["status"] for row in cursor.fetchall()}
 
