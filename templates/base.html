@@ -6,6 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក{% endblock %} - រដ្ឋបាលឃុំនគរភាស</title>
 
+  <!-- Favicons & App Icons -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#1e3a8a">
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
@@ -21,7 +29,7 @@
   </script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.2">
   {% block extra_head %}{% endblock %}
 </head>
 
@@ -34,8 +42,8 @@
     <!-- Sidebar Navigation -->
     <aside id="app-sidebar" class="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-logo-icon">
-          <i class="fa-solid fa-landmark"></i>
+        <div class="sidebar-logo-icon" style="background: transparent; overflow: hidden; padding: 0;">
+          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
         </div>
         <div class="sidebar-title-box">
           <h3>រដ្ឋបាលឃុំនគរភាស</h3>
