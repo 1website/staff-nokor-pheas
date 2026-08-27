@@ -12,7 +12,7 @@
     <p>សៀវភៅកត់ត្រាចរន្តសាច់ប្រាក់ ចំណូលសេវាសាធារណៈ ចំណាយរដ្ឋបាល និងគម្រោងអភិវឌ្ឍន៍ រដ្ឋបាលឃុំនគរភាស</p>
   </div>
   <div class="page-actions">
-    <a href="{{ url_for('export_finance_excel_route', month=selected_month, type=selected_type, category=selected_category) }}"
+    <a href="{{ url_for('export_finance_excel_route', from_month=from_month, to_month=to_month, type=selected_type, category=selected_category) }}"
       class="btn btn-success" title="ទាញយកជាឯកសារ Excel">
       <i class="fa-solid fa-file-excel"></i>
       <span>នាំចេញជា Excel</span>
@@ -45,7 +45,7 @@
       </div>
       <div class="stat-subtext">
         <i class="fa-solid fa-arrow-trend-up text-success"></i>
-        {% if selected_month and selected_month != 'all' %}ខែ {{ selected_month }}{% else %}គ្រប់ពេលវេលា{% endif %}
+        {% if from_month and to_month %}{% if from_month == to_month %}ខែ {{ from_month }}{% else %}{{ from_month }} ដល់ {{ to_month }}{% endif %}{% else %}គ្រប់ពេលវេលា{% endif %}
       </div>
     </div>
   </div>
@@ -571,9 +571,21 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- Embedded JSON Data for Clean Client-side Rendering without Syntax Errors -->
+<script type="application/json" id="finance-income-cats-data">{{ FINANCE_INCOME_CATEGORIES | tojson }}</script>
+<script type="application/json" id="finance-expense-cats-data">{{ FINANCE_EXPENSE_CATEGORIES | tojson }}</script>
+<script type="application/json" id="finance-trend-labels-data">{{ trend_labels | tojson }}</script>
+<script type="application/json" id="finance-trend-incomes-data">{{ trend_incomes | tojson }}</script>
+<script type="application/json" id="finance-trend-expenses-data">{{ trend_expenses | tojson }}</script>
+<script type="application/json" id="finance-expense-breakdown-data">{{ expense_categories_breakdown | tojson }}</script>
+
 <script>
-  const INCOME_CATS = {{ FINANCE_INCOME_CATEGORIES | tojson }};
-  const EXPENSE_CATS = {{ FINANCE_EXPENSE_CATEGORIES | tojson }};
+  const INCOME_CATS = JSON.parse(document.getElementById('finance-income-cats-data')?.textContent || '{}');
+  const EXPENSE_CATS = JSON.parse(document.getElementById('finance-expense-cats-data')?.textContent || '{}');
+  const TREND_LABELS = JSON.parse(document.getElementById('finance-trend-labels-data')?.textContent || '[]');
+  const TREND_INCOMES = JSON.parse(document.getElementById('finance-trend-incomes-data')?.textContent || '[]');
+  const TREND_EXPENSES = JSON.parse(document.getElementById('finance-trend-expenses-data')?.textContent || '[]');
+  const EXPENSE_BREAKDOWN = JSON.parse(document.getElementById('finance-expense-breakdown-data')?.textContent || '[]');
   const TODAY_ISO = "{{ today_iso }}";
 
   let financeTrendChartInstance = null;
@@ -588,7 +600,7 @@
     Object.keys(cats).forEach(key => {
       const opt = document.createElement('option');
       opt.value = key;
-      opt.textContent = `${cats[key].icon ? '' : ''}${cats[key].title_kh}`;
+      opt.textContent = `${cats[key].title_kh || key}`;
       if (key === selectedCategory) {
         opt.selected = true;
       }
@@ -603,7 +615,8 @@
     const submitBtn = document.getElementById('modal-submit-btn');
 
     if (txType === 'income') {
-      document.getElementById('modal_type_income').checked = true;
+      const radio = document.getElementById('modal_type_income');
+      if (radio) radio.checked = true;
       if (incCard) {
         incCard.style.border = '2px solid #059669';
         incCard.style.background = 'rgba(5, 150, 105, 0.08)';
@@ -622,7 +635,8 @@
         submitBtn.style.color = '#ffffff';
       }
     } else {
-      document.getElementById('modal_type_expense').checked = true;
+      const radio = document.getElementById('modal_type_expense');
+      if (radio) radio.checked = true;
       if (expCard) {
         expCard.style.border = '2px solid #dc2626';
         expCard.style.background = 'rgba(220, 38, 38, 0.08)';
@@ -657,7 +671,6 @@
     const form = document.getElementById('financeModalForm');
     if (!modal || !form) return;
 
-    // Reset form to Create Mode
     form.action = "{{ url_for('finance_create') }}";
     document.getElementById('modal_tx_id').value = '';
     document.getElementById('modal-main-title').textContent = type === 'income' ? '+ កត់ត្រាប្រតិបត្តិការចំណូលថ្មី' : '+ កត់ត្រាប្រតិបត្តិការចំណាយថ្មី';
@@ -693,7 +706,6 @@
     const method = btn.getAttribute('data-method') || 'cash';
     const notes = btn.getAttribute('data-notes') || '';
 
-    // Setup form in Edit Mode
     form.action = '/finance/' + id + '/edit';
     document.getElementById('modal_tx_id').value = id;
     document.getElementById('modal-main-title').textContent = '✏️ កែប្រែប្រតិបត្តិការ៖ ' + title;
@@ -723,14 +735,12 @@
     }
   }
 
-  // Close on Escape key
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeFinanceModal();
     }
   });
 
-  // Render Charts
   function renderFinanceCharts() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const textColor = isDark ? '#f1f5f9' : '#1e293b';
@@ -747,161 +757,158 @@
       financeTrendChartInstance = new Chart(trendCtx, {
         type: 'bar',
         data: {
-          labels: {{ trend_labels | tojson }},
-  datasets: [
-    {
-      label: 'ចំណូល (Income)',
-      data: {{ trend_incomes | tojson }},
-    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.9)' : 'rgba(5, 150, 105, 0.85)',
-    borderColor: '#10b981',
-    borderWidth: 1,
-    borderRadius: 6
-          },
-    {
-      label: 'ចំណាយ (Expense)',
-      data: {{ trend_expenses | tojson }},
-    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.9)' : 'rgba(220, 38, 38, 0.85)',
-    borderColor: '#ef4444',
-    borderWidth: 1,
-    borderRadius: 6
-          }
-  ]
-      },
-  options: {
-    responsive: true,
-      maintainAspectRatio: false,
-        plugins: {
-      legend: {
-        position: 'top',
-          labels: {
-          color: textColor,
-            font: { family: "'Kantumruy Pro', sans-serif", size: 12, weight: '600' },
-          padding: 14
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          titleColor: '#ffffff',
-            bodyColor: '#ffffff',
-              titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-        bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-        padding: 10,
-          cornerRadius: 8,
-            callbacks: {
-          label: function(context) {
-            let label = context.dataset.label || '';
-            if (label) label += ': ';
-            label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' រៀល';
-            return label;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: {
-          color: textColor,
-            font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' }
-        }
-      },
-      y: {
-        beginAtZero: true,
-          grid: {
-          color: gridColor
+          labels: TREND_LABELS,
+          datasets: [
+            {
+              label: 'ចំណូល (Income)',
+              data: TREND_INCOMES,
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.9)' : 'rgba(5, 150, 105, 0.85)',
+              borderColor: '#10b981',
+              borderWidth: 1,
+              borderRadius: 6
+            },
+            {
+              label: 'ចំណាយ (Expense)',
+              data: TREND_EXPENSES,
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.9)' : 'rgba(220, 38, 38, 0.85)',
+              borderColor: '#ef4444',
+              borderWidth: 1,
+              borderRadius: 6
+            }
+          ]
         },
-        ticks: {
-          color: subTextColor,
-            font: { family: "'Outfit', sans-serif", size: 11 },
-          callback: function(value) {
-            return (value / 1000000).toFixed(1) + ' M';
-          }
-        }
-      }
-    }
-  }
-    });
-  }
-
-  // 2. Expense Breakdown Doughnut Chart
-  const expCtx = document.getElementById('expenseBreakdownChart');
-  if (expCtx) {
-    if (expenseBreakdownChartInstance) {
-      expenseBreakdownChartInstance.destroy();
-    }
-    const expData = {{ expense_categories_breakdown | tojson
-  }};
-  const labels = expData.map(d => d.title_kh);
-  const dataValues = expData.map(d => d.amount);
-  const bgColors = [
-    '#0284c7', '#ea580c', '#d97706', '#059669',
-    '#ec4899', '#7c3aed', '#1e3a8a', '#64748b'
-  ];
-
-  if (expData.length === 0) {
-    expenseBreakdownChartInstance = new Chart(expCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['គ្មានទិន្នន័យចំណាយ'],
-        datasets: [{ data: [1], backgroundColor: [isDark ? '#243552' : '#e2e8f0'] }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
-      }
-    });
-  } else {
-    expenseBreakdownChartInstance = new Chart(expCtx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: dataValues,
-          backgroundColor: bgColors.slice(0, expData.length),
-          borderWidth: 2,
-          borderColor: sliceBorderColor,
-          hoverOffset: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              boxWidth: 14,
-              boxHeight: 14,
-              borderRadius: 3,
-              color: textColor,
-              font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' },
-              padding: 10
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: textColor,
+                font: { family: "'Kantumruy Pro', sans-serif", size: 12, weight: '600' },
+                padding: 14
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+              bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: function (context) {
+                  let label = context.dataset.label || '';
+                  if (label) label += ': ';
+                  label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' រៀល';
+                  return label;
+                }
+              }
             }
           },
-          tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            titleColor: '#ffffff',
-            bodyColor: '#ffffff',
-            titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-            bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-            padding: 10,
-            cornerRadius: 8,
-            callbacks: {
-              label: function (context) {
-                const label = context.label || '';
-                const val = context.parsed;
-                return label + ': ' + new Intl.NumberFormat('en-US').format(val) + ' រៀល';
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: textColor,
+                font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: gridColor },
+              ticks: {
+                color: subTextColor,
+                font: { family: "'Outfit', sans-serif", size: 11 },
+                callback: function (value) {
+                  return (value / 1000000).toFixed(1) + ' M';
+                }
               }
             }
           }
-        },
-        cutout: '65%'
+        }
+      });
+    }
+
+    // 2. Expense Breakdown Doughnut Chart
+    const expCtx = document.getElementById('expenseBreakdownChart');
+    if (expCtx) {
+      if (expenseBreakdownChartInstance) {
+        expenseBreakdownChartInstance.destroy();
       }
-    });
+      const expData = EXPENSE_BREAKDOWN;
+      const labels = expData.map(d => d.title_kh);
+      const dataValues = expData.map(d => d.amount);
+      const bgColors = [
+        '#0284c7', '#ea580c', '#d97706', '#059669',
+        '#ec4899', '#7c3aed', '#1e3a8a', '#64748b'
+      ];
+
+      if (expData.length === 0) {
+        expenseBreakdownChartInstance = new Chart(expCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['គ្មានទិន្នន័យចំណាយ'],
+            datasets: [{ data: [1], backgroundColor: [isDark ? '#243552' : '#e2e8f0'] }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+          }
+        });
+      } else {
+        expenseBreakdownChartInstance = new Chart(expCtx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: dataValues,
+              backgroundColor: bgColors.slice(0, expData.length),
+              borderWidth: 2,
+              borderColor: sliceBorderColor,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  boxWidth: 14,
+                  boxHeight: 14,
+                  borderRadius: 3,
+                  color: textColor,
+                  font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' },
+                  padding: 10
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+                bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function (context) {
+                    const label = context.label || '';
+                    const val = context.parsed;
+                    return label + ': ' + new Intl.NumberFormat('en-US').format(val) + ' រៀល';
+                  }
+                }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+    }
   }
-  }
-}
 
   function applyQuickPreset(preset) {
     if (!preset) return;
@@ -909,7 +916,7 @@
     const fromInput = document.getElementById('from_month_input');
     const toInput = document.getElementById('to_month_input');
     const form = document.getElementById('financeFilterForm');
-    
+
     if (preset === 'this_month') {
       const curM = String(new Date().getMonth() + 1).padStart(2, '0');
       fromInput.value = `${currentYear}-${curM}`;
