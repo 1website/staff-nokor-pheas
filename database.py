@@ -9,12 +9,13 @@ import sqlite3
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash
 
-# Support Vercel serverless environment (where root is read-only)
+# Dual Database Support: Neon PostgreSQL (Production/Cloud) & SQLite (Local)
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
 IS_VERCEL = bool(os.environ.get("VERCEL"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ORIGINAL_DB_PATH = os.path.join(BASE_DIR, "staff_management.db")
 
-if IS_VERCEL:
+if IS_VERCEL and not DATABASE_URL:
     DB_PATH = os.path.join("/tmp", "staff_management.db")
     if not os.path.exists(DB_PATH) and os.path.exists(ORIGINAL_DB_PATH):
         try:
@@ -25,11 +26,101 @@ else:
     DB_PATH = ORIGINAL_DB_PATH
 
 
+class PostgresCursorWrapper:
+    """Wrapper to make psycopg2 cursor compatible with sqlite3 cursor semantics"""
+    def __init__(self, raw_cursor):
+        self.cur = raw_cursor
+        self.lastrowid = None
+
+    def execute(self, query, params=None):
+        pg_query = query.replace("?", "%s")
+        pg_query = pg_query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        
+        # Check if INSERT statement without RETURNING
+        trimmed = pg_query.strip()
+        is_insert = trimmed.upper().startswith("INSERT INTO")
+        if is_insert and "RETURNING" not in trimmed.upper():
+            # Append RETURNING id if table has id
+            clean_q = trimmed.rstrip(";")
+            pg_query = f"{clean_q} RETURNING id;"
+
+        try:
+            if params is not None:
+                self.cur.execute(pg_query, params)
+            else:
+                self.cur.execute(pg_query)
+
+            if is_insert and self.cur.description:
+                row = self.cur.fetchone()
+                if row:
+                    self.lastrowid = row[0]
+        except Exception as e:
+            raise e
+        return self
+
+    def executemany(self, query, params_seq):
+        pg_query = query.replace("?", "%s")
+        pg_query = pg_query.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        return self.cur.executemany(pg_query, params_seq)
+
+    def fetchone(self):
+        return self.cur.fetchone()
+
+    def fetchall(self):
+        return self.cur.fetchall()
+
+    def fetchmany(self, size=None):
+        return self.cur.fetchmany(size) if size else self.cur.fetchmany()
+
+    @property
+    def rowcount(self):
+        return self.cur.rowcount
+
+    @property
+    def description(self):
+        return self.cur.description
+
+    def close(self):
+        return self.cur.close()
+
+
+class PostgresConnectionWrapper:
+    """Wrapper to make psycopg2 connection compatible with sqlite3 connection semantics"""
+    def __init__(self, raw_conn):
+        self.conn = raw_conn
+
+    def cursor(self):
+        import psycopg2.extras
+        return PostgresCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
+
+    def commit(self):
+        return self.conn.commit()
+
+    def rollback(self):
+        return self.conn.rollback()
+
+    def close(self):
+        return self.conn.close()
+
+    def execute(self, query, params=None):
+        cur = self.cursor()
+        return cur.execute(query, params)
+
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    if DATABASE_URL:
+        import psycopg2
+        import psycopg2.extras
+        url = DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        raw_conn = psycopg2.connect(url, sslmode="require")
+        return PostgresConnectionWrapper(raw_conn)
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
 
 
 def init_db():
