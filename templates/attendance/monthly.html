@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}តារាងវត្តមានប្រចាំខែ {{ month_year }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-calendar-days text-gold"></i>
+      <span>តារាងស្រង់វត្តមានប្រចាំខែ៖ {{ month_year }}</span>
+    </h1>
+    <p>តារាងវត្តមានមន្ត្រី និងបុគ្គលិករដ្ឋបាលឃុំនគរភាស សម្រាប់បូកសរុប និងផ្ញើជូនរដ្ឋបាលស្រុកអង្គរជុំ</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('export_attendance_excel_route', month=month_year) }}" class="btn btn-success">
+      <i class="fa-solid fa-file-excel"></i>
+      <span>ទាញយក Excel ផ្ញើទៅសាលាស្រុក</span>
+    </a>
+    <a href="{{ url_for('attendance_daily') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i>
+      <span>កត់ត្រាវត្តមានថ្ងៃនេះ</span>
+    </a>
+  </div>
+</div>
+
+<!-- Month Selector Toolbar -->
+<div class="filter-toolbar">
+  <form method="GET" action="{{ url_for('attendance_monthly') }}" style="display: flex; align-items: center; gap: 12px;">
+    <label class="form-label" style="margin: 0; font-weight: 600;">
+      <i class="fa-regular fa-calendar-check"></i> ជ្រើសរើសខែ-ឆ្នាំ៖
+    </label>
+    <input type="month" name="month" value="{{ month_year }}" class="form-control" style="width: 180px;" onchange="this.form.submit()">
+    <button type="submit" class="btn btn-outline-primary btn-sm">
+      <i class="fa-solid fa-arrows-rotate"></i> ផ្ទុក
+    </button>
+  </form>
+
+  <div style="display: flex; gap: 10px; font-size: 12px; flex-wrap: wrap;">
+    <span class="badge badge-success"><span style="font-size: 10px;">✓</span> វត្តមាន</span>
+    <span class="badge badge-warning">Y មកយឺត</span>
+    <span class="badge badge-info">L ច្បាប់</span>
+    <span class="badge badge-purple">M បេសកកម្ម</span>
+    <span class="badge badge-danger">A អវត្តមាន</span>
+  </div>
+</div>
+
+<!-- Monthly Attendance Grid Card -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-table text-gold"></i>
+      <span>តារាងវត្តមានលម្អិត (ខែ {{ month | kh_num }} ឆ្នាំ {{ year | kh_num }})</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="attendance-grid">
+        <thead>
+          <tr>
+            <th rowspan="2" style="width: 40px;">ល.រ</th>
+            <th rowspan="2" style="min-width: 140px; text-align: left; padding-left: 10px;">គោត្តនាម-នាម</th>
+            <th rowspan="2" style="min-width: 130px; text-align: left; padding-left: 10px;">មុខតំណែង</th>
+            {% for d in days_info %}
+            <th class="day-cell {% if d.is_weekend %}cell-weekend{% endif %}">
+              {{ d.day | kh_num }}
+            </th>
+            {% endfor %}
+            <th rowspan="2" class="th-summary-p" style="width: 45px;" title="វត្តមានសរុប">P</th>
+            <th rowspan="2" class="th-summary-l" style="width: 45px;" title="ច្បាប់សរុប">L</th>
+            <th rowspan="2" class="th-summary-m" style="width: 45px;" title="បេសកកម្មសរុប">M</th>
+            <th rowspan="2" class="th-summary-a" style="width: 45px;" title="អវត្តមានសរុប">A</th>
+          </tr>
+          <tr>
+            {% for d in days_info %}
+            <th class="row-subhead {% if d.is_weekend %}cell-weekend{% endif %}">
+              {{ d.dow_kh }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in staff_list %}
+          {% set s_att = att_grid.get(s.id, {}) %}
+          <tr>
+            <td style="color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td style="text-align: left; font-weight: 600; padding-left: 10px;">
+              <a href="{{ url_for('staff_detail', staff_id=s.id) }}">{{ s.name_kh }}</a>
+            </td>
+            <td style="text-align: left; font-size: 11.5px; padding-left: 10px; color: var(--text-muted);">
+              {{ s.position_title_kh }}
+            </td>
+
+            {% set p_count = namespace(val=0) %}
+            {% set l_count = namespace(val=0) %}
+            {% set m_count = namespace(val=0) %}
+            {% set a_count = namespace(val=0) %}
+
+            {% for d in days_info %}
+              {% if d.is_weekend %}
+                <td class="cell-weekend">-</td>
+              {% else %}
+                {% set st = s_att.get(d.day) %}
+                {% if st == 'present' %}
+                  {% set p_count.val = p_count.val + 1 %}
+                  <td class="cell-present">✓</td>
+                {% elif st == 'late' %}
+                  {% set p_count.val = p_count.val + 1 %}
+                  <td class="cell-late">Y</td>
+                {% elif st == 'on_leave' %}
+                  {% set l_count.val = l_count.val + 1 %}
+                  <td class="cell-leave">L</td>
+                {% elif st == 'mission' %}
+                  {% set m_count.val = m_count.val + 1 %}
+                  <td class="cell-mission">M</td>
+                {% elif st == 'absent' %}
+                  {% set a_count.val = a_count.val + 1 %}
+                  <td class="cell-absent">A</td>
+                {% else %}
+                  {% if d.date_iso <= today_iso %}
+                    {% set p_count.val = p_count.val + 1 %}
+                    <td class="cell-present">✓</td>
+                  {% else %}
+                    <td></td>
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            <!-- Summary Totals -->
+            <td class="td-summary-p">{{ p_count.val | kh_num }}</td>
+            <td class="td-summary-l">{{ l_count.val | kh_num }}</td>
+            <td class="td-summary-m">{{ m_count.val | kh_num }}</td>
+            <td class="td-summary-a">{{ a_count.val | kh_num }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}ស្នាដៃ និងគ្រឿងឥស្សរិយយស{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-award text-gold"></i>
+      <span>ស្នាដៃ និងការលើកទឹកចិត្ត (Honors & Achievements)</span>
+    </h1>
+    <p>កត់ត្រាលិខិតសរសើរ ប័ណ្ណសរសើរ មេដាយការងារ និងគ្រឿងឥស្សរិយយសព្រះរាជាណាចក្រកម្ពុជា</p>
+  </div>
+  <div class="page-actions">
+    {% if session.role in ['admin', 'clerk'] %}
+    <button class="btn btn-primary" data-modal-target="addAchievementModal">
+      <i class="fa-solid fa-plus"></i>
+      <span>កត់ត្រាស្នាដៃថ្មី</span>
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span>បញ្ជីស្នាដៃ និងគ្រឿងឥស្សរិយយស ({{ achievements | length | kh_num }} ស្នាដៃ)</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th>មន្ត្រីជ័យលាភី</th>
+            <th>ប្រភេទស្នាដៃ/គ្រឿងឥស្សរិយយស</th>
+            <th>ឈ្មោះស្នាដៃ/មេដាយ</th>
+            <th>ផ្ដល់ដោយ</th>
+            <th>លេខលិខិត/ព្រះរាជក្រឹត្យ</th>
+            <th>កាលបរិច្ឆេទ</th>
+            <th>ការពិពណ៌នា</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in achievements %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td>
+              <div style="font-weight: 600; color: var(--primary-dark);">{{ a.name_kh }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ a.position_title_kh }} ({{ a.officer_code }})</div>
+            </td>
+            <td>
+              <span class="badge badge-warning">
+                <i class="fa-solid fa-medal"></i> {{ HONOR_TYPES.get(a.honor_type, a.honor_type) }}
+              </span>
+            </td>
+            <td>
+              <strong style="color: var(--primary-dark);">{{ a.title }}</strong>
+            </td>
+            <td>{{ a.awarded_by }}</td>
+            <td>{{ a.decree_prakas_no or '-' }}</td>
+            <td>{{ a.award_date }}</td>
+            <td>
+              <div style="font-size: 12px; color: var(--text-muted); max-width: 250px; white-space: normal;">
+                {{ a.description or '-' }}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <i class="fa-solid fa-medal" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
+              <p>មិនទាន់មានទិន្នន័យស្នាដៃ ឬគ្រឿងឥស្សរិយយសនៅឡើយទេ</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Achievement -->
+<div id="addAchievementModal" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">កត់ត្រាស្នាដៃ / គ្រឿងឥស្សរិយយសថ្មី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('evaluation_achievements') }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ជ្រើសរើសមន្ត្រីជ័យលាភី <span class="required">*</span></label>
+          <select name="staff_id" class="form-select" required>
+            {% for s in active_staff %}
+            <option value="{{ s.id }}">{{ s.name_kh }} - {{ s.position_title_kh }} ({{ s.officer_code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ប្រភេទស្នាដៃ/ការលើកទឹកចិត្ត <span class="required">*</span></label>
+          <select name="honor_type" class="form-select" required>
+            {% for key, val in HONOR_TYPES.items() %}
+            <option value="{{ key }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះស្នាដៃ / មេដាយ / លិខិតសរសើរ <span class="required">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="ឧ. មេដាយប្រាក់ការងារ, ប័ណ្ណសរសើរការងារគំរូ..." required>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">ស្ថាប័ន/ឥស្សរជនផ្ដល់ជូន <span class="required">*</span></label>
+            <input type="text" name="awarded_by" class="form-control" placeholder="ឧ. រាជរដ្ឋាភិបាលកម្ពុជា, សាលាខេត្តសៀមរាប..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">កាលបរិច្ឆេទផ្ដល់ជូន <span class="required">*</span></label>
+            <input type="date" name="award_date" class="form-control" value="{{ today_iso }}" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">លេខព្រះរាជក្រឹត្យ / អនុក្រឹត្យ / ប្រកាស / លិខិត</label>
+          <input type="text" name="decree_prakas_no" class="form-control" placeholder="ឧ. ព្រះរាជក្រឹត្យលេខ នស/រកត/...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ការពិពណ៌នាអំពីស្នាដៃ</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="បញ្ជាក់ពីស្នាដៃ និងសមិទ្ធផលដែលសម្រេចបាន..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុក
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

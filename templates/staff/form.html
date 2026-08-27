@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}កែប្រែព័ត៌មានមន្ត្រី{% else %}បន្ថែមមន្ត្រី/បុគ្គលិកថ្មី{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid {% if is_edit %}fa-user-pen{% else %}fa-user-plus{% endif %} text-gold"></i>
+      <span>{% if is_edit %}កែប្រែព័ត៌មានមន្ត្រី៖ {{ staff.name_kh }}{% else %}បន្ថែមមន្ត្រី និងបុគ្គលិកថ្មី (សាលាឃុំ-ភូមិ){% endif %}</span>
+    </h1>
+    <p>រដ្ឋបាលឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% if is_edit %}{{ url_for('staff_detail', staff_id=staff.id) }}{% else %}{{ url_for('staff_list') }}{% endif %}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-file-pen text-gold"></i>
+      <span>ទម្រង់បញ្ចូលព័ត៌មានលម្អិត</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      
+      <!-- Group 1: ព័ត៌មានផ្ទាល់ខ្លួន -->
+      <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 14px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 6px;">
+        <i class="fa-solid fa-user"></i> ១. ព័ត៌មានផ្ទាល់ខ្លួន (Personal Information)
+      </h3>
+
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label class="form-label">អត្តលេខមន្ត្រី <span class="required">*</span></label>
+          <input type="text" name="officer_code" class="form-control" value="{{ staff.officer_code if is_edit else next_code }}" required {% if is_edit %}readonly{% endif %}>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">គោត្តនាម និងនាម (ខ្មែរ) <span class="required">*</span></label>
+          <input type="text" name="name_kh" class="form-control" value="{{ staff.name_kh if is_edit else '' }}" placeholder="ឧ. ស៊ូ វណ្ណា" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះជាអក្សរឡាតាំង <span class="required">*</span></label>
+          <input type="text" name="name_en" class="form-control font-latin" value="{{ staff.name_en if is_edit else '' }}" placeholder="ឧ. Sou Vanna" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ភេទ <span class="required">*</span></label>
+          <select name="gender" class="form-select" required>
+            <option value="ប្រុស" {% if is_edit and staff.gender == 'ប្រុស' %}selected{% endif %}>ប្រុស (Male)</option>
+            <option value="ស្រី" {% if is_edit and staff.gender == 'ស្រី' %}selected{% endif %}>ស្រី (Female)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ថ្ងៃខែឆ្នាំកំណើត <span class="required">*</span></label>
+          <input type="date" name="dob" class="form-control" value="{{ staff.dob if is_edit else '1985-01-01' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            លេខអត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរ <small style="color: var(--text-muted); font-weight: normal;">(៩ ខ្ទង់)</small>
+          </label>
+          <div style="position: relative;">
+            <input type="text" 
+                   id="national_id_input"
+                   name="national_id" 
+                   class="form-control font-latin" 
+                   value="{{ staff.national_id if is_edit and staff.national_id else '' }}" 
+                   placeholder="ឧ. 040182910 (លេខឡាតាំង ៩ ខ្ទង់)"
+                   maxlength="9"
+                   pattern="[0-9]{9}"
+                   inputmode="numeric"
+                   title="សូមបញ្ចូលលេខអត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរជាលេខឡាតាំង ៩ ខ្ទង់ (0-9)"
+                   oninput="validateNationalIdLive(this)"
+                   autocomplete="off">
+            <span id="nid_status_icon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: none; font-size: 14px;"></span>
+          </div>
+          <div id="national_id_feedback" style="font-size: 12px; margin-top: 5px; display: none;"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">លេខទូរស័ព្ទ</label>
+          <input type="text" name="phone" class="form-control" value="{{ staff.phone if is_edit else '' }}" placeholder="ឧ. 012 345 678">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">អ៊ីមែល</label>
+          <input type="email" name="email" class="form-control" value="{{ staff.email if is_edit else '' }}" placeholder="ឧ. name@nokorpheas.gov.kh">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ភូមិ / ទីកន្លែងស្នាក់នៅ <span class="required">*</span></label>
+          <select name="village" class="form-select" required>
+            {% for v in village_list %}
+            <option value="{{ v }}" {% if is_edit and staff.village == v %}selected{% endif %}>ភូមិ{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Group 2: ព័ត៌មានរដ្ឋបាល និងមុខតំណែង -->
+      <h3 style="font-size: 15px; color: var(--primary); margin: 24px 0 14px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 6px;">
+        <i class="fa-solid fa-briefcase"></i> ២. ព័ត៌មានរដ្ឋបាល និងមុខតំណែង (Administrative & Position)
+      </h3>
+
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label class="form-label">ប្រភេទក្រុមការងារ <span class="required">*</span></label>
+          <select name="category" id="staff_category_select" class="form-select" onchange="toggleSalarySection(this.value)" required>
+            {% for cat_key, cat_data in STAFF_CATEGORIES.items() %}
+            <option value="{{ cat_key }}" {% if is_edit and staff.category == cat_key %}selected{% endif %}>
+              {{ cat_data.name_kh }} ({{ cat_data.name_en }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">មុខតំណែង (ខ្មែរ) <span class="required">*</span></label>
+          <input type="text" name="position_title_kh" class="form-control" value="{{ staff.position_title_kh if is_edit else '' }}" placeholder="ឧ. មេឃុំ, ជំទប់, ស្មៀន, មេភូមិ..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">មុខតំណែង (ឡាតាំង)</label>
+          <input type="text" name="position_title_en" class="form-control font-latin" value="{{ staff.position_title_en if is_edit else '' }}" placeholder="ឧ. Commune Chief, Clerk...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">កម្រិតក្របខណ្ឌ</label>
+          <input type="text" name="cadre_level" class="form-control" value="{{ staff.cadre_level if is_edit else '' }}" placeholder="ឧ. នយោបាយ, ក.៣, កិច្ចសន្យា, ថ្នាក់ភូមិ...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">កាលបរិច្ឆេទចូលបម្រើការងារ</label>
+          <input type="date" name="appointment_date" class="form-control" value="{{ staff.appointment_date if is_edit else '2022-07-01' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">កាលបរិច្ឆេទផុតកិច្ចសន្យា (បើមាន)</label>
+          <input type="date" name="contract_end_date" class="form-control" value="{{ staff.contract_end_date if is_edit and staff.contract_end_date else '' }}">
+        </div>
+      </div>
+
+      <!-- Group 3: ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ (Hidden for ស្មៀនឃុំ) -->
+      <div id="salary_section_wrapper" style="display: {% if is_edit and staff.category == 'clerk' %}none{% else %}block{% endif %};">
+        <h3 style="font-size: 15px; color: var(--primary); margin: 24px 0 14px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 6px;">
+          <i class="fa-solid fa-money-bill-wave"></i> ៣. ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ (Salary & Allowances)
+        </h3>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">ប្រាក់បៀវត្សរ៍គោល (រៀល) <span class="required">*</span></label>
+            <input type="number" id="base_salary_input" name="base_salary" class="form-control" value="{{ (staff.base_salary | int) if is_edit and staff.base_salary is not none else 850000 }}" min="0" step="any" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ (រៀល) <small style="color: var(--primary); font-weight: normal;">(បើកក្នុងខែមេសា)</small></label>
+            <input type="number" id="pos_allowance_input" name="position_allowance" class="form-control" value="{{ (staff.position_allowance | int) if is_edit and staff.position_allowance is not none else 0 }}" min="0" step="any">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ (រៀល) <small style="color: #b45309; font-weight: normal;">(បើកក្នុងខែតុលា)</small></label>
+            <input type="number" id="fam_allowance_input" name="family_allowance" class="form-control" value="{{ (staff.family_allowance | int) if is_edit and staff.family_allowance is not none else 0 }}" min="0" step="any">
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 4: ព័ត៌មានបន្ថែម & រូបថត -->
+      <h3 style="font-size: 15px; color: var(--primary); margin: 24px 0 14px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 6px;">
+        <i class="fa-solid fa-circle-info"></i> ៤. ព័ត៌មានបន្ថែម (Additional Details)
+      </h3>
+
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label class="form-label">កម្រិតវប្បធម៌ / សញ្ញាបត្រ</label>
+          <input type="text" name="education_level" class="form-control" value="{{ staff.education_level if is_edit else '' }}" placeholder="ឧ. បរិញ្ញាបត្ររដ្ឋបាល, ទុតិយភូមិ...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ទំនាក់ទំនងពេលមានអាសន្ន</label>
+          <input type="text" name="emergency_contact" class="form-control" value="{{ staff.emergency_contact if is_edit else '' }}" placeholder="ឧ. ភរិយា៖ 012 334 556">
+        </div>
+
+        {% if is_edit %}
+        <div class="form-group">
+          <label class="form-label">ស្ថានភាពបម្រើការងារ</label>
+          <select name="status" class="form-select">
+            <option value="active" {% if staff.status == 'active' %}selected{% endif %}>កំពុងបម្រើការ (Active)</option>
+            <option value="resigned" {% if staff.status == 'resigned' %}selected{% endif %}>បានលាឈប់ (Resigned)</option>
+            <option value="retired" {% if staff.status == 'retired' %}selected{% endif %}>ចូលនិវត្តន៍ (Retired)</option>
+            <option value="suspended" {% if staff.status == 'suspended' %}selected{% endif %}>ផ្អាកការងារ (Suspended)</option>
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">រូបថតមន្ត្រី (៤x៦ ឬ Portrait)</label>
+          <input type="file" id="photo_input" name="photo" class="form-control" accept="image/*" onchange="previewOfficerPhoto(this)">
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 14px;">
+            <div id="photo_preview_container" style="width: 70px; height: 85px; border: 2px dashed #cbd5e1; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+              {% if is_edit and staff.photo %}
+              <img id="photo_preview_img" src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+              {% else %}
+              <img id="photo_preview_img" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <i id="photo_preview_icon" class="fa-solid fa-camera" style="font-size: 24px; color: #94a3b8;"></i>
+              {% endif %}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              {% if is_edit and staff.photo %}
+              <span class="badge badge-info"><i class="fa-solid fa-image"></i> មានរូបថតស្រេច</span><br>
+              ជ្រើសរើស File ថ្មីបើចង់ផ្លាស់ប្តូររូបថត
+              {% else %}
+              ជ្រើសរើសរូបថតដើម្បីមើល Preview ភ្លាមៗ (PNG, JPG, JPEG, WebP)
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">កំណត់សម្គាល់បន្ថែម</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="ព័ត៌មានបន្ថែម..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('staff_list') }}" class="btn btn-outline">បោះបង់</a>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>{% if is_edit %}រក្សាទុកការកែប្រែ{% else %}រក្សាទុកមន្ត្រីថ្មី{% endif %}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Duplicate National ID Modal Popup -->
+<div id="duplicateNidModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
+  <div class="dup-modal-dialog">
+    
+    <!-- Modal Header (Red Warning) -->
+    <div class="dup-modal-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #ffffff;">ការព្រមាន៖ ស្ទួនលេខអត្តសញ្ញាណប័ណ្ណ!</h3>
+          <p style="margin: 2px 0 0; font-size: 12px; color: #fee2e2;">លេខនេះត្រូវបានចុះឈ្មោះដោយមន្ត្រីខាងក្រោមរួចរាល់ហើយ</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeDuplicateModal()" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; font-size: 16px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="បិទ">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body with Existing Officer Information -->
+    <div class="dup-modal-body">
+      <div class="dup-profile-card">
+        <!-- Avatar / Photo -->
+        <div style="flex-shrink: 0;">
+          <img id="dup_photo" src="" alt="Profile" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none;">
+          <div id="dup_avatar_circle" style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #ffffff; font-size: 26px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ?
+          </div>
+        </div>
+
+        <!-- Name & Code -->
+        <div style="flex-grow: 1;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span id="dup_officer_code" class="dup-officer-code">NP-000</span>
+            <span id="dup_category_badge" class="badge badge-info" style="font-size: 11px;">ក្រុមការងារ</span>
+          </div>
+          <h4 id="dup_name_kh" class="dup-name-kh">ឈ្មោះមន្ត្រី</h4>
+          <div id="dup_name_en" class="dup-name-en">Officer Name</div>
+          <div id="dup_position" class="dup-position">មុខតំណែង</div>
+        </div>
+      </div>
+
+      <!-- Detail Grid -->
+      <div class="dup-detail-grid">
+        <div class="dup-detail-item dup-nid-box">
+          <span class="dup-label">លេខអត្តសញ្ញាណប័ណ្ណស្ទួន</span>
+          <strong id="dup_nid" class="dup-val font-latin">040182910</strong>
+        </div>
+        <div class="dup-detail-item">
+          <span class="dup-label">ភេទ និង អាយុ</span>
+          <strong id="dup_gender_age" class="dup-val">ប្រុស</strong>
+        </div>
+        <div class="dup-detail-item">
+          <span class="dup-label">ភូមិ / ទីកន្លែងស្នាក់នៅ</span>
+          <strong id="dup_village" class="dup-val">ភូមិ</strong>
+        </div>
+        <div class="dup-detail-item">
+          <span class="dup-label">លេខទូរស័ព្ទ</span>
+          <strong id="dup_phone" class="dup-val font-latin">-</strong>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <button type="button" onclick="closeDuplicateModal()" class="btn btn-outline" style="padding: 8px 16px;">
+          <i class="fa-solid fa-xmark"></i> បិទផ្ទាំងនេះ
+        </button>
+        <a id="dup_view_profile_btn" href="#" target="_blank" class="btn btn-primary" style="padding: 8px 16px;">
+          <i class="fa-solid fa-id-card"></i> មើលប្រវត្តិរូបពេញលេញ
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function previewOfficerPhoto(input) {
+    const previewImg = document.getElementById('photo_preview_img');
+    const previewIcon = document.getElementById('photo_preview_icon');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (previewImg) {
+          previewImg.src = e.target.result;
+          previewImg.style.display = 'block';
+        }
+        if (previewIcon) {
+          previewIcon.style.display = 'none';
+        }
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  let nidTimer = null;
+  let isNidDuplicate = false;
+  let lastDuplicateStaff = null;
+
+  function showDuplicateNidModal(staff) {
+    if (!staff) return;
+    const modal = document.getElementById('duplicateNidModal');
+    if (!modal) return;
+
+    document.getElementById('dup_officer_code').textContent = staff.officer_code || 'NP-???';
+    document.getElementById('dup_name_kh').textContent = staff.name_kh || '';
+    document.getElementById('dup_name_en').textContent = staff.name_en ? `(${staff.name_en})` : '';
+    document.getElementById('dup_position').textContent = staff.position_title_kh || '';
+    document.getElementById('dup_nid').textContent = staff.national_id || '';
+    document.getElementById('dup_category_badge').textContent = staff.category_kh || staff.category || 'មន្ត្រី';
+    
+    let genderAgeText = staff.gender || '';
+    if (staff.age_kh) {
+      genderAgeText += ` (${staff.age_kh})`;
+    }
+    document.getElementById('dup_gender_age').textContent = genderAgeText;
+    document.getElementById('dup_village').textContent = staff.village ? `ភូមិ${staff.village}` : '-';
+    document.getElementById('dup_phone').textContent = staff.phone || '-';
+
+    const photoImg = document.getElementById('dup_photo');
+    const avatarCircle = document.getElementById('dup_avatar_circle');
+    if (staff.photo_url) {
+      photoImg.src = staff.photo_url;
+      photoImg.style.display = 'block';
+      avatarCircle.style.display = 'none';
+    } else {
+      photoImg.style.display = 'none';
+      avatarCircle.style.display = 'flex';
+      avatarCircle.textContent = (staff.name_kh || '?').charAt(0);
+    }
+
+    const viewBtn = document.getElementById('dup_view_profile_btn');
+    if (viewBtn && staff.id) {
+      viewBtn.href = `/staff/${staff.id}`;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function closeDuplicateModal() {
+    const modal = document.getElementById('duplicateNidModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+    const nidInput = document.getElementById('national_id_input');
+    if (nidInput) {
+      nidInput.focus();
+    }
+  }
+
+  function validateNationalIdLive(input) {
+    // Force only Latin digits 0-9 and max 9 characters
+    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 9);
+    
+    const feedback = document.getElementById('national_id_feedback');
+    const icon = document.getElementById('nid_status_icon');
+    const val = input.value.trim();
+    const excludeId = "{{ staff.id if is_edit else '' }}";
+
+    if (!feedback || !icon) return;
+
+    if (!val) {
+      feedback.style.display = 'none';
+      icon.style.display = 'none';
+      input.style.borderColor = '';
+      isNidDuplicate = false;
+      lastDuplicateStaff = null;
+      return;
+    }
+
+    if (val.length < 9) {
+      feedback.style.display = 'block';
+      feedback.style.color = '#d97706';
+      feedback.innerHTML = `<i class="fa-solid fa-circle-info"></i> បានបញ្ចូល <strong>${val.length}</strong>/៩ ខ្ទង់ (នៅខ្វះ ${9 - val.length} ខ្ទង់ទៀត)`;
+      icon.style.display = 'block';
+      icon.innerHTML = `<i class="fa-solid fa-pen" style="color: #d97706;"></i>`;
+      input.style.borderColor = '#d97706';
+      isNidDuplicate = false;
+      lastDuplicateStaff = null;
+      return;
+    }
+
+    // Exactly 9 digits -> Check live duplicate via API
+    clearTimeout(nidTimer);
+    feedback.style.display = 'block';
+    feedback.style.color = '#3b82f6';
+    feedback.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> កំពុងផ្ទៀងផ្ទាត់លេខអត្តសញ្ញាណប័ណ្ណ...`;
+    icon.style.display = 'block';
+    icon.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: #3b82f6;"></i>`;
+
+    nidTimer = setTimeout(() => {
+      fetch(`/api/check-national-id?national_id=${encodeURIComponent(val)}&exclude_id=${excludeId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.duplicate) {
+            isNidDuplicate = true;
+            lastDuplicateStaff = data.staff;
+            feedback.style.display = 'block';
+            feedback.style.color = '#dc2626';
+            feedback.innerHTML = `<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 8px 12px; border-radius: 6px; margin-top: 4px; color: #dc2626; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span><i class="fa-solid fa-triangle-exclamation"></i> <strong>ការព្រមាន៖</strong> ${data.message}</span>
+              <button type="button" onclick="showDuplicateNidModal(lastDuplicateStaff)" class="btn btn-sm btn-outline-danger" style="padding: 2px 8px; font-size: 11.5px; white-space: nowrap;"><i class="fa-solid fa-eye"></i> មើលទិន្នន័យ</button>
+            </div>`;
+            icon.style.display = 'block';
+            icon.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color: #dc2626;"></i>`;
+            input.style.borderColor = '#dc2626';
+            
+            // Trigger Modal Popup
+            showDuplicateNidModal(data.staff);
+          } else if (data.valid) {
+            isNidDuplicate = false;
+            lastDuplicateStaff = null;
+            feedback.style.display = 'block';
+            feedback.style.color = '#16a34a';
+            feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message}`;
+            icon.style.display = 'block';
+            icon.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #16a34a;"></i>`;
+            input.style.borderColor = '#16a34a';
+          } else {
+            isNidDuplicate = false;
+            lastDuplicateStaff = null;
+            feedback.style.display = 'block';
+            feedback.style.color = '#dc2626';
+            feedback.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.message}`;
+            icon.style.display = 'block';
+            icon.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color: #dc2626;"></i>`;
+            input.style.borderColor = '#dc2626';
+          }
+        })
+        .catch(() => {
+          feedback.style.display = 'none';
+          icon.style.display = 'none';
+        });
+    }, 250);
+  }
+
+  function toggleSalarySection(category) {
+    const salarySection = document.getElementById('salary_section_wrapper');
+    const baseSalaryInput = document.getElementById('base_salary_input');
+    const posAllowanceInput = document.getElementById('pos_allowance_input');
+    const famAllowanceInput = document.getElementById('fam_allowance_input');
+
+    if (!salarySection || !baseSalaryInput) return;
+
+    if (category === 'clerk') {
+      salarySection.style.display = 'none';
+      baseSalaryInput.removeAttribute('required');
+      baseSalaryInput.value = '0';
+      if (posAllowanceInput) posAllowanceInput.value = '0';
+      if (famAllowanceInput) famAllowanceInput.value = '0';
+    } else {
+      salarySection.style.display = 'block';
+      baseSalaryInput.setAttribute('required', 'required');
+      if (baseSalaryInput.value === '0' || !baseSalaryInput.value) {
+        if (category === 'council') {
+          baseSalaryInput.value = '1150000';
+        } else if (category === 'village') {
+          baseSalaryInput.value = '500000';
+        } else {
+          baseSalaryInput.value = '850000';
+        }
+      }
+    }
+  }
+
+  // Prevent form submission if duplicate or incomplete National ID is entered
+  document.addEventListener("DOMContentLoaded", function() {
+    const form = document.querySelector('form');
+    const nidInput = document.getElementById('national_id_input');
+    const catSelect = document.getElementById('staff_category_select');
+
+    // Initialize category salary section visibility
+    if (catSelect) {
+      toggleSalarySection(catSelect.value);
+    }
+
+    if (form && nidInput) {
+      form.addEventListener('submit', function(e) {
+        const val = nidInput.value.trim();
+        if (val && val.length !== 9) {
+          e.preventDefault();
+          alert('សូមបញ្ចូលលេខអត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរឱ្យគ្រប់ ៩ ខ្ទង់ (លេខឡាតាំង 0-9)!');
+          nidInput.focus();
+          return false;
+        }
+        if (isNidDuplicate) {
+          e.preventDefault();
+          if (lastDuplicateStaff) {
+            showDuplicateNidModal(lastDuplicateStaff);
+          } else {
+            alert('លេខអត្តសញ្ញាណប័ណ្ណនេះមានក្នុងប្រព័ន្ធរួចហើយ! មិនអាចរក្សាទុកទិន្នន័យស្ទួនបានទេ។');
+          }
+          nidInput.focus();
+          return false;
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="km">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក{% endblock %} - រដ្ឋបាលឃុំនគរភាស</title>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js for Visual Reports -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Theme Early Execution (Prevents Flash of Unstyled Content) -->
+  <script>
+    (function () {
+      var savedTheme = localStorage.getItem('np_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.1">
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+  <div class="app-container">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="app-sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo-icon">
+          <i class="fa-solid fa-landmark"></i>
+        </div>
+        <div class="sidebar-title-box">
+          <h3>រដ្ឋបាលឃុំនគរភាស</h3>
+          <p>ស្រុកអង្គរជុំ ខេត្តសៀមរាប</p>
+        </div>
+        <!-- Single Unified Button to Hide/Close Sidebar on both Desktop & Mobile -->
+        <button type="button" id="sidebar-close-btn" class="sidebar-header-hide-btn" aria-label="លាក់ម៉ឺនុយ"
+          title="លាក់/បិទផ្ទាំងម៉ឺនុយ (Hide Sidebar)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-category">ផ្ទាំងគ្រប់គ្រងទូទៅ</div>
+        <a href="{{ url_for('dashboard') }}"
+          class="nav-link {% if request.path == '/' or request.path == '/dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>ផ្ទាំងគ្រប់គ្រង</span>
+        </a>
+
+        <div class="menu-category">១. មន្ត្រី និងបុគ្គលិក</div>
+        <a href="{{ url_for('staff_list') }}" class="nav-link {% if request.path == '/staff' %}active{% endif %}">
+          <i class="fa-solid fa-users"></i>
+          <span>បញ្ជីមន្ត្រី និងបុគ្គលិក</span>
+        </a>
+        <a href="{{ url_for('staff_id_cards_batch') }}"
+          class="nav-link {% if request.path == '/staff/id-cards' or '/id-card' in request.path %}active{% endif %}">
+          <i class="fa-solid fa-id-badge"></i>
+          <span>ប័ណ្ណសម្គាល់ខ្លួន</span>
+        </a>
+        {% if session.role in ['admin', 'clerk'] %}
+        <a href="{{ url_for('staff_create') }}" class="nav-link {% if request.path == '/staff/new' %}active{% endif %}">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>បន្ថែមមន្ត្រីថ្មី</span>
+        </a>
+        {% endif %}
+
+        <div class="menu-category">២. វត្តមាន និងការសុំច្បាប់</div>
+        <a href="{{ url_for('attendance_scan') }}"
+          class="nav-link {% if request.path == '/attendance/scan' %}active{% endif %}">
+          <i class="fa-solid fa-qrcode" style="color: #fbbf24;"></i>
+          <span>ស្កេនវត្តមាន QR Code</span>
+          <span class="nav-badge" style="background: #10b981; color: #ffffff; font-size: 10px;">Live</span>
+        </a>
+        <a href="{{ url_for('attendance_daily') }}"
+          class="nav-link {% if request.path == '/attendance/daily' %}active{% endif %}">
+          <i class="fa-solid fa-clipboard-user"></i>
+          <span>កត់ត្រាវត្តមានប្រចាំថ្ងៃ</span>
+        </a>
+        <a href="{{ url_for('attendance_monthly') }}"
+          class="nav-link {% if request.path == '/attendance/monthly' %}active{% endif %}">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>តារាងវត្តមានប្រចាំខែ</span>
+        </a>
+        <a href="{{ url_for('leave_list') }}"
+          class="nav-link {% if request.path.startswith('/leave') %}active{% endif %}">
+          <i class="fa-solid fa-file-signature"></i>
+          <span>ការសុំច្បាប់ឈប់សម្រាក</span>
+          {% if pending_leaves_count > 0 %}
+          <span class="nav-badge badge-warning">{{ pending_leaves_count | kh_num }}</span>
+          {% endif %}
+        </a>
+        <a href="{{ url_for('mission_list') }}"
+          class="nav-link {% if request.path.startswith('/missions') %}active{% endif %}">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>កត់ត្រាចុះបេសកកម្ម</span>
+        </a>
+
+        <div class="menu-category">៣. ប្រតិទិន & កិច្ចការរដ្ឋបាល</div>
+        <a href="{{ url_for('calendar_index') }}"
+          class="nav-link {% if request.path.startswith('/calendar') %}active{% endif %}">
+          <i class="fa-solid fa-calendar-check" style="color: #38bdf8;"></i>
+          <span>ប្រតិទិនកិច្ចការរដ្ឋបាល</span>
+        </a>
+
+        <div class="menu-category">៤. បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ</div>
+        <a href="{{ url_for('payroll_list') }}"
+          class="nav-link {% if request.path.startswith('/payroll') %}active{% endif %}">
+          <i class="fa-solid fa-money-bill-wave"></i>
+          <span>ប្រាក់បៀវត្សរ៍ & Payslip</span>
+        </a>
+
+        <div class="menu-category">៥. ហិរញ្ញវត្ថុ & ចំណូល-ចំណាយ</div>
+        <a href="{{ url_for('finance_list') }}"
+          class="nav-link {% if request.path.startswith('/finance') %}active{% endif %}">
+          <i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i>
+          <span>គ្រប់គ្រងចំណាយ</span>
+        </a>
+
+        <div class="menu-category">៦. វគ្គបណ្តុះបណ្តាល</div>
+        <a href="{{ url_for('evaluation_trainings') }}"
+          class="nav-link {% if request.path == '/evaluation/trainings' %}active{% endif %}">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>វគ្គបណ្តុះបណ្តាល</span>
+        </a>
+
+        <div class="menu-category">៧. របាយការណ៍ & នាំចេញ</div>
+        <a href="{{ url_for('reports_hub') }}" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>មជ្ឈមណ្ឌលរបាយការណ៍</span>
+        </a>
+
+        {% if session.role in ['admin', 'clerk'] %}
+        <div class="menu-category">៨. ការកំណត់ប្រព័ន្ធ</div>
+        <a href="{{ url_for('settings_villages') }}"
+          class="nav-link {% if request.path == '/settings/villages' %}active{% endif %}">
+          <i class="fa-solid fa-tree-city"></i>
+          <span>គ្រប់គ្រងស្ថិតិភូមិ (១០ ភូមិ)</span>
+        </a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('settings_users') }}"
+          class="nav-link {% if request.path == '/settings/users' %}active{% endif %}">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>គ្រប់គ្រងគណនី & សិទ្ធិ</span>
+        </a>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="user-avatar-sm">
+            {{ session.full_name[:1] if session.full_name else 'U' }}
+          </div>
+          <div class="user-info-text">
+            <div class="name">{{ session.full_name or 'មន្ត្រីឃុំ' }}</div>
+            <div class="role">
+              {% if session.role == 'admin' %}
+              <i class="fa-solid fa-shield-halved"></i> មេឃុំ / Admin
+              {% elif session.role == 'clerk' %}
+              <i class="fa-solid fa-pen-nib"></i> ស្មៀនឃុំ
+              {% else %}
+              <i class="fa-solid fa-user"></i> មន្ត្រីទូទៅ
+              {% endif %}
+            </div>
+          </div>
+          <a href="{{ url_for('logout') }}" title="ចាកចេញ" style="color: #ef4444; font-size: 16px;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="លាក់/បង្ហាញម៉ឺនុយ"
+            title="លាក់/បង្ហាញម៉ឺនុយ (Toggle Sidebar)">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="live-clock-badge">
+            <span class="dot"></span>
+            <span id="live-time-display">កំពុងផ្ទុកម៉ោង...</span>
+          </div>
+          <span class="topbar-date-display">
+            <i class="fa-regular fa-calendar"></i>
+            <span class="date-text">{{ today_khmer }}</span>
+          </span>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Theme Switcher (Light / Dark Mode) -->
+          <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="ប្តូរពណ៌ Theme"
+            title="ប្តូរពន្លឺ Theme (Light / Dark Mode)">
+            <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
+          </button>
+
+          <!-- Quick Check-in Button -->
+          <button id="btn-quick-checkin" onclick="handleQuickCheckin()" class="btn btn-sm btn-outline-primary"
+            title="កត់ត្រាវត្តមានចូល/ចេញថ្ងៃនេះ">
+            <i class="fa-solid fa-fingerprint"></i>
+            <span class="btn-text">កត់ត្រាវត្តមានភ្លាមៗ</span>
+          </button>
+
+          <a href="{{ url_for('user_profile') }}" class="btn btn-sm btn-outline user-profile-btn" title="គណនីរបស់ខ្ញុំ">
+            <i class="fa-solid fa-user"></i>
+            <span class="user-name-text">{{ session.username }}</span>
+          </a>
+
+          <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger logout-btn" title="ចាកចេញពីប្រព័ន្ធ">
+            <i class="fa-solid fa-power-off"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Toast Container -->
+      <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+      <!-- Page Content -->
+      <main class="page-content">
+        <!-- Flash Alerts Trigger for Toast -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="server-flash-message" data-category="{{ category }}" data-message="{{ message }}"
+          style="display: none;"></div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Javascript -->
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=4.0"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ប្រវត្តិរូបសង្ខេប - {{ staff.name_kh }} ({{ staff.officer_code }})</title>
+  
+  <!-- Google Fonts: Moul & Kantumruy Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Siemreap&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <style>
+    :root {
+      --font-moul: 'Moul', serif;
+      --font-khmer: 'Kantumruy Pro', 'Siemreap', sans-serif;
+      --font-latin: 'Inter', sans-serif;
+      --text-dark: #0f172a;
+      --navy-primary: #0f2b48;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      font-family: var(--font-khmer);
+      color: var(--text-dark);
+      font-size: 11pt;
+      line-height: 1.5;
+      padding: 24px 0 50px;
+    }
+
+    /* Print Controller Toolbar */
+    .btn-print-bar {
+      width: 210mm;
+      max-width: 95%;
+      margin: 0 auto 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-action-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* A4 Paper Canvas */
+    .cv-paper {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 18mm 20mm;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+      position: relative;
+    }
+
+    /* Top Official Header */
+    .official-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      width: 100%;
+    }
+
+    .header-left-col {
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    .header-left-col .gov-level {
+      font-size: 10.5pt;
+      color: #1e293b;
+      font-weight: 500;
+    }
+
+    .header-left-col .org-commune {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: var(--navy-primary);
+      margin: 2px 0;
+    }
+
+    .header-left-col .officer-id-badge {
+      font-size: 10pt;
+      color: #334155;
+      margin-top: 3px;
+    }
+
+    .header-right-col {
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .header-right-col .kingdom {
+      font-family: var(--font-moul);
+      font-size: 12pt;
+      color: var(--navy-primary);
+      letter-spacing: 0.5px;
+    }
+
+    .header-right-col .motto {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: var(--navy-primary);
+      margin-top: 2px;
+    }
+
+    .header-right-col .motto-line {
+      display: block;
+      margin: 2px auto 0;
+      width: 65px;
+      height: 4px;
+    }
+
+    /* Title & Photo Layout */
+    .cv-title-photo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0 20px;
+      gap: 15px;
+    }
+
+    .cv-title-center {
+      flex: 1;
+      text-align: center;
+      padding-left: 35mm; /* Balanced with photo width on right */
+    }
+
+    .doc-main-title {
+      font-family: var(--font-moul);
+      font-size: 16pt;
+      color: var(--navy-primary);
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-sub-title {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: #1e3a8a;
+    }
+
+    /* Photo Frame 4x6 */
+    .officer-photo-frame {
+      width: 35mm;
+      height: 45mm;
+      border: 1.5px solid #334155;
+      background: #fafafa;
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .officer-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-placeholder-text {
+      text-align: center;
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    /* Section Headings */
+    .section-title {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: var(--navy-primary);
+      border-bottom: 1.5px solid var(--navy-primary);
+      padding-bottom: 3px;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    /* Structured Data Table */
+    .cv-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 4px 0 12px;
+      font-size: 10.5pt;
+    }
+
+    .cv-data-table td {
+      padding: 6px 8px;
+      vertical-align: middle;
+      border: 1px solid #cbd5e1;
+    }
+
+    .cv-data-table .label-cell {
+      font-weight: 600;
+      color: #1e293b;
+      background-color: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .cv-data-table .value-cell {
+      color: #0f172a;
+    }
+
+    /* Data Tables (Trainings & Honors) */
+    .cv-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 14px;
+      font-size: 10pt;
+    }
+
+    .cv-grid-table th, .cv-grid-table td {
+      border: 1px solid #94a3b8;
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+
+    .cv-grid-table th {
+      background-color: #f1f5f9;
+      font-family: var(--font-khmer);
+      font-weight: 700;
+      color: #0f172a;
+      text-align: left;
+    }
+
+    /* Signature Section */
+    .signatures-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      page-break-inside: avoid;
+      width: 100%;
+    }
+
+    .sig-column {
+      text-align: center;
+      width: 46%;
+      line-height: 1.5;
+      font-size: 10.5pt;
+    }
+
+    .sig-column .sig-title {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: var(--navy-primary);
+      margin-top: 3px;
+    }
+
+    .sig-column .sig-name {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: var(--navy-primary);
+      margin-top: 65px;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+      .btn-print-bar, .toast-container {
+        display: none !important;
+      }
+      .cv-paper {
+        width: 100% !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 12mm 15mm 12mm 15mm;
+      }
+      .cv-grid-table th, .cv-data-table .label-cell {
+        background-color: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Print Control Bar (Screen Only) -->
+  <div class="btn-print-bar no-print">
+    <a href="{{ url_for('staff_detail', staff_id=staff.id) }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ទៅទំព័រមន្ត្រី
+    </a>
+    <div class="btn-action-group">
+      <button onclick="window.print()" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-print"></i> បោះពុម្ពឯកសារ (Print CV / Save PDF)
+      </button>
+    </div>
+  </div>
+
+  <!-- A4 CV Sheet -->
+  <div class="cv-paper print-document">
+    
+    <!-- Top Official Header -->
+    <div class="official-header-row">
+      <!-- Header Left -->
+      <div class="header-left-col">
+        <div class="gov-level">រដ្ឋបាលខេត្តសៀមរាប</div>
+        <div class="gov-level">រដ្ឋបាលស្រុក{{ staff.district or 'អង្គរជុំ' }}</div>
+        <div class="org-commune">រដ្ឋបាលឃុំនគរភាស</div>
+        <div class="officer-id-badge">
+          អត្តលេខមន្ត្រី៖ <strong>{{ staff.officer_code }}</strong>
+        </div>
+      </div>
+
+      <!-- Header Right -->
+      <div class="header-right-col">
+        <div class="kingdom">ព្រះរាជាណាចក្រកម្ពុជា</div>
+        <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        <svg class="motto-line" viewBox="0 0 65 6" fill="none">
+          <path d="M0 3H65" stroke="#0f2b48" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Title & Photo -->
+    <div class="cv-title-photo-row">
+      <div class="cv-title-center">
+        <h1 class="doc-main-title">ជីវប្រវត្តិសង្ខេប</h1>
+        <div class="doc-sub-title">មន្ត្រីរដ្ឋបាលឃុំនគរភាស</div>
+      </div>
+
+      <div class="officer-photo-frame">
+        {% if staff.photo %}
+        <img src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="{{ staff.name_kh }}">
+        {% else %}
+        <div class="photo-placeholder-text">
+          <i class="fa-regular fa-image" style="font-size: 18px; margin-bottom: 4px; display: block; color: #94a3b8;"></i>
+          រូបថត<br>៤ x ៦
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Section I: ព័ត៌មានផ្ទាល់ខ្លួន -->
+    <div class="cv-section">
+      <h2 class="section-title">I. ព័ត៌មានផ្ទាល់ខ្លួន (Personal Details)</h2>
+      <table class="cv-data-table">
+        <tr>
+          <td class="label-cell" style="width: 22%;">គោត្តនាម និងនាម ៖</td>
+          <td class="value-cell" style="width: 33%;"><strong>{{ staff.name_kh }}</strong></td>
+          <td class="label-cell" style="width: 20%;">អក្សរឡាតាំង ៖</td>
+          <td class="value-cell" style="width: 25%; font-family: var(--font-latin); font-weight: 500;">{{ staff.name_en }}</td>
+        </tr>
+        <tr>
+          <td class="label-cell">ភេទ ៖</td>
+          <td class="value-cell">{{ staff.gender }}</td>
+          <td class="label-cell">ថ្ងៃខែឆ្នាំកំណើត ៖</td>
+          <td class="value-cell">{{ staff.dob }} (អាយុ {{ staff.dob | kh_age }})</td>
+        </tr>
+        <tr>
+          <td class="label-cell">លេខអត្តសញ្ញាណប័ណ្ណ ៖</td>
+          <td class="value-cell"><strong>{{ staff.national_id or '........................' }}</strong></td>
+          <td class="label-cell">លេខទូរស័ព្ទ ៖</td>
+          <td class="value-cell">{{ staff.phone or '........................' }}</td>
+        </tr>
+        <tr>
+          <td class="label-cell">អាសយដ្ឋានបច្ចុប្បន្ន ៖</td>
+          <td class="value-cell" colspan="3">ភូមិ{{ staff.village }} ឃុំនគរភាស ស្រុក{{ staff.district or 'អង្គរជុំ' }} ខេត្ត{{ staff.province or 'សៀមរាប' }}</td>
+        </tr>
+        <tr>
+          <td class="label-cell">កម្រិតវប្បធម៌ទូទៅ ៖</td>
+          <td class="value-cell" colspan="3">{{ staff.education_level or '................................................................' }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section II: ព័ត៌មានការងារ និងមុខតំណែង -->
+    <div class="cv-section">
+      <h2 class="section-title">II. ព័ត៌មានការងារ និងមុខតំណែងបច្ចុប្បន្ន (Employment & Position)</h2>
+      <table class="cv-data-table">
+        <tr>
+          <td class="label-cell" style="width: 22%;">មុខតំណែងបច្ចុប្បន្ន ៖</td>
+          <td class="value-cell" style="width: 33%;"><strong>{{ staff.position_title_kh }}</strong></td>
+          <td class="label-cell" style="width: 20%;">ក្រុមការងារ ៖</td>
+          <td class="value-cell" style="width: 25%;">{{ STAFF_CATEGORIES.get(staff.category, {}).get('name_kh', staff.category) }}</td>
+        </tr>
+        <tr>
+          <td class="label-cell">កម្រិតក្របខណ្ឌ ៖</td>
+          <td class="value-cell">{{ staff.cadre_level or '-' }}</td>
+          <td class="label-cell">ថ្ងៃចូលបម្រើការ ៖</td>
+          <td class="value-cell">{{ staff.appointment_date or '-' }}</td>
+        </tr>
+        <tr>
+          <td class="label-cell">ប្រាក់បៀវត្សរ៍គោល ៖</td>
+          <td class="value-cell">{{ staff.base_salary | currency }}</td>
+          <td class="label-cell">ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ ៖</td>
+          <td class="value-cell">{{ staff.position_allowance | currency }}</td>
+        </tr>
+        {% if staff.family_allowance %}
+        <tr>
+          <td class="label-cell">ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ ៖</td>
+          <td class="value-cell" colspan="3">{{ staff.family_allowance | currency }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="label-cell">ស្ថានភាពបម្រើការ ៖</td>
+          <td class="value-cell" colspan="3">
+            {% if staff.status == 'active' %}
+            កំពុងបំពេញការងារនៅរដ្ឋបាលឃុំនគរភាស (សកម្ម)
+            {% elif staff.status == 'resigned' %}
+            បានលាឈប់ពីការងារ
+            {% elif staff.status == 'retired' %}
+            បានចូលនិវត្តន៍
+            {% else %}
+            {{ staff.status }}
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section III: វគ្គបណ្តុះបណ្តាលដែលបានឆ្លងកាត់ -->
+    <div class="cv-section">
+      <h2 class="section-title">III. វគ្គបណ្តុះបណ្តាល និងសមត្ថភាព (Trainings & Capacity Building)</h2>
+      <table class="cv-grid-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">ល.រ</th>
+            <th>វគ្គបណ្តុះបណ្តាល</th>
+            <th>ស្ថាប័នរៀបចំ</th>
+            <th style="width: 140px;">កាលបរិច្ឆេទ / រយៈពេល</th>
+            <th style="width: 160px;">វិញ្ញាបនបត្រទទួលបាន</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in trainings %}
+          <tr>
+            <td style="text-align: center;">{{ loop.index | kh_num }}</td>
+            <td><strong>{{ t.course_title }}</strong></td>
+            <td>{{ t.organizer }}</td>
+            <td>{{ t.start_date }} ({{ t.duration_days | kh_num }} ថ្ងៃ)</td>
+            <td>{{ t.certificate_title or 'បញ្ជាក់ការសិក្សា' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: #64748b; padding: 10px;">ពុំមានទិន្នន័យវគ្គបណ្តុះបណ្តាល</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section IV: ស្នាដៃ និងគ្រឿងឥស្សរិយយស -->
+    <div class="cv-section">
+      <h2 class="section-title">IV. ស្នាដៃ ប័ណ្ណសរសើរ និងគ្រឿងឥស្សរិយយស (Honors & Awards)</h2>
+      <table class="cv-grid-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">ល.រ</th>
+            <th>ប្រភេទស្នាដៃ / គ្រឿងឥស្សរិយយស</th>
+            <th>ផ្ដល់ដោយស្ថាប័ន</th>
+            <th style="width: 110px;">កាលបរិច្ឆេទ</th>
+            <th style="width: 170px;">លេខលិខិត / ព្រះរាជក្រឹត្យ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in achievements %}
+          <tr>
+            <td style="text-align: center;">{{ loop.index | kh_num }}</td>
+            <td><strong>{{ a.title }}</strong></td>
+            <td>{{ a.awarded_by }}</td>
+            <td>{{ a.award_date }}</td>
+            <td>{{ a.decree_prakas_no or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: #64748b; padding: 10px;">ពុំមានទិន្នន័យស្នាដៃ ឬគ្រឿងឥស្សរិយយស</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures-container">
+      <div class="sig-column">
+        <div>បានឃើញ និងបញ្ជាក់ថាត្រឹមត្រូវ</div>
+        <div class="sig-title">មេឃុំនគរភាស</div>
+        <div style="font-size: 9.5pt; color: #64748b; margin-top: 4px;">(ហត្ថលេខា និងត្រា)</div>
+        <div class="sig-name">ស៊ូ វណ្ណា</div>
+      </div>
+
+      <div class="sig-column">
+        <div>ធ្វើនៅសាលាឃុំនគរភាស, {{ today_khmer }}</div>
+        <div class="sig-title">ហត្ថលេខាសាមីខ្លួន</div>
+        <div style="font-size: 9.5pt; color: #64748b; margin-top: 4px;">(ចុះហត្ថលេខា)</div>
+        <div class="sig-name">{{ staff.name_kh }}</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

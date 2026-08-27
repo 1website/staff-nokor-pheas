@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}មជ្ឈមណ្ឌលរបាយការណ៍ និងការនាំចេញឯកសារ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-file-excel text-gold"></i>
+      <span>មជ្ឈមណ្ឌលរបាយការណ៍ និងការនាំចេញឯកសារ (Reporting & Export Hub)</span>
+    </h1>
+    <p>ទាញយករបាយការណ៍ផ្លូវការជាទម្រង់ Excel (.xlsx) សម្រាប់ផ្ញើទៅសាលាស្រុកអង្គរជុំ និងតម្កល់ទុកនៅសាលាឃុំ</p>
+  </div>
+</div>
+
+<!-- 1-Click Export Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 28px;">
+  
+  <!-- Export 1: District Attendance Report -->
+  <div class="card" style="border-top: 4px solid #1e3a8a;">
+    <div class="card-body">
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: #eff6ff; color: #1e3a8a; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div style="flex: 1;">
+          <h3 style="font-size: 15px; margin-bottom: 4px;">តារាងស្រង់វត្តមានប្រចាំខែ</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            សម្រាប់ផ្ញើជូនរដ្ឋបាលស្រុកអង្គរជុំ ដើម្បីបូកសរុប និងពិនិត្យ
+          </p>
+          <form method="GET" action="{{ url_for('export_attendance_excel_route') }}">
+            <div style="display: flex; gap: 8px;">
+              <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="font-size: 12px; padding: 4px 8px;" required>
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-download"></i> Excel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export 2: Staff Master Census -->
+  <div class="card" style="border-top: 4px solid #059669;">
+    <div class="card-body">
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          <i class="fa-solid fa-address-book"></i>
+        </div>
+        <div style="flex: 1;">
+          <h3 style="font-size: 15px; margin-bottom: 4px;">បញ្ជីរាយនាមមន្ត្រី-បុគ្គលិក</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            បញ្ជីឈ្មោះមន្ត្រីសាលាឃុំ និងថ្នាក់ដឹកនាំភូមិទាំង ១០
+          </p>
+          <form method="GET" action="{{ url_for('export_staff_excel_route') }}">
+            <div style="display: flex; gap: 8px;">
+              <select name="category" class="form-select" style="font-size: 12px; padding: 4px 8px;">
+                <option value="">-- ទាំងអស់ --</option>
+                <option value="council">ក្រុមប្រឹក្សាឃុំ</option>
+                <option value="clerk">ស្មៀនឃុំ</option>
+                <option value="contract">ជំនួយការឃុំ</option>
+                <option value="village">មន្ត្រីភូមិ</option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-download"></i> Excel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export 3: Payroll Sheet -->
+  <div class="card" style="border-top: 4px solid #d97706;">
+    <div class="card-body">
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          <i class="fa-solid fa-money-check-dollar"></i>
+        </div>
+        <div style="flex: 1;">
+          <h3 style="font-size: 15px; margin-bottom: 4px;">តារាងបើកប្រាក់បៀវត្សរ៍</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            តារាងទូទាត់ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភផ្សេងៗ
+          </p>
+          <form method="GET" action="{{ url_for('export_payroll_excel_route') }}">
+            <div style="display: flex; gap: 8px;">
+              <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="font-size: 12px; padding: 4px 8px;" required>
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-download"></i> Excel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export 4: Cash Book (ចំណូល-ចំណាយ) -->
+  <div class="card" style="border-top: 4px solid #10b981;">
+    <div class="card-body">
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+        <div style="flex: 1;">
+          <h3 style="font-size: 15px; margin-bottom: 4px;">សៀវភៅកត់ត្រាសាច់ប្រាក់</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            សៀវភៅកត់ត្រាចំណូល-ចំណាយ និងហិរញ្ញវត្ថុឃុំ
+          </p>
+          <form method="GET" action="{{ url_for('export_finance_excel_route') }}">
+            <div style="display: flex; gap: 8px;">
+              <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="font-size: 12px; padding: 4px 8px;">
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-download"></i> Excel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Demographics Breakdown Tables -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  
+  <!-- Demographic: By Category and Gender -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-chart-bar text-gold"></i>
+        <span>ស្ថិតិកម្លាំងពលកម្មតាមមុខតំណែង និងភេទ</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>ក្រុមការងារ / មុខតំណែង</th>
+            <th>ភេទ</th>
+            <th style="text-align: right;">ចំនួនមន្ត្រី</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in cat_gender_rows %}
+          <tr>
+            <td>
+              {% set cat_info = STAFF_CATEGORIES.get(r.category, {}) %}
+              <span class="badge {{ cat_info.badge_class }}">{{ cat_info.name_kh }}</span>
+            </td>
+            <td>{{ r.gender }}</td>
+            <td style="text-align: right; font-weight: 700;">{{ r.count | kh_num }} នាក់</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Demographic: By Village -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-tree-city text-gold"></i>
+        <span>ស្ថិតិមន្ត្រីតាមភូមិ (១០ ភូមិ)</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>ឈ្មោះភូមិ</th>
+            <th style="text-align: right;">ចំនួនមន្ត្រីបម្រើការ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in village_dist %}
+          <tr>
+            <td><strong>ភូមិ{{ v.village }}</strong></td>
+            <td style="text-align: right; font-weight: 700; color: var(--primary);">{{ v.staff_count | kh_num }} នាក់</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

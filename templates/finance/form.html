@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if is_edit %}កែប្រែប្រតិបត្តិការហិរញ្ញវត្ថុ{% else %}កត់ត្រាប្រតិបត្តិការហិរញ្ញវត្ថុថ្មី{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-scale-balanced text-gold"></i>
+      <span>{% if is_edit %}កែប្រែព័ត៌មានប្រតិបត្តិការហិរញ្ញវត្ថុ (Edit Transaction){% else
+        %}កត់ត្រាប្រតិបត្តិការហិរញ្ញវត្ថុថ្មី (New Transaction){% endif %}</span>
+    </h1>
+    <p>បញ្ចូលព័ត៌មានលម្អិតនៃចំណូល ឬចំណាយ របស់រដ្ឋបាលឃុំនគរភាស</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('finance_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>ត្រឡប់ទៅគ្រប់គ្រងចំណាយ</span>
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div style="max-width: 860px; margin: 0 auto;">
+    <div class="card">
+      <div class="card-header"
+        style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 18px 24px;">
+        <h3 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i>
+          <span>ទម្រង់ព័ត៌មានប្រតិបត្តិការ</span>
+        </h3>
+      </div>
+
+      <div class="card-body" style="padding: 24px;">
+        <form method="POST"
+          action="{% if is_edit %}{{ url_for('finance_edit', tx_id=tx.id) }}{% else %}{{ url_for('finance_create') }}{% endif %}"
+          enctype="multipart/form-data">
+
+          <!-- 1. Transaction Type Switcher -->
+          <div style="margin-bottom: 24px;">
+            <label class="form-label" style="font-weight: 700; margin-bottom: 10px; display: block;">
+              ១. ជ្រើសរើសប្រភេទប្រតិបត្តិការ <span class="text-danger">*</span>
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <!-- Option Income -->
+              <label class="type-selector-card" id="card-type-income"
+                style="cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px; border: 2px solid {% if (is_edit and tx.type == 'income') or (not is_edit and preset_type != 'expense') %}#059669; background: #ecfdf5{% else %}var(--border-color); background: var(--bg-card){% endif %}; border-radius: 12px; transition: var(--transition);">
+                <input type="radio" name="type" value="income" id="type_income"
+                  style="width: 18px; height: 18px; accent-color: #059669;" {% if (is_edit and tx.type=='income' ) or
+                  (not is_edit and preset_type !='expense' ) %}checked{% endif %} onchange="updateTypeUI('income')">
+                <div style="flex: 1;">
+                  <div
+                    style="font-weight: 700; color: #059669; font-size: 15px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-circle-arrow-down"></i> ប្រតិបត្តិការចំណូល (Income)
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    ថវិកាមូលនិធិឃុំ
+                  </div>
+                </div>
+              </label>
+
+              <!-- Option Expense -->
+              <label class="type-selector-card" id="card-type-expense"
+                style="cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px; border: 2px solid {% if (is_edit and tx.type == 'expense') or (not is_edit and preset_type == 'expense') %}#dc2626; background: #fef2f2{% else %}var(--border-color); background: var(--bg-card){% endif %}; border-radius: 12px; transition: var(--transition);">
+                <input type="radio" name="type" value="expense" id="type_expense"
+                  style="width: 18px; height: 18px; accent-color: #dc2626;" {% if (is_edit and tx.type=='expense' ) or
+                  (not is_edit and preset_type=='expense' ) %}checked{% endif %} onchange="updateTypeUI('expense')">
+                <div style="flex: 1;">
+                  <div
+                    style="font-weight: 700; color: #dc2626; font-size: 15px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-circle-arrow-up"></i> ប្រតិបត្តិការចំណាយ (Expense)
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    រដ្ឋបាល, ទឹកភ្លើង, សម្ភារៈការិយាល័យ, គម្រោងអភិវឌ្ឍន៍
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Core Information Fields -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Date -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-regular fa-calendar"></i> កាលបរិច្ឆេទប្រតិបត្តិការ <span class="text-danger">*</span>
+              </label>
+              <input type="date" name="transaction_date" class="form-control"
+                value="{% if is_edit %}{{ tx.transaction_date }}{% else %}{{ today_iso }}{% endif %}" required>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-tags"></i> ប្រភព / ខ្ទង់ប្រតិបត្តិការ <span class="text-danger">*</span>
+              </label>
+              <select name="category" id="category_select" class="form-select" required>
+                <!-- Populated via Javascript depending on selected type -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Title / Description -->
+          <div style="margin-bottom: 20px;">
+            <label class="form-label" style="font-weight: 600;">
+              <i class="fa-solid fa-pen"></i> បរិយាយប្រតិបត្តិការ / កិច្ចការ <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="title" class="form-control"
+              placeholder="ឧ. ចំណូលសេវាអត្រានុកូលដ្ឋាន និងបញ្ជាក់ឯកសារប្រចាំសប្តាហ៍ទី១ ឬ ទិញសម្ភារៈការិយាល័យ..."
+              value="{% if is_edit %}{{ tx.title }}{% endif %}" required>
+          </div>
+
+          <!-- Amount with live preview -->
+          <div
+            style="margin-bottom: 20px; background: var(--bg-main); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center;">
+              <div>
+                <label class="form-label" style="font-weight: 700; margin-bottom: 6px;">
+                  <i class="fa-solid fa-coins"></i> ចំនួនទឹកប្រាក់ (រៀល KHR) <span class="text-danger">*</span>
+                </label>
+                <input type="number" id="amount_input" name="amount" class="form-control"
+                  style="font-size: 16px; font-weight: 700; font-family: var(--font-latin);" placeholder="0"
+                  value="{% if is_edit %}{{ tx.amount | int }}{% endif %}" min="1" step="any" required
+                  oninput="updateCurrencyPreview(this.value)">
+              </div>
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">ទម្រង់បង្ហាញទឹកប្រាក់៖</div>
+                <div id="currency_preview_box"
+                  style="font-size: 18px; font-weight: 700; color: #059669; font-family: var(--font-body);">
+                  {% if is_edit %}{{ tx.amount | currency }}{% else %}0 រៀល{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payer/Payee & Receipt No -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Payer / Payee -->
+            <div>
+              <label class="form-label" id="payer_payee_label" style="font-weight: 600;">
+                <i class="fa-solid fa-user"></i> ឈ្មោះអ្នកបង់ប្រាក់
+              </label>
+              <input type="text" name="payer_payee" id="payer_payee_input" class="form-control"
+                placeholder="ឧ. ប្រជាពលរដ្ឋក្នុងឃុំ ឬ ឈ្មោះក្រុមហ៊ុន/បុគ្គល..."
+                value="{% if is_edit %}{{ tx.payer_payee or '' }}{% endif %}">
+            </div>
+
+            <!-- Receipt / Voucher No -->
+            <div>
+              <label class="form-label" id="receipt_voucher_label" style="font-weight: 600;">
+                <i class="fa-solid fa-receipt"></i> លេខបង្កាន់ដៃទទួលប្រាក់
+              </label>
+              <input type="text" name="receipt_voucher_no" id="receipt_voucher_input" class="form-control"
+                placeholder="ឧ. REC-2026-08 ឬ INV-1092..."
+                value="{% if is_edit %}{{ tx.receipt_voucher_no or '' }}{% endif %}">
+            </div>
+          </div>
+
+          <!-- Payment Method & Attachment -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Payment Method -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-credit-card"></i> វិធីសាស្រ្តទូទាត់ប្រាក់ <span class="text-danger">*</span>
+              </label>
+              <select name="payment_method" class="form-select" required>
+                {% for m_key, m_val in PAYMENT_METHODS.items() %}
+                <option value="{{ m_key }}" {% if is_edit and tx.payment_method==m_key %}selected{% elif not is_edit and
+                  m_key=='cash' %}selected{% endif %}>
+                  {{ m_val.title_kh }} ({{ m_val.title_en }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- File Upload -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-paperclip"></i> ភ្ជាប់ឯកសារស្កេន/វិក្កយបត្រ (PDF ឬ រូបភាព)
+              </label>
+              <input type="file" name="attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+              {% if is_edit and tx.attachment %}
+              <div style="margin-top: 6px; font-size: 12px; color: var(--primary);">
+                <i class="fa-solid fa-file"></i> ឯកសារបច្ចុប្បន្ន៖ <a
+                  href="{{ url_for('static', filename='uploads/' + tx.attachment) }}" target="_blank">{{ tx.attachment
+                  }}</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div style="margin-bottom: 24px;">
+            <label class="form-label" style="font-weight: 600;">
+              <i class="fa-regular fa-comment-dots"></i> កំណត់សម្គាល់បន្ថែម (Notes)
+            </label>
+            <textarea name="notes" class="form-control" rows="3"
+              placeholder="ព័ត៌មានលម្អិត ឬឯកសារយោងបន្ថែម (បើមាន)...">{% if is_edit %}{{ tx.notes or '' }}{% endif %}</textarea>
+          </div>
+
+          {% if is_edit %}
+          <!-- Status (Only in edit mode) -->
+          <div style="margin-bottom: 24px;">
+            <label class="form-label" style="font-weight: 600;">
+              <i class="fa-solid fa-shield-check"></i> ស្ថានភាពប្រតិបត្តិការ
+            </label>
+            <select name="status" class="form-select" style="max-width: 280px;">
+              {% for s_key, s_val in FINANCE_STATUSES.items() %}
+              <option value="{{ s_key }}" {% if tx.status==s_key %}selected{% endif %}>{{ s_val.title_kh }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+
+          <hr style="margin: 24px 0; border-color: var(--border-color);">
+
+          <!-- Buttons -->
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <a href="{{ url_for('finance_list') }}" class="btn btn-outline">
+              <i class="fa-solid fa-xmark"></i> បោះបង់
+            </a>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>{% if is_edit %}រក្សាទុកការកែប្រែ{% else %}រក្សាទុកប្រតិបត្តិការ{% endif %}</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const incomeCategories = {{ FINANCE_INCOME_CATEGORIES | tojson }};
+  const expenseCategories = {{ FINANCE_EXPENSE_CATEGORIES | tojson }};
+  const currentCategory = "{% if is_edit %}{{ tx.category }}{% else %}{% endif %}";
+
+  function updateTypeUI(type) {
+    const cardIncome = document.getElementById('card-type-income');
+    const cardExpense = document.getElementById('card-type-expense');
+    const catSelect = document.getElementById('category_select');
+    const payerPayeeLabel = document.getElementById('payer_payee_label');
+    const payerPayeeInput = document.getElementById('payer_payee_input');
+    const receiptLabel = document.getElementById('receipt_voucher_label');
+    const receiptInput = document.getElementById('receipt_voucher_input');
+    const previewBox = document.getElementById('currency_preview_box');
+
+    catSelect.innerHTML = '';
+
+    if (type === 'income') {
+      cardIncome.style.borderColor = '#059669';
+      cardIncome.style.backgroundColor = '#ecfdf5';
+      cardExpense.style.borderColor = 'var(--border-color)';
+      cardExpense.style.backgroundColor = 'var(--bg-card)';
+
+      payerPayeeLabel.innerHTML = '<i class="fa-solid fa-user"></i> ឈ្មោះអ្នកបង់ប្រាក់ (Payer)';
+      payerPayeeInput.placeholder = 'ឧ. ប្រជាពលរដ្ឋក្នុងឃុំ, សប្បុរសជន...';
+      receiptLabel.innerHTML = '<i class="fa-solid fa-receipt"></i> លេខបង្កាន់ដៃទទួលប្រាក់ (Receipt No.)';
+      receiptInput.placeholder = 'ឧ. REC-2026-08-01...';
+      previewBox.style.color = '#059669';
+
+      for (const [key, val] of Object.entries(incomeCategories)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = val.title_kh + ' (' + val.title_en + ')';
+        if (key === currentCategory) opt.selected = true;
+        catSelect.appendChild(opt);
+      }
+    } else {
+      cardExpense.style.borderColor = '#dc2626';
+      cardExpense.style.backgroundColor = '#fef2f2';
+      cardIncome.style.borderColor = 'var(--border-color)';
+      cardIncome.style.backgroundColor = 'var(--bg-card)';
+
+      payerPayeeLabel.innerHTML = '<i class="fa-solid fa-user-tag"></i> ឈ្មោះអ្នកទទួលប្រាក់ / ក្រុមហ៊ុន (Payee)';
+      payerPayeeInput.placeholder = 'ឧ. ហាងផ្គត់ផ្គង់សម្ភារៈ, ជាងជួសជុល, មន្ត្រីទទួល...';
+      receiptLabel.innerHTML = '<i class="fa-solid fa-file-invoice"></i> លេខប័ណ្ណចំណាយ / វិក្កយបត្រ (Invoice/Voucher No.)';
+      receiptInput.placeholder = 'ឧ. INV-1092, VOU-2026-08...';
+      previewBox.style.color = '#dc2626';
+
+      for (const [key, val] of Object.entries(expenseCategories)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = val.title_kh + ' (' + val.title_en + ')';
+        if (key === currentCategory) opt.selected = true;
+        catSelect.appendChild(opt);
+      }
+    }
+  }
+
+  function updateCurrencyPreview(val) {
+    const box = document.getElementById('currency_preview_box');
+    if (!val || isNaN(val) || Number(val) <= 0) {
+      box.textContent = '0 រៀល';
+      return;
+    }
+    const formatted = new Intl.NumberFormat('en-US').format(Number(val));
+    box.textContent = formatted + ' រៀល (KHR)';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const isIncomeChecked = document.getElementById('type_income').checked;
+    updateTypeUI(isIncomeChecked ? 'income' : 'expense');
+
+    const amtInput = document.getElementById('amount_input');
+    if (amtInput && amtInput.value) {
+      updateCurrencyPreview(amtInput.value);
+    }
+  });
+</script>
+{% endblock %}

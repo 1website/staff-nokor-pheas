@@ -1,0 +1,941 @@
+{% extends "base.html" %}
+
+{% block title %}ស្កេនវត្តមានតាម QR Code | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block extra_head %}
+<!-- HTML5-QRCode Library CDN -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+.qr-scanner-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .qr-scanner-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scanner Card Container */
+.scanner-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.scanner-viewport-wrapper {
+  background: #0b192c;
+  padding: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+}
+
+#reader {
+  width: 100% !important;
+  max-width: 420px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(200, 138, 26, 0.6) !important;
+  background: #000000 !important;
+}
+
+#reader video {
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* Custom Scanner Target Frame & Laser */
+.scanner-overlay-box {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border: 2.5px solid #fbbf24;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow: 0 0 0 4000px rgba(11, 25, 44, 0.45);
+  display: none;
+}
+
+.scanner-laser-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent);
+  box-shadow: 0 0 10px #fbbf24;
+  top: 0;
+  animation: scanLaser 2s infinite ease-in-out;
+}
+
+@keyframes scanLaser {
+  0% { top: 0; }
+  50% { top: 100%; }
+  100% { top: 0; }
+}
+
+/* Permission Request Banner Inside Viewport */
+.camera-permission-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px 20px;
+  color: #ffffff;
+  z-index: 5;
+}
+
+.camera-permission-prompt i {
+  font-size: 54px;
+  color: #fbbf24;
+  margin-bottom: 16px;
+}
+
+.camera-permission-prompt h4 {
+  font-family: var(--font-moul);
+  font-size: 15px;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.camera-permission-prompt p {
+  font-size: 13px;
+  color: #cbd5e1;
+  max-width: 320px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Scanner Mode Tabs */
+.scanner-tab-bar {
+  display: flex;
+  background: #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.scanner-tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.scanner-tab-btn.active {
+  background: #ffffff;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+/* Scanner Controls */
+.scanner-controls-bar {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Result Card */
+.scan-result-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  padding: 20px;
+  margin-top: 20px;
+  display: none;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scan-result-card.success {
+  border-left: 5px solid #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.scan-result-card.warning {
+  border-left: 5px solid #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+
+.scan-staff-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.scan-staff-photo {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2.5px solid #cbd5e1;
+  box-shadow: var(--shadow-sm);
+}
+
+.scan-staff-photo-placeholder {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  background: #1e3a8a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Guide Accordion */
+.cam-troubleshoot-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  color: #1e3a8a;
+  line-height: 1.5;
+  margin-top: 20px;
+}
+
+.cam-troubleshoot-box strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: #1d4ed8;
+}
+
+.cam-troubleshoot-box ol {
+  margin-left: 18px;
+  margin-bottom: 0;
+}
+
+.cam-troubleshoot-box li {
+  margin-bottom: 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-qrcode text-gold"></i>
+      <span>ប្រព័ន្ធស្កេនវត្តមានតាម QR Code (QR Attendance Scanner)</span>
+    </h1>
+    <p>ស្កេនប័ណ្ណសម្គាល់ខ្លួនមន្ត្រី (Staff ID Card) ដើម្បីកត់ត្រាវត្តមានចូល/ចេញដោយស្វ័យប្រវត្តិ</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('attendance_daily') }}" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-calendar-day"></i> តារាងវត្តមានប្រចាំថ្ងៃ
+    </a>
+    <a href="{{ url_for('attendance_kiosk_qr') }}" target="_blank" class="btn btn-outline-primary">
+      <i class="fa-solid fa-display"></i> QR Code សាលាឃុំ (Kiosk)
+    </a>
+    <a href="{{ url_for('staff_id_cards_batch') }}" class="btn btn-warning">
+      <i class="fa-solid fa-id-badge"></i> បោះពុម្ពកាតមន្ត្រី
+    </a>
+  </div>
+</div>
+
+<!-- Stats Counter Bar -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+  <div class="stat-card" style="--stat-color: #1e3a8a;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-calendar-check"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">កាលបរិច្ឆេទថ្ងៃនេះ</div>
+      <div class="stat-number" style="font-size: 15px; color: #1e3a8a;">{{ today_kh }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #059669;">
+    <div class="stat-icon-wrapper" style="--stat-bg: #dcfce7;">
+      <i class="fa-solid fa-user-check"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">វត្តមានថ្ងៃនេះ</div>
+      <div class="stat-number" id="stat-today-present" style="font-size: 20px; color: #059669;">
+        {{ today_present | kh_num }} / {{ total_staff | kh_num }} នាក់
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #d97706;">
+    <div class="stat-icon-wrapper" style="--stat-bg: #fef3c7;">
+      <i class="fa-solid fa-business-time"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ម៉ោងធ្វើការរដ្ឋបាល (ចន្ទ - សុក្រ)</div>
+      <div class="stat-number" style="font-size: 14.5px; color: #d97706; line-height: 1.35;">
+        ព្រឹក ០៧:០០ - ១១:៣០ | ល្ងាច ០២:០០ - ០៥:៣០
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if is_weekend %}
+<!-- Weekend Notice Banner -->
+<div class="alert alert-warning" style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: var(--radius-md); border-left: 5px solid #d97706; margin-bottom: 24px; background: #fffbeb; box-shadow: var(--shadow-sm);">
+  <i class="fa-solid fa-calendar-xmark text-warning" style="font-size: 28px;"></i>
+  <div>
+    <div style="font-weight: 700; font-size: 15px; color: #92400e;">
+      ថ្ងៃនេះជា{{ day_name_kh }} (ថ្ងៃឈប់សម្រាកចុងសប្តាហ៍)
+    </div>
+    <div style="font-size: 13px; color: #b45309; margin-top: 2px;">
+      រដ្ឋបាលឃុំនគរភាស បំពេញការងារពីថ្ងៃចន្ទ ដល់ ថ្ងៃសុក្រ។ ប្រព័ន្ធមិនកត់ត្រាវត្តមាននៅថ្ងៃឈប់សម្រាកឡើយ។
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Main Scanner Layout Grid -->
+<div class="qr-scanner-layout">
+  
+  <!-- LEFT COLUMN: Live Camera Scanner -->
+  <div>
+    <!-- Scanner Card -->
+    <div class="scanner-card">
+      
+      <!-- Scanner Mode Tabs -->
+      <div class="scanner-tab-bar">
+        <button id="tab-btn-camera" class="scanner-tab-btn active" onclick="switchScannerTab('camera')">
+          <i class="fa-solid fa-camera"></i> ស្កេនតាមកាមេរ៉ា (Live Camera)
+        </button>
+        <button id="tab-btn-file" class="scanner-tab-btn" onclick="switchScannerTab('file')">
+          <i class="fa-solid fa-image"></i> ស្កេនតាមរូបភាព (Scan Image File)
+        </button>
+      </div>
+
+      <!-- Header -->
+      <div class="card-header" style="background: #0b192c; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 600; font-size: 14px;">
+          <i class="fa-solid fa-qrcode text-gold"></i> កន្លែងស្កេន QR Code
+        </div>
+        <span id="camera-status-badge" class="badge" style="background: #f1f5f9; color: #475569;">
+          <i class="fa-solid fa-circle-pause"></i> រង់ចាំការបើកកាមេរ៉ា
+        </span>
+      </div>
+
+      <!-- Video Viewport (Camera Mode) -->
+      <div id="camera-mode-container">
+        <div class="scanner-viewport-wrapper">
+          <div id="reader"></div>
+
+          <!-- Permission Prompt Button inside Viewport -->
+          <div id="camera-prompt-box" class="camera-permission-prompt">
+            <i class="fa-solid fa-video-slash"></i>
+            <h4>បើកដំណើរការកាមេរ៉ា</h4>
+            <p>សូមចុចប៊ូតុងខាងក្រោមដើម្បីអនុញ្ញាតឱ្យ Browser ដំណើរការកាមេរ៉ាកុំព្យូទ័រ</p>
+            <button id="btn-allow-camera" class="btn btn-warning btn-lg" style="font-weight: 700; box-shadow: 0 4px 14px rgba(251, 191, 36, 0.4);">
+              <i class="fa-solid fa-camera"></i> ចុចទីនេះដើម្បីបើកកាមេរ៉ា (Start Camera)
+            </button>
+          </div>
+
+          <div class="scanner-overlay-box" id="scanner-overlay">
+            <div class="scanner-laser-line"></div>
+          </div>
+        </div>
+
+        <!-- Controls & Camera Switcher -->
+        <div class="scanner-controls-bar">
+          <div style="display: flex; gap: 8px; align-items: center; flex: 1; flex-wrap: wrap;">
+            <select id="camera-select" class="form-select form-select-sm" style="max-width: 220px;">
+              <option value="">ជ្រើសរើសកាមេរ៉ា...</option>
+            </select>
+            <button id="btn-toggle-cam" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-play"></i> បើកកាមេរ៉ា
+            </button>
+          </div>
+          <div>
+            <button id="btn-sound-toggle" class="btn btn-sm btn-outline-secondary" title="បិទ/បើកសំឡេង">
+              <i class="fa-solid fa-volume-high"></i> សំឡេង: បើក
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Upload Mode Viewport -->
+      <div id="file-mode-container" style="display: none; padding: 24px; text-align: center; background: #f8fafc;">
+        <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 36px 20px; background: #ffffff;">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; color: var(--primary); margin-bottom: 12px;"></i>
+          <h4 style="font-weight: 700; color: #0b192c; margin-bottom: 6px;">ជ្រើសរើសរូបថត QR Code</h4>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">អាចជារូបថតថតពីទូរស័ព្ទដៃ ឬ Screenshot នៃប័ណ្ណសម្គាល់ខ្លួន</p>
+          
+          <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+          <button onclick="document.getElementById('qr-file-input').click()" class="btn btn-outline-primary">
+            <i class="fa-solid fa-folder-open"></i> ជ្រើសរើសរូបភាពពីកុំព្យូទ័រ
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Manual Code Entry Box -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-body" style="padding: 16px;">
+        <form id="manual-scan-form" style="display: flex; gap: 10px;">
+          <input type="text" id="manual-officer-code" class="form-control" placeholder="បញ្ចូលអត្តលេខមន្ត្រី (ឧ. NP-001) ឬស្កេន Barcode..." autofocus autocomplete="off">
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+            <i class="fa-solid fa-check"></i> កត់ត្រាវត្តមាន
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Real-time Scan Result Card -->
+    <div id="scan-result-card" class="scan-result-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <div id="scan-result-badge" class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">
+          <i class="fa-solid fa-circle-check"></i> វត្តមានជោគជ័យ
+        </div>
+        <div id="scan-result-time" style="font-weight: 700; font-size: 16px; color: var(--primary);">
+          ម៉ោង ០៧:៤៥
+        </div>
+      </div>
+
+      <div class="scan-staff-profile">
+        <div id="scan-staff-photo-container">
+          <!-- Photo injected by JS -->
+        </div>
+        <div style="flex: 1;">
+          <div id="scan-staff-name" style="font-family: var(--font-moul); font-size: 15px; color: var(--primary-dark);">
+            ស៊ូ វណ្ណា
+          </div>
+          <div id="scan-staff-code" style="font-size: 12px; font-weight: 600; color: #d97706; margin-top: 2px;">
+            អត្តលេខ៖ NP-001
+          </div>
+          <div id="scan-staff-position" style="font-size: 12.5px; color: #475569; margin-top: 2px;">
+            មេឃុំ • ភូមិអន្លង់សារ
+          </div>
+        </div>
+      </div>
+
+      <div id="scan-result-message" style="margin-top: 12px; font-size: 13px; font-weight: 600; color: #059669; padding-top: 8px; border-top: 1px dashed var(--border-color);">
+        បានកត់ត្រាវត្តមានចូលបំពេញការងារជោគជ័យ!
+      </div>
+    </div>
+
+    <!-- Troubleshooting Guide for Browser Camera Permission -->
+    <div class="cam-troubleshoot-box">
+      <strong><i class="fa-solid fa-circle-info"></i> របៀបដោះស្រាយបើកកាមេរ៉ាមិនចេញលើ Browser៖</strong>
+      <ol>
+        <li>សូមពិនិត្យមើលរូបសញ្ញា <strong>🔒 (សោ)</strong> ឬ <strong>📷 (កាមេរ៉ា)</strong> នៅខាងឆ្វេងបំផុតនៃរបារអាសយដ្ឋាន URL (ខាងលើ)។</li>
+        <li>ចុចលើសញ្ញាសោរនោះ 👉 បើក <strong>Camera</strong> ទៅជា <strong>«Allow» (អនុញ្ញាត)</strong>។</li>
+        <li>បន្ទាប់មកចុច <strong>Refresh (F5)</strong> លើក្តារចុច ដើម្បីដំណើរការកាមេរ៉ាឡើងវិញ។</li>
+        <li>ប្រសិនបើកុំព្យូទ័រគ្មានកាមេរ៉ា លោកអ្នកអាចប្រើប្រាស់ <strong>«ស្កេនតាមរូបភាព»</strong> ឬវាយ <strong>អត្តលេខ (NP-xxx)</strong> នៅប្រអប់ខាងលើបានយ៉ាងរហ័ស។</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN: Today's Real-time Attendance Activity Feed -->
+  <div>
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title">
+          <span><i class="fa-solid fa-list-check text-gold"></i> បញ្ជីវត្តមានថ្ងៃនេះ</span>
+        </div>
+        <span class="badge badge-info" id="feed-count-badge">{{ today_records|length | kh_num }} នាក់</span>
+      </div>
+
+      <div class="card-body" style="padding: 0; max-height: 540px; overflow-y: auto;">
+        <div class="table-responsive">
+          <table class="custom-table today-feed-table">
+            <thead>
+              <tr>
+                <th>មន្ត្រី</th>
+                <th style="text-align: center;">ម៉ោងចូល</th>
+                <th style="text-align: center;">ម៉ោងចេញ</th>
+                <th style="text-align: center;">ស្ថានភាព</th>
+              </tr>
+            </thead>
+            <tbody id="today-attendance-tbody">
+              {% for a in today_records %}
+              <tr id="att-row-{{ a.staff_id }}">
+                <td>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    {% if a.photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + a.photo) }}" alt="{{ a.name_kh }}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">
+                      {{ a.name_kh[:1] }}
+                    </div>
+                    {% endif %}
+                    <div>
+                      <div style="font-weight: 600; font-size: 13px; color: var(--primary-dark);">{{ a.name_kh }}</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">{{ a.officer_code }} • {{ a.position_title_kh }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="text-align: center; font-weight: 600; color: #059669; font-size: 13px;">
+                  {{ a.check_in_time or '-' }}
+                </td>
+                <td style="text-align: center; font-weight: 600; color: #0284c7; font-size: 13px;">
+                  {{ a.check_out_time or '-' }}
+                </td>
+                <td style="text-align: center;">
+                  {% set st = statuses.get(a.status, {}) %}
+                  <span class="badge {{ st.badge }}">{{ st.label_kh }}</span>
+                </td>
+              </tr>
+              {% else %}
+              <tr id="empty-feed-row">
+                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <i class="fa-solid fa-clipboard-user" style="font-size: 36px; color: #cbd5e1; margin-bottom: 8px;"></i>
+                  <p>មិនទាន់មានវត្តមានស្កេននៅឡើយទេសម្រាប់ថ្ងៃនេះ</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Audio & Scanner Logic Script -->
+<script>
+// Web Audio API Beep Sounds
+let audioEnabled = true;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playSuccessChime() {
+  if (!audioEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(880, now);
+    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.15); // D6
+
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.35);
+    osc2.stop(now + 0.35);
+  } catch (e) {
+    console.warn("Audio error:", e);
+  }
+}
+
+function playErrorBeep() {
+  if (!audioEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.setValueAtTime(180, now + 0.15);
+
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } catch (e) {
+    console.warn("Audio error:", e);
+  }
+}
+
+// Sound toggle button
+document.getElementById('btn-sound-toggle').addEventListener('click', function() {
+  audioEnabled = !audioEnabled;
+  this.innerHTML = audioEnabled 
+    ? '<i class="fa-solid fa-volume-high"></i> សំឡេង: បើក' 
+    : '<i class="fa-solid fa-volume-xmark"></i> សំឡេង: បិទ';
+  this.classList.toggle('btn-outline-secondary', audioEnabled);
+  this.classList.toggle('btn-secondary', !audioEnabled);
+});
+
+// Mode Switching (Live Camera / File)
+function switchScannerTab(mode) {
+  const isCam = mode === 'camera';
+  document.getElementById('tab-btn-camera').classList.toggle('active', isCam);
+  document.getElementById('tab-btn-file').classList.toggle('active', !isCam);
+  document.getElementById('camera-mode-container').style.display = isCam ? 'block' : 'none';
+  document.getElementById('file-mode-container').style.display = !isCam ? 'block' : 'none';
+
+  if (!isCam && isScanning) {
+    stopScanner();
+  }
+}
+
+// Scanner Core State
+let html5QrCode = null;
+let isScanning = false;
+let isProcessing = false;
+let lastScannedCode = '';
+let lastScannedTime = 0;
+
+function getScannerInstance() {
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("reader");
+  }
+  return html5QrCode;
+}
+
+// Explicit Request Camera Permission
+async function requestAndStartCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // Stop initial probe stream
+    stream.getTracks().forEach(track => track.stop());
+
+    // Hide permission prompt
+    document.getElementById('camera-prompt-box').style.display = 'none';
+
+    // Populate camera devices
+    const devices = await Html5Qrcode.getCameras();
+    const cameraSelect = document.getElementById('camera-select');
+    cameraSelect.innerHTML = '';
+
+    if (devices && devices.length) {
+      devices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.id;
+        option.text = device.label || `កាមេរ៉ាទី ${index + 1}`;
+        cameraSelect.appendChild(option);
+      });
+
+      const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear'));
+      const selectedId = backCam ? backCam.id : devices[0].id;
+      cameraSelect.value = selectedId;
+
+      startScanner(selectedId);
+    } else {
+      // Fallback start with default environment/user
+      startScannerWithFacingMode();
+    }
+  } catch (err) {
+    console.error("Camera access error:", err);
+    document.getElementById('camera-prompt-box').style.display = 'flex';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> គ្មានសិទ្ធិបើកកាមេរ៉ា';
+    document.getElementById('camera-status-badge').style.background = '#fee2e2';
+    document.getElementById('camera-status-badge').style.color = '#dc2626';
+    showToast("សូមអនុញ្ញាតសិទ្ធិបើកកាមេរ៉ានៅលើ Browser ដើម្បីស្កេន!", "warning", "ត្រូវការសិទ្ធិកាមេរ៉ា");
+  }
+}
+
+function startScanner(cameraId) {
+  const qr = getScannerInstance();
+  const config = {
+    fps: 15,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0
+  };
+
+  qr.start(
+    cameraId,
+    config,
+    (decodedText) => onScanSuccess(decodedText),
+    (errorMessage) => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('camera-prompt-box').style.display = 'none';
+    document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-power-off"></i> បិទកាមេរ៉ា';
+    document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-danger';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-circle-dot"></i> កាមេរ៉ាកំពុងដំណើរការ';
+    document.getElementById('camera-status-badge').style.background = 'rgba(16, 185, 129, 0.2)';
+    document.getElementById('camera-status-badge').style.color = '#34d399';
+    document.getElementById('scanner-overlay').style.display = 'block';
+  }).catch(err => {
+    console.error("Start scanner error:", err);
+    isScanning = false;
+  });
+}
+
+function startScannerWithFacingMode() {
+  const qr = getScannerInstance();
+  const config = { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
+  qr.start(
+    { facingMode: "environment" },
+    config,
+    (decodedText) => onScanSuccess(decodedText),
+    (errorMessage) => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('camera-prompt-box').style.display = 'none';
+    document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-power-off"></i> បិទកាមេរ៉ា';
+    document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-danger';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-circle-dot"></i> កាមេរ៉ាកំពុងដំណើរការ';
+    document.getElementById('camera-status-badge').style.background = 'rgba(16, 185, 129, 0.2)';
+    document.getElementById('camera-status-badge').style.color = '#34d399';
+    document.getElementById('scanner-overlay').style.display = 'block';
+  }).catch(err => {
+    console.error("FacingMode error:", err);
+  });
+}
+
+function stopScanner() {
+  if (html5QrCode && isScanning) {
+    html5QrCode.stop().then(() => {
+      isScanning = false;
+      document.getElementById('camera-prompt-box').style.display = 'flex';
+      document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-play"></i> បើកកាមេរ៉ា';
+      document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-primary';
+      document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-pause"></i> កាមេរ៉ាបានបិទ';
+      document.getElementById('camera-status-badge').style.background = '#f1f5f9';
+      document.getElementById('camera-status-badge').style.color = '#64748b';
+      document.getElementById('scanner-overlay').style.display = 'none';
+    }).catch(err => console.error(err));
+  }
+}
+
+// Button Events
+document.getElementById('btn-allow-camera').addEventListener('click', () => {
+  requestAndStartCamera();
+});
+
+document.getElementById('btn-toggle-cam').addEventListener('click', function() {
+  if (isScanning) {
+    stopScanner();
+  } else {
+    requestAndStartCamera();
+  }
+});
+
+document.getElementById('camera-select').addEventListener('change', function() {
+  if (this.value) {
+    if (isScanning && html5QrCode) {
+      html5QrCode.stop().then(() => startScanner(this.value));
+    } else {
+      startScanner(this.value);
+    }
+  }
+});
+
+// File Scanner Event
+document.getElementById('qr-file-input').addEventListener('change', function(e) {
+  if (e.target.files.length === 0) return;
+  const imageFile = e.target.files[0];
+  const qr = getScannerInstance();
+
+  qr.scanFile(imageFile, true)
+    .then(decodedText => {
+      onScanSuccess(decodedText);
+      showToast("បានស្កេន QR Code ពីរូបភាពជោគជ័យ!", "success", "ជោគជ័យ");
+    })
+    .catch(err => {
+      console.error("Error scanning file:", err);
+      playErrorBeep();
+      showToast("មិនអាចស្វែងរក QR Code ក្នុងរូបភាពនេះទេ សូមសាកល្បងរូបភាពច្បាស់ជាងនេះ!", "danger", "បរាជ័យ");
+    });
+});
+
+// Scan Success Handler (Debounced)
+function onScanSuccess(code) {
+  const now = Date.now();
+  if (code === lastScannedCode && (now - lastScannedTime) < 3500) {
+    return;
+  }
+
+  if (isProcessing) return;
+  isProcessing = true;
+  lastScannedCode = code;
+  lastScannedTime = now;
+
+  processAttendanceScan(code);
+}
+
+// Manual Code Submit Form
+document.getElementById('manual-scan-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const input = document.getElementById('manual-officer-code');
+  const code = input.value.trim();
+  if (!code) return;
+  
+  processAttendanceScan(code);
+  input.value = '';
+});
+
+// Backend API Call
+function processAttendanceScan(code) {
+  fetch('/api/attendance/scan', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ code: code })
+  })
+  .then(res => res.json().then(data => ({ status: res.status, body: data })))
+  .then(({ status, body }) => {
+    isProcessing = false;
+
+    if (body.success) {
+      playSuccessChime();
+      displayScanResult(body);
+      updateAttendanceFeed(body);
+    } else {
+      playErrorBeep();
+      showToast(body.message || "រកមិនឃើញមន្ត្រីទេ!", "danger", "បរាជ័យ");
+    }
+  })
+  .catch(err => {
+    isProcessing = false;
+    playErrorBeep();
+    showToast("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "danger", "កំហុសបច្ចេកទេស");
+  });
+}
+
+// Render Result Card
+function displayScanResult(res) {
+  const card = document.getElementById('scan-result-card');
+  card.className = `scan-result-card ${res.status === 'late' ? 'warning' : 'success'}`;
+  card.style.display = 'block';
+
+  document.getElementById('scan-result-badge').className = res.status === 'late' ? 'badge badge-warning' : 'badge badge-success';
+  document.getElementById('scan-result-badge').innerHTML = res.action === 'check_in' 
+    ? (res.status === 'late' ? '<i class="fa-solid fa-clock"></i> មកយឺត (Late)' : '<i class="fa-solid fa-circle-check"></i> ចូលបំពេញការងារ')
+    : '<i class="fa-solid fa-right-from-bracket"></i> ចេញពីធ្វើការ (Check-Out)';
+
+  document.getElementById('scan-result-time').innerText = `ម៉ោង ${res.time_kh}`;
+  document.getElementById('scan-staff-name').innerText = res.staff.name_kh;
+  document.getElementById('scan-staff-code').innerText = `អត្តលេខ៖ ${res.staff.officer_code}`;
+  document.getElementById('scan-staff-position').innerText = `${res.staff.position} • ភូមិ${res.staff.village}`;
+  document.getElementById('scan-result-message').innerText = res.message;
+
+  // Photo
+  const photoCont = document.getElementById('scan-staff-photo-container');
+  if (res.staff.photo) {
+    photoCont.innerHTML = `<img src="${res.staff.photo}" class="scan-staff-photo" alt="${res.staff.name_kh}">`;
+  } else {
+    photoCont.innerHTML = `<div class="scan-staff-photo-placeholder">${res.staff.name_kh.charAt(0)}</div>`;
+  }
+
+  // Update counter
+  if (res.today_count_kh) {
+    document.getElementById('stat-today-present').innerText = `${res.today_count_kh} / {{ total_staff | kh_num }} នាក់`;
+  }
+}
+
+// Update Feed Table
+function updateAttendanceFeed(res) {
+  const tbody = document.getElementById('today-attendance-tbody');
+  const emptyRow = document.getElementById('empty-feed-row');
+  if (emptyRow) emptyRow.remove();
+
+  const existingRow = document.getElementById(`att-row-${res.staff.id}`);
+  const statusBadge = res.status === 'late' ? 'badge-warning' : 'badge-success';
+
+  if (existingRow) {
+    existingRow.innerHTML = `
+      <td>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
+          <div>
+            <div style="font-weight: 600; font-size: 13px; color: var(--primary-dark);">${res.staff.name_kh}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${res.staff.officer_code} • ${res.staff.position}</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align: center; font-weight: 600; color: #059669; font-size: 13px;">${res.check_in_time}</td>
+      <td style="text-align: center; font-weight: 600; color: #0284c7; font-size: 13px;">${res.check_out_time}</td>
+      <td style="text-align: center;">
+        <span class="badge ${statusBadge}">${res.status_label}</span>
+      </td>
+    `;
+    existingRow.style.backgroundColor = '#ecfdf5';
+    setTimeout(() => { existingRow.style.backgroundColor = ''; }, 2000);
+  } else {
+    const tr = document.createElement('tr');
+    tr.id = `att-row-${res.staff.id}`;
+    tr.style.backgroundColor = '#ecfdf5';
+    tr.innerHTML = `
+      <td>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
+          <div>
+            <div style="font-weight: 600; font-size: 13px; color: var(--primary-dark);">${res.staff.name_kh}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${res.staff.officer_code} • ${res.staff.position}</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align: center; font-weight: 600; color: #059669; font-size: 13px;">${res.check_in_time}</td>
+      <td style="text-align: center; font-weight: 600; color: #0284c7; font-size: 13px;">${res.check_out_time}</td>
+      <td style="text-align: center;">
+        <span class="badge ${statusBadge}">${res.status_label}</span>
+      </td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+    setTimeout(() => { tr.style.backgroundColor = ''; }, 2000);
+
+    const countBadge = document.getElementById('feed-count-badge');
+    if (countBadge && res.today_count_kh) {
+      countBadge.innerText = `${res.today_count_kh} នាក់`;
+    }
+  }
+}
+
+// Auto check camera permission status on load
+document.addEventListener('DOMContentLoaded', () => {
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'camera' }).then(res => {
+      if (res.state === 'granted') {
+        requestAndStartCamera();
+      }
+    }).catch(() => {});
+  }
+});
+</script>
+{% endblock %}

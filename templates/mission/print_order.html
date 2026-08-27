@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>លិខិតបញ្ជាបេសកកម្ម - {{ mission.mission_code }}</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <style>
+    :root {
+      --font-moul: 'Moul', serif;
+      --font-khmer: 'Kantumruy Pro', 'Siemreap', sans-serif;
+      --navy-primary: #0f2b48;
+    }
+    body {
+      background-color: #f1f5f9;
+      font-family: var(--font-khmer);
+      color: #0f172a;
+      padding: 20px 0;
+    }
+    .order-paper {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 22mm 22mm;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    .btn-print-bar {
+      width: 210mm;
+      max-width: 95%;
+      margin: 0 auto 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .official-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    .header-left-col {
+      text-align: left;
+      line-height: 1.45;
+    }
+    .header-left-col .org-commune {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: var(--navy-primary);
+      margin: 2px 0;
+    }
+    .header-right-col {
+      text-align: center;
+      line-height: 1.45;
+    }
+    .header-right-col .kingdom {
+      font-family: var(--font-moul);
+      font-size: 12pt;
+      color: var(--navy-primary);
+    }
+    .header-right-col .motto {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: var(--navy-primary);
+    }
+    @media print {
+      body { background: transparent !important; padding: 0 !important; }
+      .order-paper { width: 100% !important; min-height: auto !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+      .btn-print-bar, .toast-container { display: none !important; }
+      @page { size: A4 portrait; margin: 15mm 20mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="btn-print-bar no-print">
+    <a href="{{ url_for('mission_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+    <button onclick="window.print()" class="btn btn-primary btn-lg">
+      <i class="fa-solid fa-print"></i> បោះពុម្ពលិខិតបញ្ជាបេសកកម្ម (Print PDF)
+    </button>
+  </div>
+
+  <div class="order-paper print-document">
+    
+    <!-- Header -->
+    <div class="official-header-row">
+      <div class="header-left-col">
+        <div>រដ្ឋបាលខេត្តសៀមរាប</div>
+        <div>រដ្ឋបាលស្រុកអង្គរជុំ</div>
+        <div class="org-commune">រដ្ឋបាលឃុំនគរភាស</div>
+        <div style="font-size: 9.5pt; color: #475569; margin-top: 2px;">
+          លេខ៖ {{ mission.mission_order_no or '............/២៦ លប.នភ' }}
+        </div>
+      </div>
+
+      <div class="header-right-col">
+        <div class="kingdom">ព្រះរាជាណាចក្រកម្ពុជា</div>
+        <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        <div style="text-align: center; margin-top: 2px;">
+          <svg width="65" height="6" viewBox="0 0 65 6" fill="none">
+            <path d="M0 3H65" stroke="#0f2b48" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div style="text-align: center; margin: 25px 0 20px;">
+      <h2 style="font-family: var(--font-moul); font-size: 15pt; color: var(--navy-primary); margin-bottom: 4px;">
+        លិខិតបញ្ជាបេសកកម្ម
+      </h2>
+      <p style="font-size: 11pt; color: #475569; font-weight: 500;">(MISSION ORDER)</p>
+    </div>
+
+    <!-- Content -->
+    <div style="line-height: 2; font-size: 11.5pt;">
+      <p style="text-indent: 40px;">
+        <strong>មេឃុំនគរភាស</strong> បញ្ជាឱ្យលោក/លោកស្រី និងក្រុមការងារ ដែលមានរាយនាមដូចខាងក្រោម៖
+      </p>
+
+      <!-- Participants Table -->
+      <table class="official-table" style="margin: 15px 0;">
+        <thead>
+          <tr>
+            <th style="width: 45px; text-align: center;">ល.រ</th>
+            <th>គោត្តនាម និងនាម</th>
+            <th>អត្តលេខ</th>
+            <th>មុខតំណែង</th>
+            <th>តួនាទីក្នុងបេសកកម្ម</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in participants %}
+          <tr>
+            <td style="text-align: center;">{{ loop.index | kh_num }}</td>
+            <td><strong>{{ p.name_kh }}</strong></td>
+            <td>{{ p.officer_code }}</td>
+            <td>{{ p.position_title_kh }}</td>
+            <td>{{ p.role_in_mission or 'សមាជិក' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: #64748b;">មិនទាន់មានសមាសភាពចូលរួម</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Mission Details -->
+      <table style="width: 100%; margin: 15px 0; font-size: 11.5pt; border-collapse: collapse;">
+        <tr>
+          <td style="width: 32%; padding: 6px 0; font-weight: 600;">- កម្មវត្ថុនៃការចុះបំពេញការងារ ៖</td>
+          <td style="width: 68%; padding: 6px 0;"><strong>{{ mission.title }}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-weight: 600;">- គោលបំណងលម្អិត ៖</td>
+          <td style="padding: 6px 0;">{{ mission.purpose }}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-weight: 600;">- ទីកន្លែងចុះបំពេញការងារ ៖</td>
+          <td style="padding: 6px 0;"><strong>{{ mission.destination }}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-weight: 600;">- កាលបរិច្ឆេទ ៖</td>
+          <td style="padding: 6px 0;">
+            ចាប់ពីថ្ងៃទី <strong>{{ mission.start_date }}</strong> ដល់ថ្ងៃទី <strong>{{ mission.end_date }}</strong>
+            (ចំនួន <strong style="color: #1e3a8a;">{{ mission.total_days | kh_num }} ថ្ងៃ</strong>)
+          </td>
+        </tr>
+      </table>
+
+      <p style="text-indent: 40px; margin-top: 15px;">
+        អាជ្ញាធរភូមិ-ឃុំ មន្ត្រីជំនាញពាក់ព័ន្ធ និងសមត្ថកិច្ចមូលដ្ឋាន ត្រូវជួយសម្របសម្រួល និងសហការដើម្បីឱ្យបេសកកម្មខាងលើប្រព្រឹត្តទៅដោយរលូន និងទទួលបានលទ្ធផលល្អប្រសើរ។
+      </p>
+    </div>
+
+    <!-- Signatures -->
+    <div style="display: flex; justify-content: space-between; margin-top: 35px; page-break-inside: avoid;">
+      <div style="text-align: center; width: 45%;">
+        <div>បានឃើញ និងបញ្ជាក់ការមកដល់</div>
+        <div style="font-family: var(--font-moul); font-size: 10.5pt; color: var(--navy-primary); margin-top: 4px;">អាជ្ញាធរទទួលបេសកកម្ម</div>
+        <div style="font-size: 9.5pt; color: #64748b; margin-top: 4px;">(ហត្ថលេខា និងត្រា)</div>
+        <div style="margin-top: 60px;">ថ្ងៃទី....... ខែ....... ឆ្នាំ២០២...</div>
+      </div>
+
+      <div style="text-align: center; width: 45%;">
+        <div>ឃុំនគរភាស, {{ today_khmer }}</div>
+        <div style="font-family: var(--font-moul); font-size: 10.5pt; color: var(--navy-primary); margin-top: 4px;">មេឃុំនគរភាស</div>
+        <div style="font-size: 9.5pt; color: #64748b; margin-top: 4px;">(ហត្ថលេខា និងត្រា)</div>
+        <div style="font-family: var(--font-moul); font-size: 11pt; color: var(--navy-primary); margin-top: 60px;">ស៊ូ វណ្ណា</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

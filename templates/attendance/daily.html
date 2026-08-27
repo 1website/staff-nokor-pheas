@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}កត់ត្រាវត្តមានប្រចាំថ្ងៃ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-clipboard-user text-gold"></i>
+      <span>កត់ត្រាវត្តមានប្រចាំថ្ងៃ សាលាឃុំនគរភាស</span>
+    </h1>
+    <p>ស្រង់ម៉ោងចូល-ចេញ និងកត់ត្រាស្ថានភាពវត្តមានមន្ត្រី-បុគ្គលិក</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('attendance_scan') }}" class="btn btn-warning">
+      <i class="fa-solid fa-qrcode"></i>
+      <span>ស្កេនវត្តមាន QR Code</span>
+    </a>
+    <a href="{{ url_for('attendance_monthly') }}" class="btn btn-outline-primary">
+      <i class="fa-solid fa-calendar-days"></i>
+      <span>មើលតារាងប្រចាំខែ</span>
+    </a>
+    <a href="{{ url_for('export_attendance_excel_route') }}" class="btn btn-success">
+      <i class="fa-solid fa-file-excel"></i>
+      <span>នាំចេញ Excel</span>
+    </a>
+  </div>
+</div>
+
+<!-- Date Selector Toolbar -->
+<div class="filter-toolbar">
+  <form method="GET" action="{{ url_for('attendance_daily') }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <label class="form-label" style="margin: 0; font-weight: 600;">
+      <i class="fa-regular fa-calendar"></i> ជ្រើសរើសកាលបរិច្ឆេទ៖
+    </label>
+    <input type="date" name="date" value="{{ target_date }}" class="form-control" style="width: 170px;" onchange="this.form.submit()">
+    <button type="submit" class="btn btn-outline-primary btn-sm">
+      <i class="fa-solid fa-arrows-rotate"></i> ផ្ទុកទិន្នន័យ
+    </button>
+  </form>
+
+  <div style="font-size: 14px; font-weight: 600; color: var(--primary);">
+    {{ target_date | kh_date }}
+  </div>
+</div>
+
+<!-- Daily Attendance Table Form -->
+<form method="POST" action="{{ url_for('attendance_daily') }}">
+  <input type="hidden" name="attendance_date" value="{{ target_date }}">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>បញ្ជីវត្តមានមន្ត្រី ({{ staff_attendance | length | kh_num }} នាក់)</span>
+      </div>
+      {% if session.role in ['admin', 'clerk'] %}
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-sm btn-outline" onclick="markAll('present')">
+          <i class="fa-solid fa-check-double" style="color: #10b981;"></i> វត្តមានទាំងអស់
+        </button>
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុកវត្តមាន
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">ល.រ</th>
+              <th>អត្តលេខ</th>
+              <th>គោត្តនាម-នាម</th>
+              <th>មុខតំណែង</th>
+              <th>ក្រុមការងារ</th>
+              <th style="width: 120px;">ម៉ោងចូល</th>
+              <th style="width: 120px;">ម៉ោងចេញ</th>
+              <th style="width: 180px;">ស្ថានភាពវត្តមាន</th>
+              <th>កំណត់សម្គាល់</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in staff_attendance %}
+            <tr>
+              <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+              <td><strong>{{ s.officer_code }}</strong></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  {% if s.photo %}
+                  <img src="{{ url_for('static', filename='uploads/' + s.photo) }}" alt="{{ s.name_kh }}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; flex-shrink: 0;">
+                  {% else %}
+                  <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; flex-shrink: 0;">
+                    {{ s.name_kh[:1] }}
+                  </div>
+                  {% endif %}
+                  <div>
+                    <div style="font-weight: 600; color: var(--primary-dark);">{{ s.name_kh }}</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);">ភូមិ{{ s.village }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ s.position_title_kh }}</td>
+              <td>
+                {% set cat_info = STAFF_CATEGORIES.get(s.category, {}) %}
+                <span class="badge {{ cat_info.badge_class }}">{{ cat_info.name_kh }}</span>
+              </td>
+              <td>
+                <input type="time" name="check_in_{{ s.id }}" class="form-control" style="padding: 4px 8px; font-size: 12.5px;" value="{{ s.check_in_time or ('07:45' if s.att_status == 'present' else '') }}">
+              </td>
+              <td>
+                <input type="time" name="check_out_{{ s.id }}" class="form-control" style="padding: 4px 8px; font-size: 12.5px;" value="{{ s.check_out_time or ('17:00' if s.att_status == 'present' else '') }}">
+              </td>
+              <td>
+                <select name="status_{{ s.id }}" class="form-select status-select-{{ s.id }}" style="padding: 4px 8px; font-size: 12.5px; font-weight: 500;">
+                  <option value="present" {% if s.att_status == 'present' or (not s.att_status and s.category != 'village') %}selected{% endif %}>🟢 វត្តមាន (Present)</option>
+                  <option value="late" {% if s.att_status == 'late' %}selected{% endif %}>🟡 មកយឺត (Late)</option>
+                  <option value="early_leave" {% if s.att_status == 'early_leave' %}selected{% endif %}>🟠 ចេញមុន (Early)</option>
+                  <option value="on_leave" {% if s.att_status == 'on_leave' %}selected{% endif %}>🔵 ច្បាប់ (On Leave)</option>
+                  <option value="mission" {% if s.att_status == 'mission' %}selected{% endif %}>🟣 បេសកកម្ម (Mission)</option>
+                  <option value="absent" {% if s.att_status == 'absent' %}selected{% endif %}>🔴 អវត្តមាន (Absent)</option>
+                </select>
+              </td>
+              <td>
+                <input type="text" name="remarks_{{ s.id }}" class="form-control" style="padding: 4px 8px; font-size: 12.5px;" value="{{ s.remarks or '' }}" placeholder="មូលហេតុ/កំណត់សម្គាល់...">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if session.role in ['admin', 'clerk'] %}
+    <div class="card-footer" style="display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>រក្សាទុកវត្តមានថ្ងៃនេះ</span>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function markAll(status) {
+    document.querySelectorAll("select[name^='status_']").forEach(select => {
+      select.value = status;
+    });
+  }
+</script>
+{% endblock %}

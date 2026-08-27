@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}ផ្ទាំងគ្រប់គ្រងទូទៅ (Dashboard){% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-landmark text-gold"></i>
+      <span>រដ្ឋបាលឃុំនគរភាស - ផ្ទាំងគ្រប់គ្រងទូទៅ</span>
+    </h1>
+    <p>ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យមន្ត្រី វត្តមាន ច្បាប់ បេសកកម្ម និងប្រាក់បៀវត្សរ៍ ស្រុកអង្គរជុំ ខេត្តសៀមរាប</p>
+  </div>
+  <div class="page-actions">
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('staff_create') }}" class="btn btn-primary">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>បន្ថែមមន្ត្រីថ្មី</span>
+    </a>
+    <a href="{{ url_for('attendance_scan') }}" class="btn btn-primary">
+      <i class="fa-solid fa-qrcode"></i>
+      <span>ស្កេនវត្តមាន QR</span>
+    </a>
+    <a href="{{ url_for('attendance_daily') }}" class="btn btn-success">
+      <i class="fa-solid fa-clipboard-check"></i>
+      <span>ស្រង់វត្តមានថ្ងៃនេះ</span>
+    </a>
+    {% endif %}
+    <a href="{{ url_for('leave_request_create') }}" class="btn btn-warning">
+      <i class="fa-solid fa-file-signature"></i>
+      <span>ស្នើសុំច្បាប់</span>
+    </a>
+  </div>
+</div>
+
+<!-- Stat Counters Grid -->
+<div class="stats-grid">
+  <!-- Card 1: Total Staff -->
+  <div class="stat-card" style="--stat-color: #1e3a8a; --stat-bg: #eff6ff;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">មន្ត្រី និងបុគ្គលិកសរុប</div>
+      <div class="stat-number">{{ total_staff | kh_num }} <span
+          style="font-size: 14px; font-weight: normal;">នាក់</span></div>
+      <div class="stat-subtext">ស្រី {{ female_staff_count | kh_num }} នាក់</div>
+    </div>
+  </div>
+
+  <!-- Card 2: Council -->
+  <div class="stat-card" style="--stat-color: #0284c7; --stat-bg: #e0f2fe;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-user-tie"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ក្រុមប្រឹក្សាឃុំ</div>
+      <div class="stat-number">{{ council_count | kh_num }} <span
+          style="font-size: 14px; font-weight: normal;">រូប</span></div>
+      <div class="stat-subtext">មេឃុំ ជំទប់ និងសមាជិក</div>
+    </div>
+  </div>
+
+  <!-- Card 3: Clerk & Contract -->
+  <div class="stat-card" style="--stat-color: #0d9488; --stat-bg: #ccfbf1;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-briefcase"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ស្មៀន & ជំនួយការឃុំ</div>
+      <div class="stat-number">{{ (clerk_count + contract_count) | kh_num }} <span
+          style="font-size: 14px; font-weight: normal;">នាក់</span></div>
+      <div class="stat-subtext">រដ្ឋបាល ហិរញ្ញវត្ថុ</div>
+    </div>
+  </div>
+
+  <!-- Card 4: Village Chiefs -->
+  <div class="stat-card" style="--stat-color: #ea580c; --stat-bg: #ffedd5;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-house-chimney-user"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">មន្ត្រីភូមិ</div>
+      <div class="stat-number">{{ village_count | kh_num }} <span
+          style="font-size: 14px; font-weight: normal;">នាក់</span></div>
+      <div class="stat-subtext">១០ ភូមិក្នុងឃុំនគរភាស</div>
+    </div>
+  </div>
+</div>
+
+<!-- Today's Attendance Quick Bar -->
+<div class="card att-quick-card">
+  <div class="card-body">
+    <div class="att-quick-header">
+      <div class="att-quick-title">
+        <h3>
+          <i class="fa-solid fa-clock-rotate-left"></i> ស្ថានភាពវត្តមានប្រចាំថ្ងៃ៖ {{ today_khmer }}
+        </h3>
+        <p>កត់ត្រាម៉ោងចូល-ចេញ និងតាមដានវត្តមានមន្ត្រីប្រចាំសាលាឃុំ</p>
+      </div>
+
+      <div class="att-badges-grid">
+        <div class="att-badge-item badge-present">
+          <div class="badge-label">វត្តមាន (Present)</div>
+          <div class="badge-val">{{ (att_stats.get('present', 0) + att_stats.get('late', 0)) | kh_num }}</div>
+        </div>
+        <div class="att-badge-item badge-leave">
+          <div class="badge-label">ច្បាប់ (Leave)</div>
+          <div class="badge-val">{{ att_stats.get('on_leave', 0) | kh_num }}</div>
+        </div>
+        <div class="att-badge-item badge-mission">
+          <div class="badge-label">បេសកកម្ម (Mission)</div>
+          <div class="badge-val">{{ att_stats.get('mission', 0) | kh_num }}</div>
+        </div>
+        <div class="att-badge-item badge-absent">
+          <div class="badge-label">អវត្តមាន (Absent)</div>
+          <div class="badge-val">{{ att_stats.get('absent', 0) | kh_num }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-main-grid">
+  <!-- Left Column: Pending Leaves & Recent Check-ins -->
+  <div>
+    <!-- Pending Leaves Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-clock text-gold"></i>
+          <span>សំណើសុំច្បាប់រង់ចាំការអនុម័ត (Pending Requests)</span>
+        </div>
+        <a href="{{ url_for('leave_list') }}" class="btn btn-sm btn-outline">មើលទាំងអស់</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        {% if pending_leaves %}
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>មន្ត្រីស្នើសុំ</th>
+                <th>ប្រភេទច្បាប់</th>
+                <th>កាលបរិច្ឆេទ</th>
+                <th>ចំនួនថ្ងៃ</th>
+                <th>សកម្មភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for l in pending_leaves %}
+              <tr>
+                <td>
+                  <strong>{{ l.name_kh }}</strong>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ l.position_title_kh }}</div>
+                </td>
+                <td>
+                  <span class="badge badge-info text-nowrap">{{ LEAVE_TYPES.get(l.leave_type, l.leave_type) }}</span>
+                </td>
+                <td class="text-nowrap">{{ l.start_date }} ដល់ {{ l.end_date }}</td>
+                <td class="text-nowrap"><strong>{{ l.total_days | kh_num }} ថ្ងៃ</strong></td>
+                <td>
+                  {% if session.role in ['admin', 'clerk'] %}
+                  <div style="display: flex; gap: 6px;" class="table-action-btns">
+                    <form method="POST" action="{{ url_for('leave_action', leave_id=l.id) }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="btn btn-sm btn-success" title="យល់ព្រម">
+                        <i class="fa-solid fa-check"></i>
+                      </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('leave_action', leave_id=l.id) }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="btn btn-sm btn-danger" title="បដិសេធ">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </form>
+                  </div>
+                  {% else %}
+                  <span class="badge badge-warning text-nowrap">រង់ចាំពិនិត្យ</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+          <i class="fa-regular fa-circle-check" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+          <p>ពុំមានសំណើសុំច្បាប់រង់ចាំការអនុម័តនៅឡើយទេ</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Active Missions Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-route text-gold"></i>
+          <span>បេសកកម្ម និងការចុះមូលដ្ឋានថ្មីៗ</span>
+        </div>
+        <a href="{{ url_for('mission_list') }}" class="btn btn-sm btn-outline">មើលទាំងអស់</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        {% if recent_missions %}
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>កូដ/កម្មវត្ថុ</th>
+                <th>ទីតាំងចុះ</th>
+                <th>កាលបរិច្ឆេទ</th>
+                <th>ស្ថានភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in recent_missions %}
+              <tr>
+                <td>
+                  <span style="font-weight: 600; color: var(--primary);" class="text-nowrap">{{ m.mission_code }}</span>
+                  <div>{{ m.title }}</div>
+                </td>
+                <td><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> {{ m.destination }}</td>
+                <td class="text-nowrap">{{ m.start_date }} ដល់ {{ m.end_date }} ({{ m.total_days | kh_num }} ថ្ងៃ)</td>
+                <td>
+                  {% if m.status == 'completed' %}
+                  <span class="badge badge-success text-nowrap">បានបញ្ចប់</span>
+                  {% elif m.status == 'in_progress' %}
+                  <span class="badge badge-warning text-nowrap">កំពុងអនុវត្ត</span>
+                  {% else %}
+                  <span class="badge badge-info text-nowrap">បានគ្រោង</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+          មិនទាន់មានទិន្នន័យបេសកកម្ម
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Charts & Villages -->
+  <div>
+    <!-- Financial Cash Flow Card (ចរន្តសាច់ប្រាក់ ចំណូល-ចំណាយ) -->
+    <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 20px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title">
+          <i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i>
+          <span>ចរន្តសាច់ប្រាក់ ចំណូល-ចំណាយ (ខែនេះ)</span>
+        </div>
+        <a href="{{ url_for('finance_list') }}" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 3px 8px;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> គ្រប់គ្រងចំណាយ
+        </a>
+      </div>
+      <div class="card-body" style="padding: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center;">
+          <div style="background: #ecfdf5; padding: 10px 6px; border-radius: 8px; border: 1px solid #a7f3d0;">
+            <div style="font-size: 11px; color: #065f46; font-weight: 600; margin-bottom: 4px;">
+              <i class="fa-solid fa-circle-arrow-down"></i> សរុបចំណូល
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: #059669;">
+              + {{ (finance_summary.income or 0) | currency }}
+            </div>
+          </div>
+
+          <div style="background: #fef2f2; padding: 10px 6px; border-radius: 8px; border: 1px solid #fecaca;">
+            <div style="font-size: 11px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">
+              <i class="fa-solid fa-circle-arrow-up"></i> សរុបចំណាយ
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: #dc2626;">
+              - {{ (finance_summary.expense or 0) | currency }}
+            </div>
+          </div>
+
+          <div style="background: {% if (finance_summary.net or 0) >= 0 %}#f0f9ff{% else %}#fff1f2{% endif %}; padding: 10px 6px; border-radius: 8px; border: 1px solid {% if (finance_summary.net or 0) >= 0 %}#bae6fd{% else %}#fecdd3{% endif %};">
+            <div style="font-size: 11px; color: {% if (finance_summary.net or 0) >= 0 %}#0369a1{% else %}#be123c{% endif %}; font-weight: 600; margin-bottom: 4px;">
+              <i class="fa-solid fa-vault"></i> តុល្យភាពនៅសល់
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: {% if (finance_summary.net or 0) >= 0 %}#0284c7{% else %}#e11d48{% endif %};">
+              {{ (finance_summary.net or 0) | currency }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Card -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title">
+          <i class="fa-solid fa-chart-pie text-gold"></i>
+          <span>សមាសភាពមន្ត្រីតាមក្រុម</span>
+        </div>
+        <span style="font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-subtle); padding: 3px 10px; border-radius: 20px;">
+          សរុប {{ total_staff | kh_num }} នាក់
+        </span>
+      </div>
+      <div class="card-body" style="padding: 14px;">
+        <div class="staff-composition-container">
+          <!-- Perfectly Centered Donut Chart with Center Total Stat -->
+          <div class="donut-chart-box">
+            <div class="donut-center-stat">
+              <span class="donut-total-num">{{ total_staff | kh_num }}</span>
+              <span class="donut-total-label">មន្ត្រីសរុប</span>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+
+          <!-- 4 Category Breakdown Cards -->
+          <div class="composition-breakdown-grid">
+            <!-- 1. Council -->
+            <a href="{{ url_for('staff_list', category='council') }}" class="comp-card" title="មើលបញ្ជីក្រុមប្រឹក្សាឃុំ">
+              <div class="comp-icon-box" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div class="comp-info">
+                <div class="comp-name">ក្រុមប្រឹក្សាឃុំ</div>
+                <div class="comp-count-row">
+                  <strong>{{ council_count | kh_num }} <small>រូប</small></strong>
+                  <span class="comp-pct">{{ ((council_count / (total_staff or 1)) * 100) | round(0) | int | kh_num }}%</span>
+                </div>
+              </div>
+            </a>
+
+            <!-- 2. Clerk -->
+            <a href="{{ url_for('staff_list', category='clerk') }}" class="comp-card" title="មើលបញ្ជីស្មៀនឃុំ">
+              <div class="comp-icon-box" style="background: rgba(13, 148, 136, 0.12); color: #0d9488;">
+                <i class="fa-solid fa-pen-nib"></i>
+              </div>
+              <div class="comp-info">
+                <div class="comp-name">ស្មៀនឃុំ</div>
+                <div class="comp-count-row">
+                  <strong>{{ clerk_count | kh_num }} <small>នាក់</small></strong>
+                  <span class="comp-pct">{{ ((clerk_count / (total_staff or 1)) * 100) | round(0) | int | kh_num }}%</span>
+                </div>
+              </div>
+            </a>
+
+            <!-- 3. Assistants / Contract -->
+            <a href="{{ url_for('staff_list', category='contract') }}" class="comp-card" title="មើលបញ្ជីជំនួយការឃុំ">
+              <div class="comp-icon-box" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                <i class="fa-solid fa-briefcase"></i>
+              </div>
+              <div class="comp-info">
+                <div class="comp-name">ជំនួយការឃុំ</div>
+                <div class="comp-count-row">
+                  <strong>{{ contract_count | kh_num }} <small>នាក់</small></strong>
+                  <span class="comp-pct">{{ ((contract_count / (total_staff or 1)) * 100) | round(0) | int | kh_num }}%</span>
+                </div>
+              </div>
+            </a>
+
+            <!-- 4. Village Chiefs -->
+            <a href="{{ url_for('staff_list', category='village') }}" class="comp-card" title="មើលបញ្ជីមន្ត្រីភូមិ">
+              <div class="comp-icon-box" style="background: rgba(234, 88, 12, 0.12); color: #ea580c;">
+                <i class="fa-solid fa-house-chimney-user"></i>
+              </div>
+              <div class="comp-info">
+                <div class="comp-name">មន្ត្រីភូមិ</div>
+                <div class="comp-count-row">
+                  <strong>{{ village_count | kh_num }} <small>នាក់</small></strong>
+                  <span class="comp-pct">{{ ((village_count / (total_staff or 1)) * 100) | round(0) | int | kh_num }}%</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Render Chart for Staff Categories
+  const chartCanvas = document.getElementById('categoryChart');
+  if (chartCanvas) {
+    const ctx = chartCanvas.getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['ក្រុមប្រឹក្សាឃុំ', 'ស្មៀនឃុំ', 'ជំនួយការឃុំ', 'មន្ត្រីភូមិ'],
+        datasets: [{
+          data: [{{ council_count }}, {{ clerk_count }}, {{ contract_count }}, {{ village_count }}],
+          backgroundColor: ['#0284c7', '#0d9488', '#8b5cf6', '#ea580c'],
+          hoverBackgroundColor: ['#0369a1', '#0f766e', '#7c3aed', '#c2410c'],
+          borderWidth: 2,
+          borderColor: isDark ? '#152238' : '#ffffff',
+          hoverOffset: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false // Using our rich interactive 2x2 grid legend cards instead
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            padding: 10,
+            cornerRadius: 8,
+            titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+            bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+            callbacks: {
+              label: function(context) {
+                const val = context.parsed || 0;
+                const total = {{ total_staff or 1 }};
+                const pct = Math.round((val / total) * 100);
+                return ` ${val} នាក់ (${pct}%)`;
+              }
+            }
+          }
+        },
+        cutout: '72%'
+      }
+    });
+  }
+</script>
+{% endblock %}

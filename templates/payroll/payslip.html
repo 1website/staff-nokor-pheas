@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ - {{ p.name_kh }} ({{ p.month_year }})</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <style>
+    body { background-color: #f1f5f9; padding: 20px 0; }
+    .payslip-paper {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 22mm 22mm;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    .btn-print-bar {
+      width: 210mm;
+      margin: 0 auto 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .payslip-box {
+      border: 1px solid #1e3a8a;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    .payslip-box-header {
+      background: #1e3a8a;
+      color: #ffffff;
+      padding: 8px 16px;
+      font-weight: bold;
+      font-size: 11pt;
+    }
+    @media print {
+      body { background: transparent; padding: 0; }
+      .payslip-paper { width: 100%; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
+      .btn-print-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="btn-print-bar no-print">
+    <a href="{{ url_for('payroll_list', month=p.month_year) }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+      <i class="fa-solid fa-print"></i> បោះពុម្ពប័ណ្ណបើកប្រាក់ (Print PDF)
+    </button>
+  </div>
+
+  <div class="payslip-paper print-document">
+    
+    <!-- Official Header -->
+    <div class="official-header">
+      <div class="official-header-left">
+        <div>រដ្ឋបាលខេត្តសៀមរាប</div>
+        <div>រដ្ឋបាលស្រុកអង្គរជុំ</div>
+        <div class="org-title">រដ្ឋបាលឃុំនគរភាស</div>
+        <div style="font-size: 9.5pt; color: #475569; margin-top: 2px;">
+          អត្តលេខ៖ <strong>{{ p.officer_code }}</strong>
+        </div>
+      </div>
+
+      <div class="official-header-right">
+        <div class="kingdom">ព្រះរាជាណាចក្រកម្ពុជា</div>
+        <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        <div style="text-align: center; margin-top: -4px;">
+          <svg width="60" height="8" viewBox="0 0 60 8" fill="none">
+            <path d="M0 4H60" stroke="#000000" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="official-title-box" style="margin: 15px 0 10px;">
+      <h2 class="official-doc-title">ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ</h2>
+      <p style="font-size: 11pt; color: #1e3a8a; font-weight: bold;">
+        ប្រចាំខែ {{ p.month_year.split('-')[1] | kh_num }} ឆ្នាំ {{ p.month_year.split('-')[0] | kh_num }} (PAYSLIP)
+      </p>
+    </div>
+
+    <!-- Officer Profile Banner -->
+    <table class="official-table" style="margin: 15px 0; font-size: 10.5pt;">
+      <tr>
+        <td style="width: 25%; font-weight: bold;">គោត្តនាម និងនាម៖</td>
+        <td style="width: 35%;"><strong>{{ p.name_kh }}</strong> ({{ p.name_en }})</td>
+        <td style="width: 20%; font-weight: bold;">អត្តលេខមន្ត្រី៖</td>
+        <td style="width: 20%;"><strong>{{ p.officer_code }}</strong></td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">មុខតំណែង៖</td>
+        <td>{{ p.position_title_kh }}</td>
+        <td style="font-weight: bold;">ក្រុមការងារ៖</td>
+        <td>{{ STAFF_CATEGORIES.get(p.category, {}).get('name_kh', p.category) }}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">ភូមិ/អាសយដ្ឋាន៖</td>
+        <td>ភូមិ{{ p.village }} ឃុំនគរភាស</td>
+        <td style="font-weight: bold;">កាលបរិច្ឆេទបើក៖</td>
+        <td>{{ p.paid_date or today_iso }}</td>
+      </tr>
+    </table>
+
+    <!-- Earnings & Deductions Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 15px 0;">
+      
+      <!-- Earnings (ប្រាក់ចំណូលទទួលបាន) -->
+      <div class="payslip-box">
+        <div class="payslip-box-header" style="background: #0f766e;">
+          I. ប្រាក់បៀវត្សរ៍ & ប្រាក់ឧបត្ថម្ភ (Earnings)
+        </div>
+        <table class="official-table" style="margin: 0; border: none;">
+          <tr>
+            <td>១. ប្រាក់បៀវត្សរ៍គោល</td>
+            <td style="text-align: right; font-weight: bold;">{{ p.base_salary | currency }}</td>
+          </tr>
+          <tr>
+            <td>២. ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ</td>
+            <td style="text-align: right;">{{ p.position_allowance | currency }}</td>
+          </tr>
+          <tr>
+            <td>៣. ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ</td>
+            <td style="text-align: right;">{{ p.family_allowance | currency }}</td>
+          </tr>
+          <tr style="background: #f0fdf4; font-weight: bold; border-top: 2px solid #0f766e;">
+            <td>សរុបប្រាក់ចំណូល (Gross):</td>
+            <td style="text-align: right; color: #0f766e;">{{ p.gross_salary | currency }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Deductions (ការកាត់កង) -->
+      <div class="payslip-box">
+        <div class="payslip-box-header" style="background: #991b1b;">
+          II. ការកាត់កង (Deductions)
+        </div>
+        <table class="official-table" style="margin: 0; border: none;">
+          <tr>
+            <td>១. ប្រាក់កាត់ផ្សេងៗ</td>
+            <td style="text-align: right; color: #dc2626;">{{ p.nssf_deduction | currency }}</td>
+          </tr>
+          <tr>
+            <td>២. ការកាត់វត្តមាន/វិន័យ</td>
+            <td style="text-align: right;">{{ p.attendance_deduction | currency }}</td>
+          </tr>
+          <tr>
+            <td>៣. ពន្ធលើប្រាក់បៀវត្សរ៍</td>
+            <td style="text-align: right;">{{ p.tax_deduction | currency }}</td>
+          </tr>
+          <tr style="height: 38px;">
+            <td></td>
+            <td></td>
+          </tr>
+          <tr style="height: 38px;">
+            <td></td>
+            <td></td>
+          </tr>
+          <tr style="background: #fef2f2; font-weight: bold; border-top: 2px solid #991b1b;">
+            <td>សរុបការកាត់កង:</td>
+            <td style="text-align: right; color: #dc2626;">-{{ ((p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0)) | currency }}</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Net Pay Highlight Box -->
+    <div style="background: #eff6ff; border: 2px solid #1e3a8a; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+      <div>
+        <div style="font-size: 11pt; color: #1e3a8a; font-weight: bold;">ប្រាក់បៀវត្សរ៍សុទ្ធត្រូវបើកជូន (NET PAY)៖</div>
+        <div style="font-size: 9.5pt; color: #475569;">វិធីសាស្ត្រទូទាត់៖ <strong>{{ p.payment_method }} (គណនីរដ្ឋបាលឃុំ)</strong></div>
+      </div>
+      <div style="font-size: 22pt; font-weight: bold; color: #1e3a8a; font-family: var(--font-heading);">
+        {{ p.net_salary | currency }}
+      </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signature-block" style="margin-top: 40px;">
+      <div class="signature-box">
+        <div>បានឃើញ និងអនុម័ត</div>
+        <div class="signer-title">មេឃុំនគរភាស</div>
+        <div class="signer-name">ស៊ូ វណ្ណា</div>
+      </div>
+
+      <div class="signature-box">
+        <div>អ្នករៀបចំតារាង</div>
+        <div class="signer-title">ស្មៀនឃុំនគរភាស</div>
+        <div class="signer-name">ហេង ចាន់រិទ្ធ</div>
+      </div>
+
+      <div class="signature-box">
+        <div>ឃុំនគរភាស, {{ today_khmer }}</div>
+        <div class="signer-title">ហត្ថលេខាសាមីខ្លួន</div>
+        <div class="signer-name">{{ p.name_kh }}</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

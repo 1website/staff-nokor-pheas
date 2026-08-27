@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}ប្រវត្តិរូបមន្ត្រី {{ staff.name_kh }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-id-card text-gold"></i>
+      <span>ប្រវត្តិរូប និងឯកសារមន្ត្រី៖ {{ staff.name_kh }}</span>
+    </h1>
+    <p>អត្តលេខមន្ត្រី៖ <strong>{{ staff.officer_code }}</strong> | រដ្ឋបាលឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('staff_id_card', staff_id=staff.id) }}" target="_blank" class="btn btn-outline-info">
+      <i class="fa-solid fa-id-badge"></i>
+      <span>ប័ណ្ណសម្គាល់ខ្លួន (ID Card)</span>
+    </a>
+    <a href="{{ url_for('staff_print_cv', staff_id=staff.id) }}" target="_blank" class="btn btn-outline-primary">
+      <i class="fa-solid fa-print"></i>
+      <span>បោះពុម្ពប្រវត្តិរូប (CV)</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('staff_edit', staff_id=staff.id) }}" class="btn btn-warning">
+      <i class="fa-solid fa-pen-to-square"></i>
+      <span>កែប្រែព័ត៌មាន</span>
+    </a>
+    <button class="btn btn-primary" data-modal-target="uploadDocModal">
+      <i class="fa-solid fa-file-arrow-up"></i>
+      <span>Upload ឯកសារស្កេន</span>
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Profile Banner Card -->
+<div class="card profile-banner-card">
+  <div class="card-body profile-banner-body">
+    <div class="profile-banner-layout">
+      {% if staff.photo %}
+      <img src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="{{ staff.name_kh }}" class="profile-avatar-img">
+      {% else %}
+      <div class="profile-avatar-initial">
+        {{ staff.name_kh[:1] }}
+      </div>
+      {% endif %}
+      
+      <div class="profile-banner-main">
+        <div class="profile-name-row">
+          <h2 class="profile-name-kh">{{ staff.name_kh }}</h2>
+          <span class="profile-name-en">({{ staff.name_en }})</span>
+          {% set cat_info = STAFF_CATEGORIES.get(staff.category, {}) %}
+          <span class="badge {{ cat_info.badge_class }}">{{ cat_info.name_kh }}</span>
+          <span class="badge badge-success">កំពុងបម្រើការ</span>
+        </div>
+        
+        <div class="profile-position-text">
+          <i class="fa-solid fa-user-tie"></i> {{ staff.position_title_kh }}
+          {% if staff.position_title_en %}<span style="color: var(--text-muted); font-weight: normal;">({{ staff.position_title_en }})</span>{% endif %}
+        </div>
+        
+        <div class="profile-meta-chips">
+          {% set st_age = staff.dob | age %}
+          <span class="profile-meta-chip"><i class="fa-solid fa-venus-mars"></i> ភេទ៖ <strong>{{ staff.gender }}</strong></span>
+          <span class="profile-meta-chip"><i class="fa-solid fa-cake-candles"></i> អាយុ៖ <strong class="{% if st_age and st_age > 65 %}text-danger{% else %}text-primary{% endif %}" style="{% if st_age and st_age > 65 %}color: #dc2626; font-weight: 700;{% endif %}">{{ staff.dob | kh_age }}</strong> ({{ staff.dob }})</span>
+          <span class="profile-meta-chip"><i class="fa-solid fa-phone"></i> ទូរស័ព្ទ៖ <strong>{{ staff.phone or '-' }}</strong></span>
+          <span class="profile-meta-chip"><i class="fa-solid fa-location-dot"></i> ភូមិ{{ staff.village }} ឃុំនគរភាស</span>
+        </div>
+      </div>
+      
+      <div class="profile-salary-box">
+        <div class="profile-salary-label">ប្រាក់បៀវត្សរ៍គោលប្រចាំខែ</div>
+        <div class="profile-salary-amount">
+          {{ staff.base_salary | currency }}
+        </div>
+        <div class="profile-salary-sub">
+          ឧបត្ថម្ភចូលឆ្នាំ៖ {{ staff.position_allowance | currency }}
+        </div>
+        {% if staff.family_allowance %}
+        <div class="profile-salary-sub">
+          ឧបត្ថម្ភភ្ជុំបិណ្ឌ៖ {{ staff.family_allowance | currency }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="profile-grid-2">
+  <!-- Section 1: Detailed Profile Info -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-address-book text-gold"></i>
+        <span>ព័ត៌មានផ្ទាល់ខ្លួន & រដ្ឋបាល</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 16px 20px;">
+      <table class="custom-table" style="font-size: 13.5px;">
+        <tbody>
+          <tr>
+            <td style="width: 40%; color: var(--text-muted); font-weight: 500;">អត្តលេខមន្ត្រី</td>
+            <td><strong>{{ staff.officer_code }}</strong></td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">ថ្ងៃខែឆ្នាំកំណើត & អាយុ</td>
+            <td><strong>{{ staff.dob | kh_date(include_day=False) }}</strong> (អាយុ <strong style="{% if st_age and st_age > 65 %}color: #dc2626;{% endif %}">{{ staff.dob | kh_age }}</strong>)</td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">លេខអត្តសញ្ញាណប័ណ្ណ</td>
+            <td>{{ staff.national_id or '-' }}</td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">កម្រិតវប្បធម៌ / សញ្ញាបត្រ</td>
+            <td>{{ staff.education_level or '-' }}</td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">កម្រិតក្របខណ្ឌ</td>
+            <td>{{ staff.cadre_level or '-' }}</td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">កាលបរិច្ឆេទចូលបម្រើការ</td>
+            <td>{{ staff.appointment_date or '-' }}</td>
+          </tr>
+          {% if staff.contract_end_date %}
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">កាលបរិច្ឆេទផុតកិច្ចសន្យា</td>
+            <td><strong style="color: #ea580c;">{{ staff.contract_end_date }}</strong></td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">ទំនាក់ទំនងបន្ទាន់</td>
+            <td>{{ staff.emergency_contact or '-' }}</td>
+          </tr>
+          <tr>
+            <td style="color: var(--text-muted); font-weight: 500;">កំណត់សម្គាល់បន្ថែម</td>
+            <td>{{ staff.notes or '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 2: Scanned Documents Attachments (ដីកា, កិច្ចសន្យា, សញ្ញាបត្រ, CV) -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-folder-open text-gold"></i>
+        <span>ឯកសារភ្ជាប់ស្កេន (Scanned Documents)</span>
+      </div>
+      {% if session.role in ['admin', 'clerk'] %}
+      <button class="btn btn-sm btn-primary" data-modal-target="uploadDocModal">
+        <i class="fa-solid fa-plus"></i> Upload
+      </button>
+      {% endif %}
+    </div>
+    <div class="card-body" style="padding: 12px 16px;">
+      {% if documents %}
+      <ul style="list-style: none;">
+        {% for doc in documents %}
+        <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+              <i class="fa-solid fa-file-pdf"></i>
+            </div>
+            <div>
+              <div style="font-weight: 600; color: var(--primary-dark); font-size: 13.5px;">{{ doc.title }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">
+                <span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">{{ DOCUMENT_TYPES.get(doc.doc_type, doc.doc_type) }}</span>
+                • {{ doc.upload_date[:10] }}
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <a href="{{ doc.file_path }}" target="_blank" class="btn btn-sm btn-outline-primary" title="ទាញយក / មើលឯកសារ">
+              <i class="fa-solid fa-arrow-down"></i>
+            </a>
+            {% if session.role in ['admin', 'clerk'] %}
+            <form method="POST" action="{{ url_for('document_delete', doc_id=doc.id) }}" onsubmit="return confirm('តើលោកអ្នកពិតជាចង់លុបឯកសារនេះមែនទេ?');">
+              <button type="submit" class="btn btn-sm btn-danger" title="លុបឯកសារ">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div style="padding: 30px 20px; text-align: center; color: var(--text-muted);">
+        <i class="fa-solid fa-file-circle-question" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
+        <p>ពុំទាន់មានឯកសារស្កេន (ដីកា កិច្ចសន្យា ឬសញ្ញាបត្រ) ត្រូវបានភ្ជាប់នៅឡើយទេ</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Payroll & Payslip History -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-money-check-dollar text-gold"></i>
+      <span>ប្រវត្តិនៃការបើកប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ (Payroll History)</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    {% if payroll_history %}
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>ខែ-ឆ្នាំ</th>
+            <th>ប្រាក់បៀវត្សរ៍គោល</th>
+            <th>ឧបត្ថម្ភចូលឆ្នាំ</th>
+            <th>ឧបត្ថម្ភភ្ជុំបិណ្ឌ</th>
+            <th>ប្រាក់សរុប</th>
+            <th>ប្រាក់កាត់ផ្សេងៗ</th>
+            <th>ប្រាក់សុទ្ធទទួលបាន</th>
+            <th>វិធីសាស្ត្រ</th>
+            <th style="text-align: center;">ប័ណ្ណបើកប្រាក់</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payroll_history %}
+          <tr>
+            <td><strong>{{ p.month_year }}</strong></td>
+            <td>{{ p.base_salary | currency }}</td>
+            <td>
+              {% if p.position_allowance > 0 %}
+              <span style="color: #0284c7; font-weight: 600;">{{ p.position_allowance | currency }}</span>
+              {% else %}
+              <span style="color: #94a3b8;">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.family_allowance > 0 %}
+              <span style="color: #d97706; font-weight: 600;">{{ p.family_allowance | currency }}</span>
+              {% else %}
+              <span style="color: #94a3b8;">-</span>
+              {% endif %}
+            </td>
+            <td><strong>{{ p.gross_salary | currency }}</strong></td>
+            <td style="color: #dc2626;">-{{ p.nssf_deduction | currency }}</td>
+            <td style="font-weight: 700; color: #059669;">{{ p.net_salary | currency }}</td>
+            <td><span class="badge badge-info">{{ p.payment_method }}</span></td>
+            <td style="text-align: center;">
+              <a href="{{ url_for('payroll_payslip', payroll_id=p.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-receipt"></i> Payslip
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+      មិនទាន់មានទិន្នន័យប្រាក់បៀវត្សរ៍
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section 4: Trainings & Achievements -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  <!-- Trainings -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-graduation-cap text-gold"></i>
+        <span>វគ្គបណ្តុះបណ្តាលដែលបានចូលរួម</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 16px;">
+      {% if trainings %}
+      <ul style="list-style: none;">
+        {% for t in trainings %}
+        <li style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+          <div style="font-weight: 600; color: var(--primary-dark);">{{ t.course_title }}</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            រៀបចំដោយ៖ {{ t.organizer }} | {{ t.start_date }} ដល់ {{ t.end_date }} ({{ t.duration_days | kh_num }} ថ្ងៃ)
+          </div>
+          {% if t.certificate_title %}
+          <div style="font-size: 11.5px; color: var(--success); margin-top: 3px;">
+            <i class="fa-solid fa-certificate"></i> {{ t.certificate_title }}
+          </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p style="text-align: center; color: var(--text-muted); padding: 16px;">មិនទាន់មានទិន្នន័យវគ្គបណ្តុះបណ្តាល</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Achievements -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-award text-gold"></i>
+        <span>ស្នាដៃ និងគ្រឿងឥស្សរិយយស</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 16px;">
+      {% if achievements %}
+      <ul style="list-style: none;">
+        {% for a in achievements %}
+        <li style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+          <div style="font-weight: 600; color: var(--primary-dark);">
+            <i class="fa-solid fa-medal text-gold"></i> {{ a.title }}
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            ផ្ដល់ដោយ៖ {{ a.awarded_by }} | កាលបរិច្ឆេទ៖ {{ a.award_date }}
+          </div>
+          {% if a.decree_prakas_no %}
+          <div style="font-size: 11.5px; color: var(--primary); margin-top: 3px;">
+            {{ a.decree_prakas_no }}
+          </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p style="text-align: center; color: var(--text-muted); padding: 16px;">មិនទាន់មានទិន្នន័យស្នាដៃ ឬគ្រឿងឥស្សរិយយស</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Upload Document -->
+<div id="uploadDocModal" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">Upload ឯកសារស្កេនភ្ជាប់ប្រវត្តិរូប</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('staff_upload_doc', staff_id=staff.id) }}" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ប្រភេទឯកសារ <span class="required">*</span></label>
+          <select name="doc_type" class="form-select" required>
+            {% for key, val in DOCUMENT_TYPES.items() %}
+            <option value="{{ key }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ចំណងជើងឯកសារ <span class="required">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="ឧទាហរណ៍៖ ដីកាតែងតាំងលេខ..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ជ្រើសរើស File (PDF, Word, រូបភាព) <span class="required">*</span></label>
+          <input type="file" name="document_file" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">កំណត់សម្គាល់បន្ថែម</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="ព័ត៌មានបន្ថែម..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Upload ឯកសារ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

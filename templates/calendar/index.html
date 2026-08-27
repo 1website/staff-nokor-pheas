@@ -1,0 +1,658 @@
+{% extends "base.html" %}
+
+{% block title %}ប្រតិទិនកិច្ចការរដ្ឋបាល - រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block content %}
+<div class="calendar-page-container">
+  <!-- Page Header -->
+  <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 22px;">
+    <div class="page-header-title">
+      <h1 style="display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-calendar-check" style="color: var(--primary);"></i>
+        <span>ប្រតិទិនកិច្ចការរដ្ឋបាល</span>
+      </h1>
+      <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 13.5px;">
+        កាលវិភាគប្រជុំសាមញ្ញ/វិសាមញ្ញក្រុមប្រឹក្សាឃុំ វេទិកាសាធារណៈ ពិធីបុណ្យជាតិ និងទិវាផ្សេងៗ
+      </p>
+    </div>
+
+    <div class="page-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <a href="{{ url_for('calendar_index') }}" class="btn btn-outline" title="ត្រឡប់មកខែបច្ចុប្បន្ន">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>ខែនេះ</span>
+      </a>
+      {% if session.role in ['admin', 'clerk'] %}
+      <button type="button" class="btn btn-primary" onclick="openAddEventModal()">
+        <i class="fa-solid fa-calendar-plus"></i>
+        <span>បន្ថែមព្រឹត្តិការណ៍ថ្មី</span>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Summary Stats Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
+    <div class="stat-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-color);">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        <i class="fa-solid fa-calendar-days"></i>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">កិច្ចការក្នុងខែនេះ</div>
+        <div style="font-size: 22px; font-weight: 700; color: var(--text-main); font-family: var(--font-latin);">{{ total_month_events | kh_num }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-color);">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">បានបញ្ចប់រួចរាល់</div>
+        <div style="font-size: 22px; font-weight: 700; color: #10b981; font-family: var(--font-latin);">{{ completed_month_events | kh_num }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-color);">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        <i class="fa-solid fa-clock"></i>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">គ្រោងទុក / ជិតមកដល់</div>
+        <div style="font-size: 22px; font-weight: 700; color: #f59e0b; font-family: var(--font-latin);">{{ scheduled_month_events | kh_num }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Control & Filter Toolbar -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-body" style="padding: 14px 18px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        
+        <!-- Month Navigation -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <a href="{{ url_for('calendar_index', month=prev_month_str, type=selected_type, search=search_query) }}" class="btn btn-outline btn-sm" title="ខែមុន">
+            <i class="fa-solid fa-chevron-left"></i>
+            <span>ខែមុន</span>
+          </a>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px; font-weight: 700; color: var(--primary); font-family: var(--font-heading); min-width: 170px; text-align: center;">
+              {{ current_month_str | kh_date(False) }}
+            </span>
+          </div>
+
+          <a href="{{ url_for('calendar_index', month=next_month_str, type=selected_type, search=search_query) }}" class="btn btn-outline btn-sm" title="ខែបន្ទាប់">
+            <span>ខែបន្ទាប់</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        </div>
+
+        <!-- Filter & Search Form -->
+        <form method="GET" action="{{ url_for('calendar_index') }}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <input type="hidden" name="month" value="{{ current_month_str }}">
+
+          <!-- Type Filter Dropdown -->
+          <select name="type" class="form-select" style="font-size: 13px; padding: 7px 12px; min-width: 180px;" onchange="this.form.submit()">
+            <option value="">-- ប្រភេទកិច្ចការទាំងអស់ --</option>
+            {% for t_key, t_info in EVENT_TYPES.items() %}
+            <option value="{{ t_key }}" {% if selected_type == t_key %}selected{% endif %}>
+              {{ t_info.title_kh }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <!-- Search Box -->
+          <div class="search-input-wrapper" style="position: relative;">
+            <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="ស្វែងរកចំណងជើង, ទីកន្លែង..." style="font-size: 13px; padding: 7px 32px 7px 12px; width: 200px;">
+            {% if search_query %}
+            <a href="{{ url_for('calendar_index', month=current_month_str, type=selected_type) }}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" title="សម្អាត">
+              <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Calendar Layout (Grid + Sidebar) -->
+  <div style="display: grid; grid-template-columns: 2.8fr 1fr; gap: 20px; align-items: start;" class="calendar-layout-grid">
+    
+    <!-- Left: Month Calendar Grid Card -->
+    <div class="card">
+      <div class="card-header" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-regular fa-calendar-days" style="color: var(--primary);"></i>
+          <span>តារាងប្រតិទិនប្រចាំខែ {{ current_month_str | kh_date(False) }}</span>
+        </h3>
+        <span class="badge badge-info" style="font-size: 11.5px;">{{ month_events | length | kh_num }} កិច្ចការ</span>
+      </div>
+
+      <div class="card-body" style="padding: 12px;">
+        <div class="calendar-grid-wrapper">
+          <!-- Weekday Headers (Mon -> Sun) -->
+          <div class="calendar-header-row">
+            {% for dow in khmer_dow_short %}
+            <div class="calendar-dow-cell {% if loop.index0 >= 5 %}calendar-dow-weekend{% endif %}">
+              {{ dow }}
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Calendar Days Grid -->
+          <div class="calendar-days-grid">
+            {% for day_cell in calendar_days %}
+              {% if day_cell.is_empty %}
+                <div class="calendar-day-box day-empty"></div>
+              {% else %}
+                <div class="calendar-day-box {% if day_cell.is_today %}day-today{% endif %} {% if day_cell.is_weekend %}day-weekend{% endif %} {% if day_cell.events | length > 0 %}day-has-events{% endif %}"
+                     onclick="handleDayCellClick('{{ day_cell.date_iso }}')">
+                  
+                  <!-- Day Header -->
+                  <div class="day-box-header">
+                    <span class="day-number {% if day_cell.is_today %}today-badge{% endif %}">
+                      {{ day_cell.day | kh_num }}
+                    </span>
+                    {% if day_cell.is_today %}
+                    <span class="today-text-pill">ថ្ងៃនេះ</span>
+                    {% endif %}
+                  </div>
+
+                  <!-- Events inside day cell -->
+                  <div class="day-events-list">
+                    {% for ev in day_cell.events %}
+                      {% set t_info = EVENT_TYPES.get(ev.event_type, {}) %}
+                      <div class="cal-event-pill cal-event-{{ ev.event_type }}" 
+                           onclick="event.stopPropagation(); showEventDetailModal({{ ev.id }})"
+                           title="{{ ev.title }} ({{ ev.start_time }}{% if ev.end_time %} - {{ ev.end_time }}{% endif %})">
+                        <i class="fa-solid {{ t_info.icon or 'fa-calendar' }}"></i>
+                        <span class="event-pill-time">{{ ev.start_time }}</span>
+                        <span class="event-pill-title">{{ ev.title }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Upcoming Events Panel & Legend -->
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      
+      <!-- Upcoming Events Card -->
+      <div class="card">
+        <div class="card-header" style="padding: 14px 18px;">
+          <h4 class="card-title" style="margin: 0; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b;"></i>
+            <span>កិច្ចការជិតមកដល់</span>
+          </h4>
+        </div>
+        <div class="card-body" style="padding: 14px 16px;">
+          {% if upcoming_events %}
+          <div class="upcoming-events-list" style="display: flex; flex-direction: column; gap: 12px;">
+            {% for ev in upcoming_events %}
+            {% set t_info = EVENT_TYPES.get(ev.event_type, {}) %}
+            <div class="upcoming-event-item" onclick="showEventDetailModal({{ ev.id }})">
+              <div class="upcoming-date-box">
+                <span class="upcoming-day">{{ ev.event_date[8:10] | kh_num }}</span>
+                <span class="upcoming-month">{{ ev.event_date[5:7] | kh_num }}</span>
+              </div>
+              <div class="upcoming-content">
+                <div class="upcoming-title">{{ ev.title }}</div>
+                <div class="upcoming-meta">
+                  <span><i class="fa-regular fa-clock"></i> {{ ev.start_time }}{% if ev.end_time %} - {{ ev.end_time }}{% endif %}</span>
+                  {% if ev.location %}
+                  <span><i class="fa-solid fa-location-dot"></i> {{ ev.location }}</span>
+                  {% endif %}
+                </div>
+                <div style="margin-top: 5px;">
+                  <span class="badge {{ t_info.badge_class or 'badge-info' }}" style="font-size: 10.5px;">
+                    {{ t_info.title_kh }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="text-align: center; padding: 25px 10px; color: var(--text-muted); font-size: 13px;">
+            <i class="fa-regular fa-calendar-check" style="font-size: 28px; margin-bottom: 8px; display: block; color: #cbd5e1;"></i>
+            មិនទាន់មានកិច្ចការគ្រោងទុកបន្តទៀតឡើយ
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Event Type Legend Card -->
+      <div class="card">
+        <div class="card-header" style="padding: 14px 18px;">
+          <h4 class="card-title" style="margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-palette" style="color: var(--primary);"></i>
+            <span>កូដពណ៌សម្គាល់ប្រភេទកិច្ចការ</span>
+          </h4>
+        </div>
+        <div class="card-body" style="padding: 14px 16px;">
+          <div style="display: flex; flex-direction: column; gap: 9px; font-size: 12.5px;">
+            {% for t_key, t_info in EVENT_TYPES.items() %}
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="legend-color-dot" style="background: {{ t_info.color }};"></span>
+              <span style="color: var(--text-main); font-weight: 500;">{{ t_info.title_kh }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     1. MODAL: VIEW EVENT DETAILS
+     ============================================================================== -->
+<div id="viewEventModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; overflow-y: auto;">
+  <div class="event-modal-dialog">
+    <div class="event-modal-header" id="view_modal_header">
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+        <div id="view_event_icon_box" class="event-icon-box">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div style="min-width: 0;">
+          <span id="view_event_type_badge" class="badge badge-info" style="font-size: 11px; margin-bottom: 3px;">ប្រភេទ</span>
+          <h3 id="view_event_title" style="margin: 0; font-size: 15.5px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ចំណងជើងកិច្ចការ</h3>
+        </div>
+      </div>
+      <button type="button" onclick="closeViewEventModal()" class="modal-close-btn" title="បិទ (Esc)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="event-modal-body">
+      <!-- Info Grid -->
+      <div class="event-detail-grid">
+        <div class="event-detail-box">
+          <span class="detail-label"><i class="fa-regular fa-calendar"></i> កាលបរិច្ឆេទ</span>
+          <strong id="view_event_date" class="detail-val font-latin">-</strong>
+        </div>
+        <div class="event-detail-box">
+          <span class="detail-label"><i class="fa-regular fa-clock"></i> ពេលវេលា</span>
+          <strong id="view_event_time" class="detail-val font-latin">-</strong>
+        </div>
+        <div class="event-detail-box">
+          <span class="detail-label"><i class="fa-solid fa-location-dot"></i> ទីកន្លែង</span>
+          <strong id="view_event_location" class="detail-val">-</strong>
+        </div>
+        <div class="event-detail-box">
+          <span class="detail-label"><i class="fa-solid fa-user-tie"></i> អធិបតី / ប្រធានអង្គប្រជុំ</span>
+          <strong id="view_event_chairperson" class="detail-val">-</strong>
+        </div>
+      </div>
+
+      <!-- Participants -->
+      <div class="event-info-section">
+        <div class="section-label"><i class="fa-solid fa-users"></i> សមាសភាពចូលរួម៖</div>
+        <div id="view_event_participants" class="section-content">-</div>
+      </div>
+
+      <!-- Description / Agenda -->
+      <div class="event-info-section">
+        <div class="section-label"><i class="fa-solid fa-list-check"></i> របៀបវារៈ / សេចក្តីពិពណ៌នា៖</div>
+        <div id="view_event_description" class="section-content">-</div>
+      </div>
+    </div>
+
+    <!-- Status & Actions Footer -->
+    <div class="event-modal-footer">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="detail-label" style="margin: 0;">ស្ថានភាព៖</span>
+        <span id="view_event_status_badge" class="badge badge-info">គ្រោងទុក</span>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        {% if session.role in ['admin', 'clerk'] %}
+        <button type="button" id="btn_open_edit_event" class="btn btn-outline btn-sm" onclick="openEditFromView()">
+          <i class="fa-solid fa-pen-to-square"></i> កែប្រែ
+        </button>
+        <form id="delete_event_form" method="POST" action="" style="display: inline; margin: 0;" onsubmit="return confirm('តើលោកអ្នកប្រាកដជាចង់លុបកិច្ចការនេះចេញពីប្រតិទិន?')">
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fa-solid fa-trash-can"></i> លុប
+          </button>
+        </form>
+        {% endif %}
+        <button type="button" onclick="closeViewEventModal()" class="btn btn-outline btn-sm">
+          បិទ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     2. MODAL: ADD NEW EVENT
+     ============================================================================== -->
+<div id="addEventModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; overflow-y: auto;">
+  <div class="event-modal-dialog">
+    <div class="event-modal-header header-primary">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="event-icon-box" style="background: rgba(255, 255, 255, 0.2);">
+          <i class="fa-solid fa-calendar-plus"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #ffffff;">បន្ថែមព្រឹត្តិការណ៍ / អង្គប្រជុំថ្មី</h3>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: #e0f2fe;">កត់ត្រាកិច្ចប្រជុំ ឬកាលវិភាគការងាររដ្ឋបាលឃុំ</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeAddEventModal()" class="modal-close-btn" title="បិទ (Esc)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form method="POST" action="{{ url_for('calendar_event_create') }}">
+      <div class="event-modal-body">
+        
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">ចំណងជើងកិច្ចការ / អង្គប្រជុំ</label>
+          <input type="text" name="title" class="form-control" style="padding: 7px 10px; font-size: 13px;" required placeholder="ឧ. កិច្ចប្រជុំសាមញ្ញក្រុមប្រឹក្សាឃុំប្រចាំខែ...">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">ប្រភេទកិច្ចការ</label>
+            <select name="event_type" class="form-select" style="padding: 7px 10px; font-size: 13px;" required>
+              {% for t_key, t_info in EVENT_TYPES.items() %}
+              <option value="{{ t_key }}">{{ t_info.title_kh }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">កាលបរិច្ឆេទ</label>
+            <input type="date" id="add_event_date_input" name="event_date" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;" required value="{{ today_iso }}">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ម៉ោងចាប់ផ្តើម</label>
+            <input type="time" name="start_time" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;" value="08:00">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ម៉ោងបញ្ចប់</label>
+            <input type="time" name="end_time" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;" value="11:30">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ទីកន្លែង</label>
+            <input type="text" name="location" class="form-control" style="padding: 7px 10px; font-size: 13px;" value="សាលាឃុំនគរភាស" placeholder="ឧ. សាលាឃុំ, វត្ត...">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">អធិបតី / ប្រធានអង្គប្រជុំ</label>
+            <input type="text" name="chairperson" class="form-control" style="padding: 7px 10px; font-size: 13px;" placeholder="ឧ. លោក ឌី គន់ (មេឃុំ)">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">សមាសភាពចូលរួម</label>
+            <input type="text" name="participants" class="form-control" style="padding: 7px 10px; font-size: 13px;" placeholder="ឧ. សមាជិកក្រុមប្រឹក្សាឃុំ, ស្មៀនឃុំ...">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ស្ថានភាព</label>
+            <select name="status" class="form-select" style="padding: 7px 10px; font-size: 13px;">
+              <option value="scheduled" selected>គ្រោងទុក (Scheduled)</option>
+              <option value="completed">បានបញ្ចប់ (Completed)</option>
+              <option value="postponed">លើកពេល (Postponed)</option>
+              <option value="cancelled">លុបចោល (Cancelled)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 4px;">
+          <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">របៀបវារៈ ឬសេចក្តីពិពណ៌នា</label>
+          <textarea name="description" class="form-control" rows="2" style="padding: 6px 10px; font-size: 12.5px;" placeholder="សេចក្តីលម្អិតនៃរបៀបវារៈប្រជុំ..."></textarea>
+        </div>
+
+      </div>
+
+      <div class="event-modal-footer" style="justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeAddEventModal()" class="btn btn-outline">
+          <i class="fa-solid fa-xmark"></i> បោះបង់
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុកកិច្ចការ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==============================================================================
+     3. MODAL: EDIT EVENT
+     ============================================================================== -->
+<div id="editEventModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; overflow-y: auto;">
+  <div class="event-modal-dialog">
+    <div class="event-modal-header header-warning">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="event-icon-box" style="background: rgba(255, 255, 255, 0.2);">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #ffffff;">កែប្រែព័ត៌មានកិច្ចការ / អង្គប្រជុំ</h3>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: #fef3c7;">ធ្វើបច្ចុប្បន្នភាពកាលបរិច្ឆេទ ឬរបៀបវារៈ</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeEditEventModal()" class="modal-close-btn" title="បិទ (Esc)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form id="edit_event_form" method="POST" action="">
+      <div class="event-modal-body">
+        
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">ចំណងជើងកិច្ចការ / អង្គប្រជុំ</label>
+          <input type="text" id="edit_title" name="title" class="form-control" style="padding: 7px 10px; font-size: 13px;" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">ប្រភេទកិច្ចការ</label>
+            <select id="edit_event_type" name="event_type" class="form-select" style="padding: 7px 10px; font-size: 13px;" required>
+              {% for t_key, t_info in EVENT_TYPES.items() %}
+              <option value="{{ t_key }}">{{ t_info.title_kh }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label required" style="font-size: 12.5px; margin-bottom: 3px;">កាលបរិច្ឆេទ</label>
+            <input type="date" id="edit_event_date" name="event_date" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ម៉ោងចាប់ផ្តើម</label>
+            <input type="time" id="edit_start_time" name="start_time" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ម៉ោងបញ្ចប់</label>
+            <input type="time" id="edit_end_time" name="end_time" class="form-control font-latin" style="padding: 7px 10px; font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ទីកន្លែង</label>
+            <input type="text" id="edit_location" name="location" class="form-control" style="padding: 7px 10px; font-size: 13px;">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">អធិបតី / ប្រធានអង្គប្រជុំ</label>
+            <input type="text" id="edit_chairperson" name="chairperson" class="form-control" style="padding: 7px 10px; font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">សមាសភាពចូលរួម</label>
+            <input type="text" id="edit_participants" name="participants" class="form-control" style="padding: 7px 10px; font-size: 13px;">
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">ស្ថានភាព</label>
+            <select id="edit_status" name="status" class="form-select" style="padding: 7px 10px; font-size: 13px;">
+              <option value="scheduled">គ្រោងទុក (Scheduled)</option>
+              <option value="completed">បានបញ្ចប់ (Completed)</option>
+              <option value="postponed">លើកពេល (Postponed)</option>
+              <option value="cancelled">លុបចោល (Cancelled)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 4px;">
+          <label class="form-label" style="font-size: 12.5px; margin-bottom: 3px;">របៀបវារៈ ឬសេចក្តីពិពណ៌នា</label>
+          <textarea id="edit_description" name="description" class="form-control" rows="2" style="padding: 6px 10px; font-size: 12.5px;"></textarea>
+        </div>
+
+      </div>
+
+      <div class="event-modal-footer" style="justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeEditEventModal()" class="btn btn-outline">
+          <i class="fa-solid fa-xmark"></i> បោះបង់
+        </button>
+        <button type="submit" class="btn btn-warning">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុកការកែប្រែ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let currentActiveEventData = null;
+
+  function handleDayCellClick(dateIso) {
+    {% if session.role in ['admin', 'clerk'] %}
+    openAddEventModal(dateIso);
+    {% endif %}
+  }
+
+  function openAddEventModal(presetDate = null) {
+    const modal = document.getElementById('addEventModal');
+    if (!modal) return;
+    if (presetDate) {
+      document.getElementById('add_event_date_input').value = presetDate;
+    }
+    modal.style.display = 'flex';
+  }
+
+  function closeAddEventModal() {
+    const modal = document.getElementById('addEventModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function showEventDetailModal(eventId) {
+    fetch(`/calendar/events/${eventId}`)
+      .then(res => res.json())
+      .then(ev => {
+        currentActiveEventData = ev;
+        document.getElementById('view_event_title').textContent = ev.title || '';
+        document.getElementById('view_event_type_badge').textContent = ev.event_type_kh || '';
+        document.getElementById('view_event_type_badge').className = `badge ${ev.badge_class || 'badge-info'}`;
+        
+        document.getElementById('view_event_date').textContent = ev.event_date || '';
+        const timeText = ev.start_time ? (ev.end_time ? `${ev.start_time} - ${ev.end_time}` : ev.start_time) : 'ពេញមួយថ្ងៃ';
+        document.getElementById('view_event_time').textContent = timeText;
+        document.getElementById('view_event_location').textContent = ev.location || 'សាលាឃុំនគរភាស';
+        document.getElementById('view_event_chairperson').textContent = ev.chairperson || '-';
+        document.getElementById('view_event_participants').textContent = ev.participants || '-';
+        document.getElementById('view_event_description').textContent = ev.description || 'គ្មានសេចក្តីពិពណ៌នា';
+
+        const statusBadge = document.getElementById('view_event_status_badge');
+        if (statusBadge) {
+          statusBadge.textContent = ev.status_kh || ev.status;
+          statusBadge.className = `badge ${ev.status_badge || 'badge-info'}`;
+        }
+
+        const delForm = document.getElementById('delete_event_form');
+        if (delForm) {
+          delForm.action = `/calendar/events/${ev.id}/delete`;
+        }
+
+        const modal = document.getElementById('viewEventModal');
+        if (modal) modal.style.display = 'flex';
+      })
+      .catch(err => {
+        console.error("Error loading event:", err);
+        if (window.toast) toast.error("មិនអាចទាញយកទិន្នន័យកិច្ចការបានឡើយ", "កំហុស");
+      });
+  }
+
+  function closeViewEventModal() {
+    const modal = document.getElementById('viewEventModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function openEditFromView() {
+    if (!currentActiveEventData) return;
+    closeViewEventModal();
+    const ev = currentActiveEventData;
+
+    document.getElementById('edit_event_form').action = `/calendar/events/${ev.id}/edit`;
+    document.getElementById('edit_title').value = ev.title || '';
+    document.getElementById('edit_event_type').value = ev.event_type || 'ordinary_meeting';
+    document.getElementById('edit_event_date').value = ev.event_date || '';
+    document.getElementById('edit_start_time').value = ev.start_time || '';
+    document.getElementById('edit_end_time').value = ev.end_time || '';
+    document.getElementById('edit_location').value = ev.location || '';
+    document.getElementById('edit_chairperson').value = ev.chairperson || '';
+    document.getElementById('edit_participants').value = ev.participants || '';
+    document.getElementById('edit_description').value = ev.description || '';
+    document.getElementById('edit_status').value = ev.status || 'scheduled';
+
+    const editModal = document.getElementById('editEventModal');
+    if (editModal) editModal.style.display = 'flex';
+  }
+
+  function closeEditEventModal() {
+    const modal = document.getElementById('editEventModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Close modals on backdrop click
+  window.addEventListener('click', function(e) {
+    ['viewEventModal', 'addEventModal', 'editEventModal'].forEach(id => {
+      const modal = document.getElementById(id);
+      if (modal && e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });
+
+  // Close modals on ESC key
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      ['viewEventModal', 'addEventModal', 'editEventModal'].forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal) modal.style.display = 'none';
+      });
+    }
+  });
+</script>
+{% endblock %}

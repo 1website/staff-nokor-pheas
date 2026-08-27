@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}បង្កើតបេសកកម្មថ្មី{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-map-location-dot text-gold"></i>
+      <span>បង្កើតបេសកកម្មចុះមូលដ្ឋានថ្មី</span>
+    </h1>
+    <p>កត់ត្រាលិខិតបញ្ជាបេសកកម្ម និងចាត់តាំងសមាសភាពមន្ត្រីចុះបំពេញការងារ</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('mission_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+  </div>
+</div>
+
+<div class="card" style="max-width: 850px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-pen-to-square text-gold"></i>
+      <span>ព័ត៌មានលម្អិតនៃបេសកកម្ម</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('mission_create') }}" enctype="multipart/form-data">
+      
+      <div class="form-group">
+        <label class="form-label">កម្មវត្ថុ / ចំណងជើងបេសកកម្ម <span class="required">*</span></label>
+        <input type="text" name="title" class="form-control" placeholder="ឧ. ចុះផ្សព្វផ្សាយការចុះបញ្ជីអត្រានុកូលដ្ឋាន..." required>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">ទីតាំងចុះបំពេញការងារ <span class="required">*</span></label>
+          <input type="text" name="destination" class="form-control" placeholder="ឧ. ភូមិរមៀត និងភូមិគោកថ្មី / សាលាស្រុកអង្គរជុំ" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">លេខលិខិតបញ្ជាបេសកកម្ម</label>
+          <input type="text" name="mission_order_no" class="form-control" placeholder="ឧ. លប.០២២/២៦ នភ">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">ចាប់ពីថ្ងៃទី <span class="required">*</span></label>
+          <input type="date" name="start_date" class="form-control" value="{{ today_iso }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ដល់ថ្ងៃទី <span class="required">*</span></label>
+          <input type="date" name="end_date" class="form-control" value="{{ today_iso }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">គោលបំណង និងភារកិច្ចត្រូវអនុវត្ត <span class="required">*</span></label>
+        <textarea name="purpose" class="form-control" rows="3" placeholder="បញ្ជាក់លម្អិតពីគោលបំណង និងសកម្មភាពត្រូវធ្វើ..." required></textarea>
+      </div>
+
+      <!-- Reference Document Upload (PDF or Images) -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fa-solid fa-paperclip text-gold"></i> ឯកសារយោង (ភ្ជាប់ File រូបភាព ឬ File PDF)
+        </label>
+        <div class="file-dropzone-box" id="dropzone_wrapper">
+          <input type="file" name="attachment" id="mission_attachment" class="form-control" accept=".pdf,image/png,image/jpeg,image/webp,image/jpg" style="display: none;" onchange="previewMissionAttachment(this)">
+          <label for="mission_attachment" style="cursor: pointer; display: block; margin: 0;">
+            <div style="width: 48px; height: 48px; margin: 0 auto 8px; border-radius: 50%; background: var(--primary-subtle); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 22px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div style="font-weight: 600; font-size: 14px; color: var(--primary-dark);">ចុចទីនេះដើម្បីជ្រើសរើសឯកសារយោង (File រូបភាព ឬ PDF)</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">គាំទ្រប្រភេទ file: PDF (.pdf), រូបភាព (.jpg, .jpeg, .png, .webp) — ទំហំអតិបរមា 16MB</div>
+          </label>
+          <div id="file_selected_info" style="display: none; margin-top: 12px; padding: 8px 14px; background: #e0f2fe; border-radius: 6px; font-size: 13px; color: #0369a1; font-weight: 600;">
+            <i class="fa-solid fa-file-circle-check"></i> <span id="file_selected_name"></span>
+            <button type="button" onclick="clearMissionAttachment()" style="background: none; border: none; color: #ef4444; margin-left: 10px; cursor: pointer; font-size: 13px;" title="លុបឯកសារ"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staff Participants Selector -->
+      <div class="form-group" style="margin-top: 24px;">
+        <label class="form-label" style="font-size: 14px;">
+          <i class="fa-solid fa-users" style="color: var(--primary);"></i> ជ្រើសរើសសមាសភាពមន្ត្រីចូលរួមបេសកកម្ម <span class="required">*</span>
+        </label>
+        <div class="staff-selector-container">
+          <div class="staff-checkbox-grid">
+            {% for s in active_staff %}
+            <label class="staff-checkbox-card">
+              <input type="checkbox" name="staff_ids" value="{{ s.id }}">
+              <div>
+                <span class="staff-name">{{ s.name_kh }}</span>
+                <span class="staff-pos">({{ s.position_title_kh }})</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('mission_list') }}" class="btn btn-outline">បោះបង់</a>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>បង្កើតបេសកកម្ម</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function previewMissionAttachment(input) {
+  const info = document.getElementById('file_selected_info');
+  const nameSpan = document.getElementById('file_selected_name');
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const sizeKB = (file.size / 1024).toFixed(1);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    const sizeStr = file.size > 1024 * 1024 ? sizeMB + ' MB' : sizeKB + ' KB';
+    info.style.display = 'inline-flex';
+    info.style.alignItems = 'center';
+    nameSpan.textContent = 'បានជ្រើសរើស៖ ' + file.name + ' (' + sizeStr + ')';
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+function clearMissionAttachment() {
+  const input = document.getElementById('mission_attachment');
+  const info = document.getElementById('file_selected_info');
+  input.value = '';
+  info.style.display = 'none';
+}
+</script>
+{% endblock %}

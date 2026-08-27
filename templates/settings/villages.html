@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}គ្រប់គ្រងស្ថិតិភូមិទាំង ១០ | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-tree-city text-gold"></i>
+      <span>គ្រប់គ្រងស្ថិតិភូមិទាំង ១០ ក្នុងឃុំនគរភាស</span>
+    </h1>
+    <p>កែប្រែទិន្នន័យចំនួនខ្នងផ្ទះ ចំនួនប្រជាពលរដ្ឋសរុប និងចំនួនស្ត្រី តាមភូមិនីមួយៗ</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left"></i> ទំព័រដើម (Dashboard)
+    </a>
+  </div>
+</div>
+
+<!-- Stat Counters Grid -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+  <div class="stat-card" style="--stat-color: #1e3a8a; --stat-bg: #eff6ff;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-map-location-dot"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ភូមិចំណុះសរុប</div>
+      <div class="stat-number">{{ total_villages | kh_num }} <small style="font-size: 14px;">ភូមិ</small></div>
+      <div class="stat-subtext">ឃុំនគរភាស ស្រុកអង្គរជុំ</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #0284c7; --stat-bg: #e0f2fe;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-house-chimney"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ខ្នងផ្ទះសរុប</div>
+      <div class="stat-number">{{ total_families | kh_num }} <small style="font-size: 14px;">ខ្នង</small></div>
+      <div class="stat-subtext">ទូទាំងឃុំនគរភាស</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #059669; --stat-bg: #dcfce7;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ប្រជាពលរដ្ឋសរុប</div>
+      <div class="stat-number">{{ total_population | kh_num }} <small style="font-size: 14px;">នាក់</small></div>
+      <div class="stat-subtext">ស្រី {{ total_female | kh_num }} នាក់ ({{ female_pct }}%)</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #d97706; --stat-bg: #fef3c7;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-person-dress"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ស្ត្រីសរុប</div>
+      <div class="stat-number" style="color: #d97706;">{{ total_female | kh_num }} <small style="font-size: 14px;">នាក់</small></div>
+      <div class="stat-subtext">ប្រុស {{ total_male | kh_num }} នាក់</div>
+    </div>
+  </div>
+</div>
+
+<!-- Villages Table Card -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card-title">
+      <i class="fa-solid fa-list-ol text-gold"></i>
+      <span>តារាងស្ថិតិ និងចំនួនប្រជាសាស្ត្រតាមភូមិ</span>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th>ឈ្មោះភូមិ (ខ្មែរ / អង់គ្លេស)</th>
+            <th style="text-align: center;">ចំនួនខ្នងផ្ទះ</th>
+            <th style="text-align: center;">ប្រជាពលរដ្ឋសរុប</th>
+            <th style="text-align: center;">ស្ត្រី (ស្រី)</th>
+            <th style="text-align: center;">បុរស (ប្រុស)</th>
+            <th style="width: 100px; text-align: center;">សកម្មភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in villages %}
+          {% set male_pop = (v.total_population or 0) - (v.female_population or 0) %}
+          <tr>
+            <td style="text-align: center; font-weight: 600;">{{ loop.index | kh_num }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(30, 58, 138, 0.08); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px;">
+                  <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div>
+                  <strong style="font-size: 14px; color: var(--primary-dark);">ភូមិ{{ v.village_name_kh }}</strong>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ v.village_name_en }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; font-size: 13px; font-weight: 700; padding: 5px 12px;">
+                <i class="fa-solid fa-house-chimney" style="font-size: 11px;"></i> {{ v.total_families | kh_num }} ខ្នង
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid #d1fae5; font-size: 13px; font-weight: 700; padding: 5px 12px;">
+                <i class="fa-solid fa-users" style="font-size: 11px;"></i> {{ v.total_population | kh_num }} នាក់
+              </span>
+            </td>
+            <td style="text-align: center; font-weight: 600; color: #d97706; font-size: 13px;">
+              {{ v.female_population | kh_num }} នាក់
+            </td>
+            <td style="text-align: center; font-weight: 600; color: #3b82f6; font-size: 13px;">
+              {{ male_pop | kh_num }} នាក់
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn btn-sm btn-warning" onclick="openEditVillageModal({{ v.id }}, '{{ v.village_name_kh }}', '{{ v.village_name_en }}', {{ v.total_families or 0 }}, {{ v.total_population or 0 }}, {{ v.female_population or 0 }})">
+                <i class="fa-solid fa-pen-to-square"></i> កែប្រែ
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Village Modal -->
+<div class="modal-backdrop" id="editVillageModal" onclick="if(event.target === this) closeEditVillageModal()">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fa-solid fa-pen-to-square text-gold"></i>
+        <span>កែប្រែស្ថិតិភូមិ៖ <span id="modal-village-title-kh" style="color: var(--primary);"></span></span>
+      </div>
+      <button type="button" class="modal-close" onclick="closeEditVillageModal()" title="បិទ">&times;</button>
+    </div>
+
+    <form id="editVillageForm" method="POST" action="">
+      <div class="modal-body" style="padding: 20px 24px;">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div>
+            <label class="form-label required">ឈ្មោះភូមិ (ខ្មែរ)</label>
+            <input type="text" name="village_name_kh" id="modal-village-kh" class="form-control" required placeholder="ឧ. រមៀត">
+          </div>
+          <div>
+            <label class="form-label required">ឈ្មោះភូមិ (ឡាតាំង)</label>
+            <input type="text" name="village_name_en" id="modal-village-en" class="form-control" required placeholder="ឧ. Romeat">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label required" style="font-weight: 600;">
+            <i class="fa-solid fa-house-chimney text-primary"></i> ចំនួនខ្នងផ្ទះសរុប (ខ្នង)
+          </label>
+          <input type="number" name="total_families" id="modal-total-families" class="form-control" min="0" required placeholder="ឧ. 190">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label required" style="font-weight: 600;">
+            <i class="fa-solid fa-users text-success"></i> ចំនួនប្រជាពលរដ្ឋសរុប (នាក់)
+          </label>
+          <input type="number" name="total_population" id="modal-total-pop" class="form-control" min="0" required placeholder="ឧ. 850">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required" style="font-weight: 600;">
+            <i class="fa-solid fa-person-dress text-warning"></i> ចំនួនស្ត្រី / ស្រី (នាក់)
+          </label>
+          <input type="number" name="female_population" id="modal-female-pop" class="form-control" min="0" required placeholder="ឧ. 435">
+          <small class="form-hint" style="color: var(--text-muted); display: block; margin-top: 4px;">
+            💡 ចំនួនបុរសនឹងត្រូវគណនាដោយស្វ័យប្រវត្ត = (មនុស្សសរុប - ស្រី)
+          </small>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="padding: 14px 24px;">
+        <button type="button" class="btn btn-outline-secondary" onclick="closeEditVillageModal()">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុកការកែប្រែ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditVillageModal(id, nameKh, nameEn, families, pop, female) {
+  document.getElementById('editVillageForm').action = '/settings/villages/' + id + '/edit';
+  document.getElementById('modal-village-title-kh').innerText = 'ភូមិ' + nameKh;
+  document.getElementById('modal-village-kh').value = nameKh;
+  document.getElementById('modal-village-en').value = nameEn;
+  document.getElementById('modal-total-families').value = families;
+  document.getElementById('modal-total-pop').value = pop;
+  document.getElementById('modal-female-pop').value = female;
+
+  document.getElementById('editVillageModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditVillageModal() {
+  document.getElementById('editVillageModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeEditVillageModal();
+  }
+});
+</script>
+{% endblock %}

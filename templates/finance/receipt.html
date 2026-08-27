@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    {% if is_income %}បង្កាន់ដៃទទួលប្រាក់{% else %}ប័ណ្ណទូទាត់ចំណាយ{% endif %} - {{ tx.transaction_code }} - រដ្ឋបាលឃុំនគរភាស
+  </title>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Fonts & CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.1">
+
+  <style>
+    body {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+      margin: 0;
+      padding: 24px 12px;
+    }
+
+    .voucher-print-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px 48px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .no-print-toolbar {
+      max-width: 800px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .official-header-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .header-left {
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .header-left h4 {
+      font-family: 'Moul', serif;
+      font-size: 13px;
+      color: #1e3a8a;
+      margin: 0 0 4px 0;
+    }
+
+    .header-right {
+      text-align: center;
+    }
+
+    .header-right h3 {
+      font-family: 'Moul', serif;
+      font-size: 14px;
+      color: #0f2b48;
+      margin: 0 0 4px 0;
+    }
+
+    .header-right p {
+      font-family: 'Moul', serif;
+      font-size: 12px;
+      color: #0f2b48;
+      margin: 0;
+    }
+
+    .doc-main-title {
+      text-align: center;
+      margin: 28px 0 20px 0;
+      padding-bottom: 12px;
+      border-bottom: 2px dashed #cbd5e1;
+    }
+
+    .doc-main-title h2 {
+      font-family: 'Moul', serif;
+      font-size: 18px;
+      color: {% if is_income %}#059669{% else %}#dc2626{% endif %};
+      margin: 0 0 6px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-main-title .doc-subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 1px;
+    }
+
+    .voucher-meta-strip {
+      display: flex;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    .voucher-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+
+    .voucher-table th, .voucher-table td {
+      border: 1px solid #cbd5e1;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+
+    .voucher-table th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #1e293b;
+      width: 32%;
+    }
+
+    .voucher-amount-highlight {
+      font-size: 20px;
+      font-weight: 700;
+      color: {% if is_income %}#059669{% else %}#dc2626{% endif %};
+      font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+    }
+
+    .signatures-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      text-align: center;
+      margin-top: 36px;
+    }
+
+    .sig-role {
+      font-family: 'Moul', serif;
+      font-size: 11px;
+      color: #1e293b;
+      margin-bottom: 70px;
+    }
+
+    .sig-name {
+      font-family: 'Moul', serif;
+      font-size: 12px;
+      color: #0f172a;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      .voucher-print-container {
+        box-shadow: none;
+        padding: 20px 24px;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Toolbar -->
+  <div class="no-print-toolbar">
+    <a href="{{ url_for('finance_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+    <div style="display: flex; gap: 8px;">
+      <button onclick="window.print()" class="btn btn-primary" style="padding: 8px 20px;">
+        <i class="fa-solid fa-print"></i> បោះពុម្ពប័ណ្ណ (Print)
+      </button>
+    </div>
+  </div>
+
+  <!-- Printable Voucher Sheet -->
+  <div class="voucher-print-container">
+    
+    <!-- Official Kingdom & Commune Header -->
+    <div class="official-header-grid">
+      <div class="header-left">
+        <div>រដ្ឋបាលខេត្តសៀមរាប</div>
+        <div>រដ្ឋបាលស្រុកអង្គរជុំ</div>
+        <h4>រដ្ឋបាលឃុំនគរភាស</h4>
+        <div style="font-size: 11px; color: #64748b;">លេខ៖ {{ tx.transaction_code }}</div>
+      </div>
+      <div class="header-right">
+        <h3>ព្រះរាជាណាចក្រកម្ពុជា</h3>
+        <p>ជាតិ សាសនា ព្រះមហាក្សត្រ</p>
+        <div style="font-size: 16px; color: #c88a1a; margin-top: 4px;">🙡 🙠</div>
+      </div>
+    </div>
+
+    <!-- Document Title -->
+    <div class="doc-main-title">
+      <h2>
+        {% if is_income %}
+        <i class="fa-solid fa-file-invoice" style="margin-right: 6px;"></i> បង្កាន់ដៃទទួលប្រាក់ (RECEIPT)
+        {% else %}
+        <i class="fa-solid fa-receipt" style="margin-right: 6px;"></i> ប័ណ្ណទូទាត់ចំណាយ (PAYMENT VOUCHER)
+        {% endif %}
+      </h2>
+      <div class="doc-subtitle">
+        {% if is_income %}OFFICIAL CASH RECEIPT VOUCHER{% else %}OFFICIAL CASH DISBURSEMENT VOUCHER{% endif %}
+      </div>
+    </div>
+
+    <!-- Metadata Strip -->
+    <div class="voucher-meta-strip">
+      <div>
+        <strong>លេខកូដប្រតិបត្តិការ៖</strong> <span style="font-family: 'Outfit', sans-serif; font-weight: 600;">{{ tx.transaction_code }}</span>
+      </div>
+      {% if tx.receipt_voucher_no %}
+      <div>
+        <strong>លេខប័ណ្ណ/វិក្កយបត្រ៖</strong> {{ tx.receipt_voucher_no }}
+      </div>
+      {% endif %}
+      <div>
+        <strong>កាលបរិច្ឆេទ៖</strong> {{ tx.transaction_date | kh_date }}
+      </div>
+    </div>
+
+    <!-- Main Content Table -->
+    <table class="voucher-table">
+      <tbody>
+        <tr>
+          <th>
+            {% if is_income %}ឈ្មោះអ្នកបង់ប្រាក់ (Payer){% else %}ឈ្មោះអ្នកទទួលប្រាក់ (Payee){% endif %}
+          </th>
+          <td>
+            <strong>{{ tx.payer_payee or 'ប្រជាពលរដ្ឋក្នុងឃុំ' }}</strong>
+          </td>
+        </tr>
+        <tr>
+          <th>ប្រភព / ខ្ទង់ប្រតិបត្តិការ</th>
+          <td>
+            {{ category_title }}
+          </td>
+        </tr>
+        <tr>
+          <th>បរិយាយ / កិច្ចការ</th>
+          <td>
+            <strong>{{ tx.title }}</strong>
+          </td>
+        </tr>
+        <tr>
+          <th>វិធីសាស្រ្តទូទាត់ប្រាក់</th>
+          <td>
+            {{ pay_method_title }}
+          </td>
+        </tr>
+        <tr>
+          <th>ចំនួនទឹកប្រាក់ទូទាត់</th>
+          <td>
+            <div class="voucher-amount-highlight">
+              {{ tx.amount | currency }}
+            </div>
+          </td>
+        </tr>
+        {% if tx.notes %}
+        <tr>
+          <th>កំណត់សម្គាល់បន្ថែម</th>
+          <td style="color: #475569; font-style: italic;">
+            {{ tx.notes }}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    <!-- Date line -->
+    <div style="text-align: right; font-size: 13px; font-style: italic; margin-bottom: 16px;">
+      ឃុំនគរភាស, {{ tx.transaction_date | kh_date(include_day=false) }}
+    </div>
+
+    <!-- 3-Column Signatures Grid -->
+    <div class="signatures-grid">
+      <!-- Left: Chief -->
+      <div>
+        <div class="sig-role">
+          បានឃើញ និងអនុម័ត<br>
+          មេឃុំនគរភាស
+        </div>
+        <div class="sig-name">ស៊ូ វណ្ណា</div>
+      </div>
+
+      <!-- Center: Clerk / Accountant -->
+      <div>
+        <div class="sig-role">
+          ស្មៀន/គណនេយ្យករឃុំ<br>
+          អ្នកកត់ត្រា
+        </div>
+        <div class="sig-name">ហេង ចាន់រិទ្ធ</div>
+      </div>
+
+      <!-- Right: Payer / Payee -->
+      <div>
+        <div class="sig-role">
+          {% if is_income %}ហត្ថលេខាអ្នកបង់ប្រាក់{% else %}ហត្ថលេខាអ្នកទទួលប្រាក់{% endif %}<br>
+          (ស្នាមមេដៃ)
+        </div>
+        <div class="sig-name">{{ tx.payer_payee or '........................' }}</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

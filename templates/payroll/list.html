@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}គ្រប់គ្រងប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-money-bill-wave text-gold"></i>
+      <span>គ្រប់គ្រងប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ (Payroll & Allowances)</span>
+    </h1>
+    <p>តារាងទូទាត់ប្រាក់បៀវត្សរ៍ ឧបត្ថម្ភចូលឆ្នាំ ឧបត្ថម្ភភ្ជុំបិណ្ឌ និងប័ណ្ណបើកប្រាក់ (Payslip) ប្រចាំខែ</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('export_payroll_excel_route', month=month_year) }}" class="btn btn-success">
+      <i class="fa-solid fa-file-excel"></i>
+      <span>នាំចេញជា Excel</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <form method="POST" action="{{ url_for('payroll_generate') }}" style="display: inline-block;">
+      <input type="hidden" name="month_year" value="{{ month_year }}">
+      <button type="submit" class="btn btn-primary" onclick="return confirm('តើអ្នកពិតជាចង់គណនាឡើងវិញនូវប្រាក់បៀវត្សរ៍ខែនេះមែនទេ?');">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span>គណនាប្រាក់បៀវត្សរ៍ស្វ័យប្រវត្តិ</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Month Selector Toolbar -->
+<div class="filter-toolbar">
+  <form method="GET" action="{{ url_for('payroll_list') }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <label class="form-label" style="margin: 0; font-weight: 600;">
+      <i class="fa-regular fa-calendar"></i> ជ្រើសរើសខែ-ឆ្នាំ៖
+    </label>
+    <input type="month" name="month" value="{{ month_year }}" class="form-control" style="width: 180px;" onchange="this.form.submit()">
+    <button type="submit" class="btn btn-outline-primary btn-sm">
+      <i class="fa-solid fa-arrows-rotate"></i> ផ្ទុក
+    </button>
+
+    {% set m_part = month_year.split('-')[1] if '-' in month_year else '' %}
+    {% if m_part == '04' %}
+    <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+      <i class="fa-solid fa-gift"></i> រដូវចូលឆ្នាំថ្មី (គណនាប្រាក់ឧបត្ថម្ភចូលឆ្នាំដោយស្វ័យប្រវត្តិ)
+    </span>
+    {% elif m_part == '10' %}
+    <span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+      <i class="fa-solid fa-gift"></i> រដូវបុណ្យភ្ជុំបិណ្ឌ (គណនាប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌដោយស្វ័យប្រវត្តិ)
+    </span>
+    {% else %}
+    <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; padding: 6px 12px; font-size: 12px;">
+      <i class="fa-solid fa-calendar-check"></i> ខែធម្មតា (គ្មានឧបត្ថម្ភចូលឆ្នាំ និងភ្ជុំបិណ្ឌ)
+    </span>
+    {% endif %}
+  </form>
+
+  <div style="font-size: 14px; font-weight: 600; color: var(--primary);">
+    សរុបទូទាត់ខែនេះ៖ <strong>{{ (totals.tot_net or 0) | currency }}</strong> ({{ (totals.count or 0) | kh_num }} នាក់)
+  </div>
+</div>
+
+<!-- Summary Cards for Payroll Components -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+  <div class="stat-card" style="--stat-color: #1e3a8a;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-sack-dollar"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ប្រាក់បៀវត្សរ៍គោល</div>
+      <div class="stat-number" style="font-size: 18px;">{{ (totals.tot_base or 0) | currency }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #0284c7;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ឧបត្ថម្ភចូលឆ្នាំ-ភ្ជុំបិណ្ឌ</div>
+      <div class="stat-number" style="font-size: 18px;">
+        {{ ((totals.tot_pos or 0) + (totals.tot_fam or 0)) | currency }}
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #dc2626;">
+    <div class="stat-icon-wrapper" style="--stat-bg: #fee2e2;">
+      <i class="fa-solid fa-file-invoice-dollar"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ប្រាក់កាត់ផ្សេងៗ</div>
+      <div class="stat-number" style="font-size: 18px; color: #dc2626;">{{ (totals.tot_nssf or 0) | currency }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-color: #059669;">
+    <div class="stat-icon-wrapper" style="--stat-bg: #dcfce7;">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ប្រាក់សុទ្ធត្រូវបើក</div>
+      <div class="stat-number" style="font-size: 18px; color: #059669;">{{ (totals.tot_net or 0) | currency }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Payroll Table Card -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span>តារាងបើកផ្ដល់ប្រាក់បៀវត្សរ៍លម្អិត</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table filterable-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th>អត្តលេខ</th>
+            <th>គោត្តនាម-នាម</th>
+            <th>មុខតំណែង</th>
+            <th>ប្រាក់គោល</th>
+            <th>ឧបត្ថម្ភចូលឆ្នាំ</th>
+            <th>ឧបត្ថម្ភភ្ជុំបិណ្ឌ</th>
+            <th>ប្រាក់សរុប</th>
+            <th>ប្រាក់កាត់ផ្សេងៗ</th>
+            <th>ប្រាក់សុទ្ធ</th>
+            <th style="text-align: center;">ប័ណ្ណបើកប្រាក់</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payroll_records %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td><strong>{{ p.officer_code }}</strong></td>
+            <td>
+              <div style="font-weight: 600; color: var(--primary-dark);">{{ p.name_kh }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">ភូមិ{{ p.village }}</div>
+            </td>
+            <td>{{ p.position_title_kh }}</td>
+            <td>{{ p.base_salary | currency }}</td>
+            <td>
+              {% if p.position_allowance > 0 %}
+              <span style="font-weight: 600; color: #0284c7;">{{ p.position_allowance | currency }}</span>
+              {% else %}
+              <span style="color: #94a3b8;">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.family_allowance > 0 %}
+              <span style="font-weight: 600; color: #d97706;">{{ p.family_allowance | currency }}</span>
+              {% else %}
+              <span style="color: #94a3b8;">-</span>
+              {% endif %}
+            </td>
+            <td><strong>{{ p.gross_salary | currency }}</strong></td>
+            <td style="color: #dc2626;">-{{ p.nssf_deduction | currency }}</td>
+            <td style="font-weight: 700; color: #059669; font-size: 14px;">
+              {{ p.net_salary | currency }}
+            </td>
+            <td style="text-align: center;">
+              <a href="{{ url_for('payroll_payslip', payroll_id=p.id) }}" target="_blank" class="btn btn-sm btn-outline-primary" title="បោះពុម្ពប័ណ្ណបើកប្រាក់ (Payslip)">
+                <i class="fa-solid fa-receipt"></i> Payslip
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="11" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <i class="fa-solid fa-file-invoice-dollar" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
+              <p>មិនទាន់មានទិន្នន័យប្រាក់បៀវត្សរ៍សម្រាប់ខែ {{ month_year }} នៅឡើយទេ</p>
+              {% if session.role in ['admin', 'clerk'] %}
+              <form method="POST" action="{{ url_for('payroll_generate') }}" style="margin-top: 10px;">
+                <input type="hidden" name="month_year" value="{{ month_year }}">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa-solid fa-calculator"></i> ចុចទីនេះដើម្បីគណនាប្រាក់បៀវត្សរ៍
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

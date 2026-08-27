@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}ពាក្យស្នើសុំច្បាប់ឈប់សម្រាក{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-file-signature text-gold"></i>
+      <span>ពាក្យស្នើសុំច្បាប់ឈប់សម្រាក</span>
+    </h1>
+    <p>សូមបំពេញព័ត៌មានស្នើសុំច្បាប់ដើម្បីដាក់ជូនមេឃុំ ឬស្មៀនពិនិត្យ និងសម្រេច</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('leave_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+    </a>
+  </div>
+</div>
+
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-pen-nib text-gold"></i>
+      <span>ទម្រង់ស្នើសុំច្បាប់</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('leave_request_create') }}">
+      
+      {% if session.role in ['admin', 'clerk'] and staff_list %}
+      <div class="form-group">
+        <label class="form-label">ជ្រើសរើសមន្ត្រីស្នើសុំ <span class="required">*</span></label>
+        <select name="staff_id" class="form-select" required>
+          {% for s in staff_list %}
+          <option value="{{ s.id }}" {% if session.staff_id == s.id %}selected{% endif %}>
+            {{ s.name_kh }} - {{ s.position_title_kh }} ({{ s.officer_code }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">ប្រភេទច្បាប់ឈប់សម្រាក <span class="required">*</span></label>
+        <select name="leave_type" class="form-select" required>
+          {% for key, label in LEAVE_TYPES.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">ចាប់ពីថ្ងៃទី <span class="required">*</span></label>
+          <input type="date" id="start_date" name="start_date" class="form-control" value="{{ today_iso }}" required onchange="calculateDays()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ដល់ថ្ងៃទី <span class="required">*</span></label>
+          <input type="date" id="end_date" name="end_date" class="form-control" value="{{ today_iso }}" required onchange="calculateDays()">
+        </div>
+      </div>
+
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 16px; border-radius: 8px; margin-bottom: 18px; font-size: 13.5px; color: #166534;">
+        <i class="fa-solid fa-calculator"></i> ចំនួនថ្ងៃសរុបដែលបានស្នើសុំ៖ <strong id="total_days_display">១ ថ្ងៃ</strong>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">មូលហេតុនៃការសុំច្បាប់ <span class="required">*</span></label>
+        <textarea name="reason" class="form-control" rows="4" placeholder="សូមបញ្ជាក់មូលហេតុច្បាស់លាស់ (ឧ. មានជំងឺផ្តាសាយ, ធុរៈគ្រួសារ, សម្រាកលំហែកាយ...)" required></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <a href="{{ url_for('leave_list') }}" class="btn btn-outline">បោះបង់</a>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>ដាក់ពាក្យស្នើសុំច្បាប់</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function calculateDays() {
+    const s = document.getElementById('start_date').value;
+    const e = document.getElementById('end_date').value;
+    if (s && e) {
+      const d1 = new Date(s);
+      const d2 = new Date(e);
+      const diffTime = d2 - d1;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const khDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+      const toKh = n => String(n).split('').map(c => khDigits[parseInt(c)] || c).join('');
+      document.getElementById('total_days_display').innerText = `${toKh(Math.max(1, diffDays))} ថ្ងៃ`;
+    }
+  }
+</script>
+{% endblock %}

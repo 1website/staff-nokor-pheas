@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code វត្តមានប្រចាំថ្ងៃ | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block extra_head %}
+<style>
+.kiosk-poster-wrapper {
+  max-width: 650px;
+  margin: 20px auto 40px;
+}
+
+.kiosk-poster-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 45px rgba(11, 25, 44, 0.15), 0 4px 15px rgba(0,0,0,0.06);
+  border: 2px solid #cbd5e1;
+  overflow: hidden;
+  text-align: center;
+  position: relative;
+}
+
+.kiosk-poster-header {
+  background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 60%, #1e40af 100%);
+  color: #ffffff;
+  padding: 30px 24px 20px;
+  border-bottom: 4px solid #c88a1a;
+  position: relative;
+}
+
+.kiosk-poster-header .nation {
+  font-family: var(--font-moul);
+  font-size: 15px;
+  color: #fbbf24;
+  margin-bottom: 4px;
+}
+
+.kiosk-poster-header .motto {
+  font-family: var(--font-moul);
+  font-size: 12px;
+  color: #fef08a;
+  margin-bottom: 12px;
+}
+
+.kiosk-poster-header .admin-text {
+  font-size: 13.5px;
+  color: #e2e8f0;
+}
+
+.kiosk-poster-header .commune-title {
+  font-family: var(--font-moul);
+  font-size: 17px;
+  color: #ffffff;
+  margin-top: 4px;
+}
+
+.kiosk-poster-body {
+  padding: 36px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.kiosk-badge-title {
+  background: linear-gradient(90deg, #92400e 0%, #c88a1a 50%, #92400e 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 24px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 10px rgba(200, 138, 26, 0.3);
+}
+
+.kiosk-qr-frame {
+  padding: 14px;
+  background: #ffffff;
+  border: 3.5px solid #1e3a8a;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(30, 58, 138, 0.15);
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.kiosk-qr-frame img {
+  width: 240px;
+  height: 240px;
+  display: block;
+}
+
+.kiosk-guide-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #059669;
+  border-radius: 10px;
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.kiosk-guide-box ul {
+  margin-left: 18px;
+  margin-top: 4px;
+}
+
+.kiosk-poster-footer {
+  background: #0b192c;
+  color: #ffffff;
+  padding: 12px 20px;
+  font-size: 12px;
+  border-top: 2px solid #c88a1a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  .topbar, .sidebar, .page-header, .page-actions, .kiosk-print-bar {
+    display: none !important;
+  }
+  .main-wrapper {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  .kiosk-poster-wrapper {
+    margin: 0 auto !important;
+    max-width: 100% !important;
+  }
+  .kiosk-poster-card {
+    box-shadow: none !important;
+    border: 1.5px solid #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kiosk-poster-wrapper">
+  
+  <div class="page-header kiosk-print-bar">
+    <div class="page-header-title">
+      <h1>
+        <i class="fa-solid fa-display text-gold"></i>
+        <span>ផ្ទាំង QR Code វត្តមានប្រចាំថ្ងៃ (Kiosk QR)</span>
+      </h1>
+      <p>សម្រាប់តាំងបង្ហាញនៅសាលាឃុំ ដើម្បីឱ្យមន្ត្រីស្កេនវត្តមានតាមទូរស័ព្ទដៃ</p>
+    </div>
+    <div class="page-actions">
+      <a href="{{ url_for('attendance_scan') }}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-camera"></i> ម៉ាស៊ីនស្កេន
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <i class="fa-solid fa-print"></i> បោះពុម្ពផ្ទាំងនេះ (Print Poster)
+      </button>
+    </div>
+  </div>
+
+  <!-- Kiosk Poster Display Card -->
+  <div class="kiosk-poster-card">
+    <div class="kiosk-poster-header">
+      <div class="nation">ព្រះរាជាណាចក្រកម្ពុជា</div>
+      <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+      <div class="admin-text">រដ្ឋបាលខេត្តសៀមរាប • រដ្ឋបាលស្រុកអង្គរជុំ</div>
+      <div class="commune-title">រដ្ឋបាលឃុំនគរភាស</div>
+    </div>
+
+    <div class="kiosk-poster-body">
+      <div class="kiosk-badge-title">
+        <i class="fa-solid fa-qrcode"></i> កត់ត្រាវត្តមានមន្ត្រីតាម QR CODE
+      </div>
+
+      <div class="kiosk-qr-frame">
+        <img src="{{ kiosk_qr }}" alt="Commune Attendance QR Code">
+      </div>
+
+      <div style="font-weight: 700; font-size: 15px; color: var(--primary-dark); margin-bottom: 6px;">
+        សូមស្កេន QR Code នេះពេលមកដល់ និងពេលចេញទៅវិញ
+      </div>
+
+      <div class="kiosk-guide-box">
+        <strong><i class="fa-solid fa-circle-info text-success"></i> របៀបស្កេនវត្តមាន៖</strong>
+        <ul>
+          <li>ថ្ងៃធ្វើការ៖ <strong>ពីថ្ងៃចន្ទ ដល់ ថ្ងៃសុក្រ</strong> (សៅរ៍-អាទិត្យ ឈប់សម្រាក)</li>
+          <li>ពេលព្រឹក៖ <strong>ម៉ោងចូល ០៧:០០ ព្រឹក</strong> ដល់ <strong>ម៉ោង ១១:៣០ ថ្ងៃត្រង់</strong> ចេញ</li>
+          <li>ពេលល្ងាច៖ <strong>ម៉ោងចូល ០២:០០ រសៀល</strong> ដល់ <strong>ម៉ោង ០៥:៣០ ល្ងាច</strong> ចេញ</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="kiosk-poster-footer">
+      <span>រដ្ឋបាលឃុំនគរភាស ស្រុកអង្គរជុំ</span>
+      <span>កាលបរិច្ឆេទ៖ {{ today_kh }}</span>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

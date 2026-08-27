@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ចូលប្រើប្រាស់ប្រព័ន្ធ - រដ្ឋបាលឃុំនគរភាស</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <style>
+    body {
+      background: radial-gradient(circle at top right, #1e3a8a 0%, #0b192c 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      padding: 30px 24px 24px;
+      text-align: center;
+      color: #ffffff;
+      position: relative;
+    }
+
+    .login-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #c88a1a 0%, #fbbf24 100%);
+    }
+
+    .emblem-icon {
+      width: 68px;
+      height: 68px;
+      background: linear-gradient(135deg, #c88a1a 0%, #f59e0b 100%);
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(200, 138, 26, 0.4);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .login-header h2 {
+      font-family: var(--font-moul);
+      font-size: 15px;
+      color: #ffffff;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .login-header p {
+      font-size: 12.5px;
+      color: #cbd5e1;
+    }
+
+    .login-body {
+      padding: 28px 28px 24px;
+    }
+
+    .demo-box {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .demo-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="login-header">
+      <div class="emblem-icon">
+        <i class="fa-solid fa-landmark"></i>
+      </div>
+      <h2>រដ្ឋបាលឃុំនគរភាស</h2>
+      <p>ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក និងរដ្ឋបាលថ្នាក់មូលដ្ឋាន</p>
+    </div>
+
+    <div class="login-body">
+      <!-- Flash Messages Trigger for Toast -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="server-flash-message" data-category="{{ category }}" data-message="{{ message }}" style="display: none;"></div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+          <label class="form-label" for="username">
+            <i class="fa-solid fa-user" style="color: var(--primary);"></i> ឈ្មោះគណនី (Username) <span class="required">*</span>
+          </label>
+          <input type="text" id="username" name="username" class="form-control" placeholder="បញ្ចូលឈ្មោះគណនី..." required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <i class="fa-solid fa-lock" style="color: var(--primary);"></i> ពាក្យសម្ងាត់ (Password) <span class="required">*</span>
+          </label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 8px;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>ចូលប្រព័ន្ធ (Sign In)</span>
+        </button>
+      </form>
+
+      <!-- Quick Demo Accounts Switcher -->
+      <div class="demo-box">
+        <div class="demo-title">
+          <i class="fa-solid fa-users-gear" style="color: var(--accent-gold);"></i> ចុចដើម្បីជ្រើសរើសគណនីសាកល្បងភ្លាមៗ៖
+        </div>
+        <div class="demo-accounts-grid">
+          <div class="demo-account-pill" data-user="admin" data-pass="admin123" title="មេឃុំ ស៊ូ វណ្ណា (Admin សិទ្ធិពេញ)">
+            <div class="pill-role">មេឃុំ (Admin)</div>
+            <div class="pill-user">admin</div>
+          </div>
+          <div class="demo-account-pill" data-user="clerk" data-pass="clerk123" title="ស្មៀនឃុំ ហេង ចាន់រិទ្ធ">
+            <div class="pill-role">ស្មៀនឃុំ (Clerk)</div>
+            <div class="pill-user">clerk</div>
+          </div>
+          <div class="demo-account-pill" data-user="it_admin" data-pass="it123" title="មន្ត្រី IT សេង ដារ៉ា">
+            <div class="pill-role">មន្ត្រី IT</div>
+            <div class="pill-user">it_admin</div>
+          </div>
+          <div class="demo-account-pill" data-user="staff" data-pass="staff123" title="ជំនួយការឃុំ លាង ស្រីម៉ៅ">
+            <div class="pill-role">មន្ត្រីទូទៅ</div>
+            <div class="pill-user">staff</div>
+          </div>
+          <div class="demo-account-pill" data-user="village_chief" data-pass="village123" title="មេភូមិរមៀត ព្រំ សុខា">
+            <div class="pill-role">មេភូមិរមៀត</div>
+            <div class="pill-user">village_chief</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

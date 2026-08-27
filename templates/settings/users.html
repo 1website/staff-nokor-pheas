@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}គ្រប់គ្រងគណនី និងសិទ្ធិប្រើប្រាស់{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-user-gear text-gold"></i>
+      <span>គ្រប់គ្រងគណនី និងសិទ្ធិប្រើប្រាស់ (User Roles & Permissions)</span>
+    </h1>
+    <p>កំណត់សិទ្ធិ Admin (មេឃុំ/IT), Clerk (ស្មៀន) និង Staff (មន្ត្រីទូទៅ/មេភូមិ)</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" data-modal-target="addUserModal">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>បង្កើតគណនីថ្មី</span>
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span>បញ្ជីគណនីអ្នកប្រើប្រាស់ក្នុងប្រព័ន្ធ ({{ users | length | kh_num }} គណនី)</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th>ឈ្មោះគណនី (Username)</th>
+            <th>ឈ្មោះពេញ (Full Name)</th>
+            <th>តួនាទីក្នុងប្រព័ន្ធ (Role)</th>
+            <th>ភ្ជាប់ជាមួយមន្ត្រី (Linked Staff)</th>
+            <th>ស្ថានភាព</th>
+            <th style="text-align: center; width: 120px;">សកម្មភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td>
+              <strong style="font-family: var(--font-latin); color: var(--primary);">{{ u.username }}</strong>
+            </td>
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td>
+              {% if u.role == 'admin' %}
+              <span class="badge badge-purple"><i class="fa-solid fa-shield-halved"></i> Admin (មេឃុំ/IT)</span>
+              {% elif u.role == 'clerk' %}
+              <span class="badge badge-clerk"><i class="fa-solid fa-pen-nib"></i> Clerk (ស្មៀនឃុំ)</span>
+              {% else %}
+              <span class="badge badge-info"><i class="fa-solid fa-user"></i> Staff (មន្ត្រីទូទៅ)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.linked_staff_name %}
+              <div>{{ u.linked_staff_name }}</div>
+              <span style="font-size: 11px; color: var(--text-muted);">({{ u.officer_code }})</span>
+              {% else %}
+              <span style="color: var(--text-muted); font-size: 12px;">មិនបានភ្ជាប់</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}
+              <span class="badge badge-success">សកម្ម (Active)</span>
+              {% else %}
+              <span class="badge badge-danger">អសកម្ម (Inactive)</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              {% if u.id != session.user_id %}
+              <form method="POST" action="{{ url_for('settings_users') }}">
+                <input type="hidden" name="action" value="toggle_status">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-success{% endif %}">
+                  {% if u.is_active %}ផ្អាក{% else %}បើក{% endif %}
+                </button>
+              </form>
+              {% else %}
+              <span style="font-size: 11px; color: var(--text-muted);">គណនីបច្ចុប្បន្ន</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add User -->
+<div id="addUserModal" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">បង្កើតគណនីប្រើប្រាស់ថ្មី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('settings_users') }}">
+      <input type="hidden" name="action" value="create">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះគណនី (Username) <span class="required">*</span></label>
+          <input type="text" name="username" class="form-control" placeholder="ឧ. vanna.sou, sokha.prom..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ពាក្យសម្ងាត់ (Password) <span class="required">*</span></label>
+          <input type="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះពេញ (Full Name) <span class="required">*</span></label>
+          <input type="text" name="full_name" class="form-control" placeholder="ឧ. ស៊ូ វណ្ណា" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">សិទ្ធិប្រើប្រាស់ (User Role) <span class="required">*</span></label>
+          <select name="role" class="form-select" required>
+            <option value="admin">Admin (មេឃុំ / IT) - សិទ្ធិគ្រប់គ្រងពេញលេញ</option>
+            <option value="clerk">Clerk (ស្មៀនឃុំ) - គ្រប់គ្រងវត្តមាន ច្បាប់ បៀវត្សរ៍</option>
+            <option value="staff">Staff (មន្ត្រីទូទៅ / មេភូមិ) - មើលព័ត៌មានផ្ទាល់ខ្លួន ស្នើសុំច្បាប់</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ភ្ជាប់ជាមួយមន្ត្រីក្នុងប្រព័ន្ធ</label>
+          <select name="staff_id" class="form-select">
+            <option value="">-- មិនភ្ជាប់ --</option>
+            {% for s in active_staff %}
+            <option value="{{ s.id }}">{{ s.name_kh }} - {{ s.position_title_kh }} ({{ s.officer_code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-user-plus"></i> បង្កើតគណនី
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

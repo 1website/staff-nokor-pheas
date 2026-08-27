@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}កត់ត្រាចុះបេសកកម្ម និងការងារមូលដ្ឋាន{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-map-location-dot text-gold"></i>
+      <span>កត់ត្រាចុះបេសកកម្ម និងការងារមូលដ្ឋាន (Mission Tracking)</span>
+    </h1>
+    <p>ការចុះបំពេញការងារតាមភូមិទាំង ១០ ការត្រួតពិនិត្យគម្រោង និងការចូលរួមប្រជុំនៅសាលាស្រុកអង្គរជុំ</p>
+  </div>
+  <div class="page-actions">
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('mission_create') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i>
+      <span>បង្កើតបេសកកម្មថ្មី</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Filter & Search Toolbar (Single Row Left-to-Right) -->
+<form method="GET" action="{{ url_for('mission_list') }}" class="filter-toolbar" id="missionFilterForm">
+  <div class="filter-group-row">
+    
+    <!-- 1. Period Type Filter (All, Week, Month, Year) -->
+    <select name="period" id="periodSelect" class="form-select" onchange="handlePeriodChange(this)" style="font-weight: 600; color: var(--primary-dark);" title="ជ្រើសរើសប្រភេទកាលបរិច្ឆេទ">
+      <option value="all" {% if period == 'all' %}selected{% endif %}>📅 កាលបរិច្ឆេទទាំងអស់</option>
+      <option value="week" {% if period == 'week' %}selected{% endif %}>📆 តាមសប្តាហ៍ (By Week)</option>
+      <option value="month" {% if period == 'month' %}selected{% endif %}>🗓️ តាមខែ (By Month)</option>
+      <option value="year" {% if period == 'year' %}selected{% endif %}>📊 តាមឆ្នាំ (By Year)</option>
+    </select>
+
+    <!-- 2. Week Filter (shown when period == 'week') -->
+    <div id="weekFilterWrapper" style="display: {% if period == 'week' %}block{% else %}none{% endif %};">
+      <select name="week" class="form-select" onchange="this.form.submit()" title="ជ្រើសរើសសប្តាហ៍">
+        <option value="this_week" {% if selected_week == 'this_week' %}selected{% endif %}>សប្តាហ៍នេះ (This Week)</option>
+        <option value="last_week" {% if selected_week == 'last_week' %}selected{% endif %}>សប្តាហ៍មុន (Last Week)</option>
+      </select>
+    </div>
+
+    <!-- 3. Month Filter (shown when period == 'month') -->
+    <div id="monthFilterWrapper" style="display: {% if period == 'month' %}block{% else %}none{% endif %};">
+      <select name="month" class="form-select" onchange="this.form.submit()" title="ជ្រើសរើសខែ">
+        {% for m_idx in range(1, 13) %}
+        <option value="{{ m_idx }}" {% if selected_month == m_idx %}selected{% endif %}>
+          ខែ{{ khmer_months[m_idx] }} ({{ m_idx | kh_num }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- 4. Year Filter (shown when period == 'month' or period == 'year') -->
+    <div id="yearFilterWrapper" style="display: {% if period in ['month', 'year'] %}block{% else %}none{% endif %};">
+      <select name="year" class="form-select" onchange="this.form.submit()" title="ជ្រើសរើសឆ្នាំ">
+        {% for y in available_years %}
+        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>
+          ឆ្នាំ{{ y | kh_num }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- 5. Status Filter -->
+    <select name="status" class="form-select" onchange="this.form.submit()" title="ជ្រើសរើសស្ថានភាព">
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>-- ស្ថានភាពទាំងអស់ --</option>
+      <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>កំពុងចុះ</option>
+      <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>បានបញ្ចប់</option>
+      <option value="planned" {% if status_filter == 'planned' %}selected{% endif %}>បានគ្រោង</option>
+    </select>
+  </div>
+
+  <!-- Search Input & Actions (Hidden when filter by month) -->
+  <div class="filter-search-group" id="searchGroupWrapper" style="display: {% if period == 'month' %}none{% else %}flex{% endif %};">
+    <div class="search-input-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" name="q" id="searchInputField" value="{{ search_query if period != 'month' else '' }}" class="form-control" placeholder="ស្វែងរកកូដ, កម្មវត្ថុ, ទីតាំង...">
+    </div>
+    <button type="submit" class="btn btn-outline-primary">
+      <i class="fa-solid fa-filter"></i> ស្វែងរក
+    </button>
+  </div>
+
+  <!-- Reset Button -->
+  {% if period != 'all' or status_filter != 'all' or (search_query and period != 'month') %}
+  <div style="display: flex; align-items: center;">
+    <a href="{{ url_for('mission_list') }}" class="btn btn-outline" title="ជម្រះ Filter ទាំងអស់">
+      <i class="fa-solid fa-rotate-left"></i> ជម្រះ
+    </a>
+  </div>
+  {% endif %}
+</form>
+
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <i class="fa-solid fa-list-check text-gold"></i>
+      <span>បញ្ជីបេសកកម្ម ({{ missions | length | kh_num }} បេសកកម្ម)</span>
+    </div>
+    {% if filter_label %}
+    <div style="font-size: 13px; font-weight: 600; color: var(--primary); background: #e0f2fe; padding: 4px 12px; border-radius: 20px; border: 1px solid #bae6fd;">
+      <i class="fa-regular fa-calendar-check"></i> កំពុងច្រោះ៖ {{ filter_label }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th style="white-space: nowrap;">កូដបេសកកម្ម</th>
+            <th>កម្មវត្ថុ / គោលបំណង</th>
+            <th>ទីតាំងចុះបំពេញការងារ</th>
+            <th style="white-space: nowrap;">កាលបរិច្ឆេទ</th>
+            <th style="white-space: nowrap;">រយៈពេល</th>
+            <th style="white-space: nowrap;">ចំនួនមន្ត្រីចូលរួម</th>
+            <th style="white-space: nowrap;">ស្ថានភាព</th>
+            <th style="text-align: center; width: 140px; white-space: nowrap;">ឯកសារ / លិខិតបញ្ជា</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in missions %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td style="white-space: nowrap;">
+              <span style="font-weight: 700; color: var(--primary); font-family: var(--font-latin);">{{ m.mission_code }}</span>
+              {% if m.mission_order_no %}
+              <div style="font-size: 11px; color: var(--text-muted);">{{ m.mission_order_no }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--primary-dark);">{{ m.title }}</div>
+              <div style="font-size: 12px; color: var(--text-muted); max-width: 280px; white-space: normal;">{{ m.purpose }}</div>
+            </td>
+            <td>
+              <i class="fa-solid fa-location-dot" style="color: #ef4444; font-size: 12px;"></i>
+              <strong>{{ m.destination }}</strong>
+            </td>
+            <td style="white-space: nowrap;">{{ m.start_date }} ដល់ {{ m.end_date }}</td>
+            <td style="white-space: nowrap;"><strong>{{ m.total_days | kh_num }} ថ្ងៃ</strong></td>
+            <td style="white-space: nowrap;">
+              <span class="badge badge-info">{{ m.participant_count | kh_num }} នាក់</span>
+            </td>
+            <td style="white-space: nowrap;">
+              {% if m.status == 'completed' %}
+              <span class="badge badge-success"><i class="fa-solid fa-check"></i> បានបញ្ចប់</span>
+              {% elif m.status == 'in_progress' %}
+              <span class="badge badge-warning"><i class="fa-solid fa-spinner fa-spin"></i> កំពុងចុះ</span>
+              {% else %}
+              <span class="badge badge-info">បានគ្រោង</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                {% if m.attachment %}
+                <a href="{{ url_for('static', filename='uploads/' + m.attachment) }}" target="_blank" class="btn btn-sm btn-outline-success" style="width: 100%; font-size: 11px; padding: 3px 6px; white-space: nowrap;" title="មើលឯកសារយោង (រូបភាព ឬ PDF)">
+                  {% if m.attachment.lower().endswith('.pdf') %}
+                  <i class="fa-solid fa-file-pdf text-danger"></i> ឯកសារយោង
+                  {% else %}
+                  <i class="fa-solid fa-image text-success"></i> ឯកសារយោង
+                  {% endif %}
+                </a>
+                {% endif %}
+                <a href="{{ url_for('mission_print_order', mission_id=m.id) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="width: 100%; font-size: 11px; padding: 3px 6px; white-space: nowrap;" title="បោះពុម្ពលិខិតបញ្ជាបេសកកម្ម">
+                  <i class="fa-solid fa-print"></i> លិខិតបញ្ជា
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <i class="fa-solid fa-route" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
+              <p>មិនទាន់មានទិន្នន័យបេសកកម្មនៅឡើយទេ</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function handlePeriodChange(selectElem) {
+    const period = selectElem.value;
+    const weekWrap = document.getElementById('weekFilterWrapper');
+    const monthWrap = document.getElementById('monthFilterWrapper');
+    const yearWrap = document.getElementById('yearFilterWrapper');
+    const searchWrap = document.getElementById('searchGroupWrapper');
+    const searchInput = document.getElementById('searchInputField');
+
+    if (weekWrap) weekWrap.style.display = (period === 'week') ? 'block' : 'none';
+    if (monthWrap) monthWrap.style.display = (period === 'month') ? 'block' : 'none';
+    if (yearWrap) yearWrap.style.display = (period === 'month' || period === 'year') ? 'block' : 'none';
+    if (searchWrap) searchWrap.style.display = (period === 'month') ? 'none' : 'flex';
+
+    if (period === 'month' && searchInput) {
+      searchInput.value = '';
+    }
+
+    // Submit form to apply filter
+    selectElem.form.submit();
+  }
+</script>
+{% endblock %}
+

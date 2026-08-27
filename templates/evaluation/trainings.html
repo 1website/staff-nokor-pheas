@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}គ្រប់គ្រងវគ្គបណ្តុះបណ្តាល និងសមត្ថភាព{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-graduation-cap text-gold"></i>
+      <span>វគ្គបណ្តុះបណ្តាល និងការអភិវឌ្ឍសមត្ថភាព (Capacity Building)</span>
+    </h1>
+    <p>កត់ត្រាវគ្គបណ្តុះបណ្តាលដែលមន្ត្រីសាលាឃុំ-ភូមិ បានចូលរួមពីក្រសួងមហាផ្ទៃ NCDD និងសាលាខេត្ត</p>
+  </div>
+  <div class="page-actions">
+    {% if session.role in ['admin', 'clerk'] %}
+    <button class="btn btn-primary" data-modal-target="addTrainingModal">
+      <i class="fa-solid fa-plus"></i>
+      <span>កត់ត្រាវគ្គថ្មី</span>
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span>បញ្ជីវគ្គបណ្តុះបណ្តាលទាំងអស់ ({{ trainings | length | kh_num }} វគ្គ)</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th>មន្ត្រីចូលរួម</th>
+            <th>ប្រធានបទវគ្គបណ្តុះបណ្តាល</th>
+            <th>ស្ថាប័នរៀបចំ</th>
+            <th>កាលបរិច្ឆេទ</th>
+            <th>រយៈពេល</th>
+            <th>ទីកន្លែង</th>
+            <th>វិញ្ញាបនបត្រ</th>
+            <th>ស្ថានភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in trainings %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td>
+              <div style="font-weight: 600; color: var(--primary-dark);">{{ t.name_kh }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ t.position_title_kh }} ({{ t.officer_code }})</div>
+            </td>
+            <td>
+              <strong style="color: var(--primary);">{{ t.course_title }}</strong>
+              {% if t.notes %}
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ t.notes }}</div>
+              {% endif %}
+            </td>
+            <td>{{ t.organizer }}</td>
+            <td>{{ t.start_date }} ដល់ {{ t.end_date }}</td>
+            <td><strong>{{ t.duration_days | kh_num }} ថ្ងៃ</strong></td>
+            <td>{{ t.location or '-' }}</td>
+            <td>
+              {% if t.certificate_title %}
+              <span class="badge badge-success"><i class="fa-solid fa-certificate"></i> {{ t.certificate_title }}</span>
+              {% else %}
+              <span style="color: var(--text-muted); font-size: 12px;">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-info">បានបញ្ចប់</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <i class="fa-solid fa-graduation-cap" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
+              <p>មិនទាន់មានទិន្នន័យវគ្គបណ្តុះបណ្តាលនៅឡើយទេ</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Training -->
+<div id="addTrainingModal" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">កត់ត្រាវគ្គបណ្តុះបណ្តាលថ្មី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('evaluation_trainings') }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ជ្រើសរើសមន្ត្រីចូលរួម <span class="required">*</span></label>
+          <select name="staff_id" class="form-select" required>
+            {% for s in active_staff %}
+            <option value="{{ s.id }}">{{ s.name_kh }} - {{ s.position_title_kh }} ({{ s.officer_code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ចំណងជើង/ប្រធានបទវគ្គបណ្តុះបណ្តាល <span class="required">*</span></label>
+          <input type="text" name="course_title" class="form-control" placeholder="ឧ. ការគ្រប់គ្រងរដ្ឋបាលតាមប្រព័ន្ធឌីជីថល..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ស្ថាប័នរៀបចំ <span class="required">*</span></label>
+          <input type="text" name="organizer" class="form-control" placeholder="ឧ. ក្រសួងមហាផ្ទៃ, NCDD, សាលាខេត្តសៀមរាប..." required>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">ថ្ងៃចាប់ផ្ដើម <span class="required">*</span></label>
+            <input type="date" name="start_date" class="form-control" value="{{ today_iso }}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ថ្ងៃបញ្ចប់ <span class="required">*</span></label>
+            <input type="date" name="end_date" class="form-control" value="{{ today_iso }}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ចំនួនថ្ងៃ</label>
+            <input type="number" name="duration_days" class="form-control" value="3" min="1" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ទីតាំងរៀបចំ</label>
+          <input type="text" name="location" class="form-control" placeholder="ឧ. សាលាខេត្តសៀមរាប / សាលាស្រុកអង្គរជុំ">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">វិញ្ញាបនបត្រ / លិខិតបញ្ជាក់</label>
+          <input type="text" name="certificate_title" class="form-control" placeholder="ឧ. វិញ្ញាបនបត្របញ្ជាក់ការសិក្សា">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">កំណត់សម្គាល់បន្ថែម</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="ព័ត៌មានបន្ថែម..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុក
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
