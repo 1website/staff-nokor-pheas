@@ -302,13 +302,8 @@
               </div>
               {% endif %}
             </td>
-            <td>
-              <div style="font-size: 13px; font-weight: 600;">
-                {{ t.transaction_date }}
-              </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-                {{ t.transaction_date | kh_date(include_day=false) }}
-              </div>
+            <td style="white-space: nowrap; font-size: 13px; font-weight: 600; font-family: var(--font-latin), var(--font-body);">
+              {{ t.transaction_date }}
             </td>
             <td>
               <div style="font-weight: 600; color: var(--text-main); font-size: 13.5px;">
