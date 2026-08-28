@@ -154,18 +154,7 @@
 
 <!-- Filter Toolbar (Month Range & Criteria) -->
 <div class="card finance-filter-card">
-  <div class="card-header finance-filter-header">
-    <div class="card-title">
-      <i class="fa-solid fa-sliders text-gold"></i>
-      <span>ចម្រាញ់ទិន្នន័យចំណូល-ចំណាយ (Filter & Search)</span>
-    </div>
-    {% if from_month or to_month or selected_type or selected_category %}
-    <span class="badge badge-warning" style="font-size: 11px;">
-      <i class="fa-solid fa-filter"></i> កំពុង Filter
-    </span>
-    {% endif %}
-  </div>
-  <div class="card-body" style="padding: 16px;">
+  <div class="card-body" style="padding: 12px 16px;">
     <form id="financeFilterForm" method="GET" action="{{ url_for('finance_list') }}" class="finance-filter-form">
       <div class="finance-filter-grid">
         <!-- 1. Range From Month -->
@@ -187,7 +176,7 @@
         <!-- 3. Quick Range Presets -->
         <div class="filter-field-group">
           <label class="filter-field-label">
-            <i class="fa-solid fa-bolt text-gold"></i> ចន្លោះពេលរហ័ស
+            <i class="fa-solid fa-bolt text-gold"></i> ចន្លោះរហ័ស
           </label>
           <select class="form-select filter-preset-select" onchange="applyQuickPreset(this.value)">
             <option value="">⚡ ចន្លោះរហ័ស...</option>
@@ -206,12 +195,12 @@
         <!-- 4. Type Filter -->
         <div class="filter-field-group">
           <label class="filter-field-label">
-            <i class="fa-solid fa-filter text-primary"></i> ប្រភេទប្រតិបត្តិការ
+            <i class="fa-solid fa-filter text-primary"></i> ប្រភេទ
           </label>
           <select name="type" class="form-select">
             <option value="" {% if not selected_type %}selected{% endif %}>-- ទាំងអស់ --</option>
-            <option value="income" {% if selected_type=='income' %}selected{% endif %}>🟢 ចំណូល (Income)</option>
-            <option value="expense" {% if selected_type=='expense' %}selected{% endif %}>🔴 ចំណាយ (Expense)</option>
+            <option value="income" {% if selected_type=='income' %}selected{% endif %}>🟢 ចំណូល</option>
+            <option value="expense" {% if selected_type=='expense' %}selected{% endif %}>🔴 ចំណាយ</option>
           </select>
         </div>
 
@@ -234,22 +223,27 @@
             </optgroup>
           </select>
         </div>
-      </div>
 
-      <!-- Action Buttons Row -->
-      <div class="finance-filter-actions">
-        <button type="submit" class="btn btn-primary">
-          <i class="fa-solid fa-magnifying-glass"></i> <span>ស្វែងរក</span>
-        </button>
-        {% if from_month or to_month or selected_type or selected_category %}
-        <a href="{{ url_for('finance_list') }}" class="btn btn-outline" title="កំណត់ឡើងវិញ">
-          <i class="fa-solid fa-rotate-left"></i> <span>ជម្រះ Filter</span>
-        </a>
-        {% endif %}
-        <a href="{{ url_for('export_finance_excel_route', from_month=from_month, to_month=to_month, type=selected_type, category=selected_category) }}"
-          class="btn btn-success" title="ទាញយក Excel">
-          <i class="fa-solid fa-file-excel"></i> <span>Excel</span>
-        </a>
+        <!-- 6. Action Buttons Inline -->
+        <div class="filter-field-group filter-actions-field">
+          <label class="filter-field-label filter-label-placeholder" aria-hidden="true">&nbsp;</label>
+          <div class="finance-inline-actions">
+            <button type="submit" class="btn btn-primary" title="ស្វែងរក">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>ស្វែងរក</span>
+            </button>
+            {% if from_month or to_month or selected_type or selected_category %}
+            <a href="{{ url_for('finance_list') }}" class="btn btn-outline" title="ជម្រះ Filter">
+              <i class="fa-solid fa-rotate-left"></i>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('export_finance_excel_route', from_month=from_month, to_month=to_month, type=selected_type, category=selected_category) }}"
+              class="btn btn-success" title="ទាញយក Excel">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Excel</span>
+            </a>
+          </div>
+        </div>
       </div>
     </form>
   </div>

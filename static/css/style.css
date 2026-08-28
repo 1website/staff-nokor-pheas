@@ -1237,15 +1237,17 @@ body.sidebar-open .sidebar-overlay {
 .stat-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 14px 16px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   position: relative;
   overflow: hidden;
   transition: var(--transition);
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .stat-card::before {
@@ -1264,41 +1266,52 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .stat-icon-wrapper {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background: var(--stat-bg, var(--primary-subtle));
   color: var(--stat-color, var(--primary));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 .stat-details {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .stat-label {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-number {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--primary-dark);
-  line-height: 1.2;
+  line-height: 1.25;
   margin-top: 2px;
   font-family: var(--font-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-subtext {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-light);
-  margin-top: 4px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Tables */
@@ -1741,8 +1754,8 @@ body.sidebar-collapsed .col-phone {
 .stats-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 18px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -1752,8 +1765,8 @@ body.sidebar-collapsed .col-phone {
 .finance-charts-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 18px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -1761,7 +1774,7 @@ body.sidebar-collapsed .col-phone {
 }
 
 .finance-filter-card {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   background: var(--bg-card);
@@ -1773,26 +1786,17 @@ body.sidebar-collapsed .col-phone {
   box-sizing: border-box;
 }
 
-.finance-filter-header {
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-card);
-}
-
 .finance-filter-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
 .finance-filter-grid {
   display: grid;
-  grid-template-columns: 140px 140px 170px 150px minmax(200px, 1fr);
-  gap: 12px;
+  grid-template-columns: 130px 130px 155px 120px minmax(160px, 1fr) auto;
+  gap: 10px;
   align-items: end;
   width: 100%;
   max-width: 100%;
@@ -1803,7 +1807,7 @@ body.sidebar-collapsed .col-phone {
 .filter-field-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -1822,13 +1826,18 @@ body.sidebar-collapsed .col-phone {
   font-size: 12px;
 }
 
+.filter-label-placeholder {
+  user-select: none;
+  pointer-events: none;
+}
+
 .filter-field-group .form-control,
 .filter-field-group .form-select {
   width: 100%;
   min-height: 38px;
   height: 38px;
   font-size: 13px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background-color: var(--bg-main);
@@ -1842,24 +1851,24 @@ body.sidebar-collapsed .col-phone {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-.finance-filter-actions {
+.finance-inline-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-color);
+  gap: 6px;
+  white-space: nowrap;
 }
 
-.finance-filter-actions .btn {
-  padding: 7px 16px;
-  font-size: 13px;
+.finance-inline-actions .btn {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 12.5px;
   font-weight: 600;
-  border-radius: var(--radius-md);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 38px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
 }
 
 /* User Avatar & Officer Badges */
@@ -2428,11 +2437,24 @@ body.sidebar-collapsed .col-phone {
 
   .finance-filter-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
-  .filter-field-wide {
+  .filter-field-wide,
+  .filter-actions-field {
     grid-column: span 2 !important;
+  }
+
+  .filter-label-placeholder {
+    display: none !important;
+  }
+
+  .finance-inline-actions {
+    width: 100% !important;
+  }
+
+  .finance-inline-actions .btn {
+    flex: 1 1 auto !important;
   }
 
   .chart-wrapper {
@@ -2445,30 +2467,27 @@ body.sidebar-collapsed .col-phone {
 @media (max-width: 768px) {
   /* Finance Filter Card Responsive Layout */
   .finance-filter-card {
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
     border-radius: var(--radius-md) !important;
   }
 
-  .finance-filter-header {
-    padding: 10px 14px !important;
-  }
-
-  .finance-filter-header .card-title {
-    font-size: 13.5px !important;
-  }
-
   .finance-filter-form {
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
   .finance-filter-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    gap: 8px !important;
     width: 100% !important;
   }
 
-  .filter-field-wide {
+  .filter-field-wide,
+  .filter-actions-field {
     grid-column: span 2 !important;
+  }
+
+  .filter-label-placeholder {
+    display: none !important;
   }
 
   .filter-field-group {
@@ -2476,29 +2495,28 @@ body.sidebar-collapsed .col-phone {
   }
 
   .filter-field-label {
-    font-size: 12px !important;
+    font-size: 11.5px !important;
   }
 
   .filter-field-group .form-control,
   .filter-field-group .form-select {
     min-height: 38px !important;
-    font-size: 13px !important;
-    padding: 6px 10px !important;
+    font-size: 12.5px !important;
+    padding: 6px 8px !important;
   }
 
-  .finance-filter-actions {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
+  .finance-inline-actions {
+    display: grid !important;
+    grid-template-columns: 1fr auto auto !important;
+    gap: 6px !important;
     width: 100% !important;
-    padding-top: 10px !important;
+    padding-top: 4px !important;
   }
 
-  .finance-filter-actions .btn {
-    flex: 1 1 auto !important;
+  .finance-inline-actions .btn {
     height: 38px !important;
     font-size: 12.5px !important;
-    padding: 6px 14px !important;
+    padding: 6px 12px !important;
     justify-content: center !important;
   }
   /* Cash Flow Grid Mobile Row View */
