@@ -115,7 +115,10 @@
             <td>
               <div class="avatar-cell">
                 {% if s.photo %}
-                <img src="{{ url_for('static', filename='uploads/' + s.photo) }}" alt="{{ s.name_kh }}" class="avatar-circle" style="object-fit: cover;">
+                <img src="{{ s.photo | photo_url }}" alt="{{ s.name_kh }}" class="avatar-circle" style="object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar-circle" style="display: none;">
+                  {{ s.name_kh[:1] }}
+                </div>
                 {% else %}
                 <div class="avatar-circle">
                   {{ s.name_kh[:1] }}

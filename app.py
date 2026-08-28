@@ -23,7 +23,8 @@ from utils.helpers import (
     DOCUMENT_TYPES, HONOR_TYPES, login_required,
     admin_required, clerk_or_admin_required, generate_qr_base64,
     FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES,
-    PAYMENT_METHODS, FINANCE_STATUSES
+    PAYMENT_METHODS, FINANCE_STATUSES,
+    staff_photo_url, process_and_save_photo
 )
 from utils.export_excel import (
     export_monthly_attendance_excel,
@@ -56,6 +57,37 @@ def add_cache_headers(response):
     if request.path.startswith('/static') or request.path == '/favicon.ico':
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     return response
+
+# Route to serve uploads with fallback and fuzzy matching
+@app.route("/static/uploads/<path:filename>")
+def serve_static_upload(filename):
+    """Serve uploaded files with multi-folder fallback and smart filename matching."""
+    upload_folder = app.config.get("UPLOAD_FOLDER")
+    if upload_folder and os.path.exists(os.path.join(upload_folder, filename)):
+        return send_from_directory(upload_folder, filename)
+
+    static_uploads = os.path.join(os.path.dirname(__file__), "static", "uploads")
+    if os.path.exists(os.path.join(static_uploads, filename)):
+        return send_from_directory(static_uploads, filename)
+
+    clean_target = filename.replace("-", "_")
+    for check_dir in [upload_folder, static_uploads]:
+        if check_dir and os.path.exists(check_dir):
+            try:
+                for f in os.listdir(check_dir):
+                    if f.replace("-", "_") == clean_target:
+                        return send_from_directory(check_dir, f)
+                    prefix = clean_target.rsplit(".", 1)[0].rsplit("_", 1)[0]
+                    if prefix and prefix in f.replace("-", "_"):
+                        return send_from_directory(check_dir, f)
+            except Exception:
+                pass
+
+    default_avatar = os.path.join(os.path.dirname(__file__), "static", "img", "default-avatar.svg")
+    if os.path.exists(default_avatar):
+        return send_from_directory(os.path.join(os.path.dirname(__file__), "static", "img"), "default-avatar.svg")
+
+    abort(404)
 
 # Ensure database tables and baseline seed data exist
 @app.before_request
@@ -108,6 +140,7 @@ def inject_global_vars():
         "format_currency": format_currency,
         "calculate_age": calculate_age,
         "format_khmer_age": format_khmer_age,
+        "staff_photo_url": staff_photo_url,
         "pending_leaves_count": pending_leaves_count
     }
 
@@ -130,6 +163,11 @@ def age_filter(dob):
 @app.template_filter("kh_age")
 def kh_age_filter(dob, suffix=True):
     return format_khmer_age(dob, suffix=suffix)
+
+@app.template_filter("photo_url")
+def photo_url_filter(val):
+    return staff_photo_url(val)
+
 
 
 # ==============================================================================
@@ -425,15 +463,16 @@ def staff_create():
                 return render_template("staff/form.html", is_edit=False, next_code=next_code, village_list=village_list)
 
         # Handle Photo Upload
-        photo_filename = None
+        photo_val = None
         if "photo" in request.files:
             file = request.files["photo"]
             if file and file.filename != "":
-                ext = os.path.splitext(file.filename)[1].lower() or '.jpg'
-                safe_code = secure_filename(officer_code).replace('-', '_')
-                filename = f"photo_{safe_code}_{int(datetime.now().timestamp())}{ext}"
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-                photo_filename = filename
+                data_uri, filename = process_and_save_photo(
+                    file,
+                    officer_code=officer_code,
+                    upload_folder=app.config["UPLOAD_FOLDER"]
+                )
+                photo_val = data_uri or filename
 
         try:
             cursor.execute("""
@@ -447,7 +486,7 @@ def staff_create():
                 officer_code, name_kh, name_en, gender, dob, national_id, phone, email,
                 village, category, position_title_kh, position_title_en, cadre_level,
                 appointment_date, contract_end_date, base_salary, position_allowance,
-                family_allowance, education_level, photo_filename, emergency_contact, notes
+                family_allowance, education_level, photo_val, emergency_contact, notes
             ))
             new_id = cursor.lastrowid
             conn.commit()
@@ -610,15 +649,19 @@ def staff_edit(staff_id):
                 conn.close()
                 return render_template("staff/form.html", is_edit=True, staff=staff, village_list=village_list)
 
-        photo_filename = staff["photo"]
+        photo_val = staff["photo"]
         if "photo" in request.files:
             file = request.files["photo"]
             if file and file.filename != "":
-                ext = os.path.splitext(file.filename)[1].lower() or '.jpg'
-                safe_code = secure_filename(staff['officer_code']).replace('-', '_')
-                filename = f"photo_{safe_code}_{int(datetime.now().timestamp())}{ext}"
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-                photo_filename = filename
+                data_uri, filename = process_and_save_photo(
+                    file,
+                    officer_code=staff["officer_code"],
+                    upload_folder=app.config["UPLOAD_FOLDER"]
+                )
+                if data_uri:
+                    photo_val = data_uri
+                elif filename:
+                    photo_val = filename
 
         cursor.execute("""
             UPDATE staff SET
@@ -633,7 +676,7 @@ def staff_edit(staff_id):
             name_kh, name_en, gender, dob, national_id, phone, email, village,
             category, position_title_kh, position_title_en, cadre_level,
             appointment_date, contract_end_date, base_salary, position_allowance,
-            family_allowance, education_level, photo_filename, status,
+            family_allowance, education_level, photo_val, status,
             emergency_contact, notes, staff_id
         ))
         conn.commit()
@@ -646,6 +689,68 @@ def staff_edit(staff_id):
     conn.close()
 
     return render_template("staff/form.html", is_edit=True, staff=staff, village_list=village_list)
+
+
+@app.route("/staff/<int:staff_id>/photo", methods=["POST"])
+@login_required
+def staff_update_photo(staff_id):
+    """Quick update profile photo from detail page or API modal"""
+    if session.get("role") not in ["admin", "clerk"] and session.get("staff_id") != staff_id:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            return jsonify({"success": False, "message": "លោកអ្នកមិនមានសិទ្ធិផ្លាស់ប្តូររូបថតនេះទេ!"}), 403
+        flash("លោកអ្នកមិនមានសិទ្ធិផ្លាស់ប្តូររូបថតនេះទេ!", "danger")
+        return redirect(url_for("staff_detail", staff_id=staff_id))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, officer_code, name_kh, photo FROM staff WHERE id = ?", (staff_id,))
+    staff = cursor.fetchone()
+    if not staff:
+        conn.close()
+        abort(404)
+
+    data_uri = None
+    saved_filename = None
+
+    if request.is_json and request.json.get("photo_data"):
+        data_uri, saved_filename = process_and_save_photo(
+            request.json["photo_data"],
+            officer_code=staff["officer_code"],
+            upload_folder=app.config["UPLOAD_FOLDER"]
+        )
+    elif "photo" in request.files:
+        file = request.files["photo"]
+        if file and file.filename != "":
+            data_uri, saved_filename = process_and_save_photo(
+                file,
+                officer_code=staff["officer_code"],
+                upload_folder=app.config["UPLOAD_FOLDER"]
+            )
+
+    if not data_uri:
+        conn.close()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            return jsonify({"success": False, "message": "សូមជ្រើសរើសឯកសាររូបភាពត្រឹមត្រូវ (JPG, PNG, WebP)!"}), 400
+        flash("សូមជ្រើសរើសឯកសាររូបភាពត្រឹមត្រូវ!", "danger")
+        return redirect(url_for("staff_detail", staff_id=staff_id))
+
+    cursor.execute("""
+        UPDATE staff
+        SET photo = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (data_uri, staff_id))
+    conn.commit()
+    conn.close()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({
+            "success": True,
+            "photo_url": data_uri,
+            "message": f"បានផ្លាស់ប្តូររូបថតរបស់ {staff['name_kh']} ដោយជោគជ័យ!"
+        })
+
+    flash(f"បានផ្លាស់ប្តូររូបថតរបស់ {staff['name_kh']} ដោយជោគជ័យ!", "success")
+    return redirect(url_for("staff_detail", staff_id=staff_id))
 
 
 @app.route("/staff/<int:staff_id>/delete", methods=["POST"])
@@ -717,7 +822,7 @@ def api_check_national_id():
             "category_kh": category_kh,
             "position_title_kh": existing["position_title_kh"],
             "appointment_date": existing["appointment_date"] or "មិនមាន",
-            "photo_url": f"/static/uploads/{existing['photo']}" if existing["photo"] else None,
+            "photo_url": staff_photo_url(existing["photo"]) if existing["photo"] else None,
             "status": existing["status"]
         }
         return jsonify({
@@ -1254,7 +1359,7 @@ def api_attendance_scan():
             "position": staff["position_title_kh"],
             "village": staff["village"],
             "category": staff["category"],
-            "photo": f"/static/uploads/{staff['photo']}" if staff["photo"] else None
+            "photo": staff_photo_url(staff["photo"]) if staff["photo"] else None
         },
         "today_count": today_count,
         "today_count_kh": to_khmer_num(today_count)

@@ -37,13 +37,24 @@
 <div class="card profile-banner-card">
   <div class="card-body profile-banner-body">
     <div class="profile-banner-layout">
-      {% if staff.photo %}
-      <img src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="{{ staff.name_kh }}" class="profile-avatar-img">
-      {% else %}
-      <div class="profile-avatar-initial">
-        {{ staff.name_kh[:1] }}
+      <div class="profile-avatar-wrapper" style="position: relative; width: 100px; height: 100px; border-radius: 18px; overflow: hidden; flex-shrink: 0; box-shadow: var(--shadow-md); border: 3px solid #ffffff; outline: 1px solid var(--border-color); background: #1e293b;">
+        {% if staff.photo %}
+        <img id="detail_profile_avatar" src="{{ staff.photo | photo_url }}" alt="{{ staff.name_kh }}" class="profile-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border: none; border-radius: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="profile-avatar-initial" style="width: 100%; height: 100%; border: none; border-radius: 0; display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; font-size: 38px; font-weight: 700;">
+          {{ staff.name_kh[:1] }}
+        </div>
+        {% else %}
+        <div class="profile-avatar-initial" style="width: 100%; height: 100%; border: none; border-radius: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; font-size: 38px; font-weight: 700;">
+          {{ staff.name_kh[:1] }}
+        </div>
+        {% endif %}
+        
+        {% if session.role in ['admin', 'clerk'] or session.staff_id == staff.id %}
+        <button type="button" onclick="openPhotoModal()" class="avatar-hover-overlay" title="ផ្លាស់ប្តូររូបថត" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(2px); color: #ffffff; border: none; padding: 4px 0; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s;">
+          <i class="fa-solid fa-camera"></i> <span>ប្តូររូប</span>
+        </button>
+        {% endif %}
       </div>
-      {% endif %}
       
       <div class="profile-banner-main">
         <div class="profile-name-row">
@@ -371,4 +382,142 @@
     </form>
   </div>
 </div>
+
+<!-- Modal: Change Profile Photo -->
+<div id="changePhotoModal" class="modal-backdrop" style="display: none;">
+  <div class="modal-dialog" style="max-width: 440px;">
+    <div class="modal-header">
+      <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-camera text-gold"></i>
+        <span>ផ្លាស់ប្តូររូបថតមន្ត្រី</span>
+      </div>
+      <button type="button" class="modal-close" onclick="closePhotoModal()">&times;</button>
+    </div>
+    <form id="changePhotoForm" method="POST" action="{{ url_for('staff_update_photo', staff_id=staff.id) }}" enctype="multipart/form-data">
+      <div class="modal-body" style="text-align: center; padding: 24px 20px;">
+        
+        <!-- Photo Preview Area -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div id="modalPhotoPreviewContainer" style="width: 140px; height: 170px; border-radius: 16px; border: 3px dashed #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0f172a; position: relative; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+            {% if staff.photo %}
+            <img id="modalPreviewImg" src="{{ staff.photo | photo_url }}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/static/img/default-avatar.svg';">
+            {% else %}
+            <img id="modalPreviewImg" src="/static/img/default-avatar.svg" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+            {% endif %}
+          </div>
+          <div style="font-size: 13.5px; color: var(--text-color);">
+            មន្ត្រី៖ <strong>{{ staff.name_kh }}</strong> <span class="font-latin text-muted">({{ staff.officer_code }})</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label">ជ្រើសរើសរូបថតថ្មី (JPG, PNG, WebP) <span class="required">*</span></label>
+          <input type="file" id="modal_photo_input" name="photo" class="form-control" accept="image/*" required onchange="handleModalPhotoSelect(this)">
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+            <i class="fa-solid fa-circle-info text-primary"></i> ប្រព័ន្ធនឹង Optimize និងបង្រួមទំហំរូបថតស្វ័យប្រវត្តិដោយរក្សាគុណភាពច្បាស់ (Portrait 4x6)
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="closePhotoModal()">បោះបង់</button>
+        <button type="submit" id="btnSavePhoto" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>រក្សាទុករូបថត</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openPhotoModal() {
+    const modal = document.getElementById('changePhotoModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closePhotoModal() {
+    const modal = document.getElementById('changePhotoModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function handleModalPhotoSelect(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const previewImg = document.getElementById('modalPreviewImg');
+        if (previewImg) {
+          previewImg.src = e.target.result;
+        }
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // Handle AJAX photo submission for instant UI update without page flicker
+  document.addEventListener('DOMContentLoaded', function() {
+    const photoForm = document.getElementById('changePhotoForm');
+    if (photoForm) {
+      photoForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('modal_photo_input');
+        if (!fileInput.files || !fileInput.files[0]) {
+          alert('សូមជ្រើសរើសឯកសាររូបថត!');
+          return;
+        }
+
+        const btnSave = document.getElementById('btnSavePhoto');
+        const originalBtnHtml = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
+
+        const formData = new FormData(photoForm);
+
+        fetch(photoForm.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          btnSave.disabled = false;
+          btnSave.innerHTML = originalBtnHtml;
+          if (data.success) {
+            // Update main avatar on detail page immediately
+            const mainAvatar = document.getElementById('detail_profile_avatar');
+            if (mainAvatar) {
+              mainAvatar.src = data.photo_url;
+              mainAvatar.style.display = 'block';
+              if (mainAvatar.nextElementSibling) {
+                mainAvatar.nextElementSibling.style.display = 'none';
+              }
+            } else {
+              // If initial was showing, reload to update layout
+              window.location.reload();
+              return;
+            }
+            closePhotoModal();
+            // Show toast or alert
+            alert(data.message || 'បានផ្លាស់ប្តូររូបថតដោយជោគជ័យ!');
+          } else {
+            alert(data.message || 'មានបញ្ហាក្នុងការរក្សាទុករូបថត!');
+          }
+        })
+        .catch(err => {
+          btnSave.disabled = false;
+          btnSave.innerHTML = originalBtnHtml;
+          // Fallback to traditional form submit if AJAX fails
+          photoForm.submit();
+        });
+      });
+    }
+  });
+</script>
 {% endblock %}

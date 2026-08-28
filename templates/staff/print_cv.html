@@ -350,7 +350,11 @@
 
       <div class="officer-photo-frame">
         {% if staff.photo %}
-        <img src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="{{ staff.name_kh }}">
+        <img src="{{ staff.photo | photo_url }}" alt="{{ staff.name_kh }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <div class="photo-placeholder-text" style="display: none;">
+          <i class="fa-regular fa-image" style="font-size: 18px; margin-bottom: 4px; display: block; color: #94a3b8;"></i>
+          រូបថត<br>៤ x ៦
+        </div>
         {% else %}
         <div class="photo-placeholder-text">
           <i class="fa-regular fa-image" style="font-size: 18px; margin-bottom: 4px; display: block; color: #94a3b8;"></i>

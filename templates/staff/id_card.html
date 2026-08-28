@@ -417,7 +417,10 @@
       <div class="id-card-body">
         <div class="id-card-photo-wrapper">
           {% if staff.photo %}
-          <img src="{{ url_for('static', filename='uploads/' + staff.photo) }}" alt="{{ staff.name_kh }}" class="id-card-photo">
+          <img src="{{ staff.photo | photo_url }}" alt="{{ staff.name_kh }}" class="id-card-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="id-card-photo-placeholder" style="display: none;">
+            <i class="fa-solid fa-user"></i>
+          </div>
           {% else %}
           <div class="id-card-photo-placeholder">
             <i class="fa-solid fa-user"></i>

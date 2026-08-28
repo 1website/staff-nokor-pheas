@@ -662,7 +662,64 @@ def ensure_baseline_data(conn=None):
             users_data
         )
 
+    # Ensure photo integrity (convert/cache existing uploaded files to base64)
+    ensure_photo_integrity(conn)
+
     conn.commit()
+
+
+def ensure_photo_integrity(conn=None):
+    """
+    Ensure staff photos are robustly linked and converted to self-contained Base64
+    so they work seamlessly across serverless deploys (Vercel) and local SQLite.
+    """
+    if conn is None:
+        conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT id, officer_code, photo FROM staff")
+        staff_rows = cursor.fetchall()
+        if not staff_rows:
+            return
+        
+        static_uploads = os.path.join(os.path.dirname(__file__), "static", "uploads")
+        if not os.path.exists(static_uploads):
+            return
+
+        from utils.helpers import process_and_save_photo
+
+        for st in staff_rows:
+            st_id = st["id"]
+            code = st["officer_code"]
+            photo_val = st["photo"]
+            
+            # If photo is already base64 data URL or external http URL, it's fine
+            if photo_val and (str(photo_val).startswith("data:image") or str(photo_val).startswith("http")):
+                continue
+
+            target_file = None
+            if photo_val:
+                candidate = os.path.join(static_uploads, photo_val)
+                if os.path.exists(candidate):
+                    target_file = candidate
+
+            # If not found, try to search for matching photo by officer code (e.g. photo_NP_001_...)
+            if not target_file and code:
+                clean_code = str(code).replace("-", "_")
+                for f in os.listdir(static_uploads):
+                    if f.startswith(f"photo_{clean_code}_") or f.startswith(f"photo_{code}_"):
+                        target_file = os.path.join(static_uploads, f)
+                        break
+
+            if target_file and os.path.exists(target_file):
+                data_uri, _ = process_and_save_photo(target_file, officer_code=code)
+                if data_uri:
+                    cursor.execute("UPDATE staff SET photo = ? WHERE id = ?", (data_uri, st_id))
+        conn.commit()
+    except Exception as e:
+        print(f"[Photo Integrity Notice] {e}")
+
 
 
 def clear_all_demo_data(conn=None):

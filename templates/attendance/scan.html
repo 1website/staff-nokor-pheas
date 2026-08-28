@@ -483,7 +483,10 @@
                 <td>
                   <div style="display: flex; align-items: center; gap: 10px;">
                     {% if a.photo %}
-                    <img src="{{ url_for('static', filename='uploads/' + a.photo) }}" alt="{{ a.name_kh }}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">
+                    <img src="{{ a.photo | photo_url }}" alt="{{ a.name_kh }}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">
+                      {{ a.name_kh[:1] }}
+                    </div>
                     {% else %}
                     <div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">
                       {{ a.name_kh[:1] }}
@@ -858,7 +861,7 @@ function displayScanResult(res) {
   // Photo
   const photoCont = document.getElementById('scan-staff-photo-container');
   if (res.staff.photo) {
-    photoCont.innerHTML = `<img src="${res.staff.photo}" class="scan-staff-photo" alt="${res.staff.name_kh}">`;
+    photoCont.innerHTML = `<img src="${res.staff.photo}" class="scan-staff-photo" alt="${res.staff.name_kh}" onerror="this.src='/static/img/default-avatar.svg';">`;
   } else {
     photoCont.innerHTML = `<div class="scan-staff-photo-placeholder">${res.staff.name_kh.charAt(0)}</div>`;
   }
@@ -882,7 +885,7 @@ function updateAttendanceFeed(res) {
     existingRow.innerHTML = `
       <td>
         <div style="display: flex; align-items: center; gap: 10px;">
-          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
+          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
           <div>
             <div style="font-weight: 600; font-size: 13px; color: var(--primary-dark);">${res.staff.name_kh}</div>
             <div style="font-size: 11px; color: var(--text-muted);">${res.staff.officer_code} • ${res.staff.position}</div>
@@ -904,7 +907,7 @@ function updateAttendanceFeed(res) {
     tr.innerHTML = `
       <td>
         <div style="display: flex; align-items: center; gap: 10px;">
-          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
+          ${res.staff.photo ? `<img src="${res.staff.photo}" alt="${res.staff.name_kh}" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>` : `<div style="width: 34px; height: 34px; border-radius: 8px; background: #1e3a8a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">${res.staff.name_kh.charAt(0)}</div>`}
           <div>
             <div style="font-weight: 600; font-size: 13px; color: var(--primary-dark);">${res.staff.name_kh}</div>
             <div style="font-size: 11px; color: var(--text-muted);">${res.staff.officer_code} • ${res.staff.position}</div>

@@ -282,3 +282,108 @@ def generate_qr_base64(data_str):
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+
+def staff_photo_url(photo):
+    """
+    Format staff photo URL supporting:
+    - Base64 Data URLs (data:image/...)
+    - Full URLs (http:// or https://)
+    - Relative paths (/static/...)
+    - Uploaded filenames (photo_NP_001_....jpg -> /static/uploads/photo_NP_001_....jpg)
+    """
+    if not photo:
+        return ""
+    photo = str(photo).strip()
+    if not photo:
+        return ""
+    if photo.startswith("data:") or photo.startswith("http://") or photo.startswith("https://") or photo.startswith("/static/"):
+        return photo
+    if photo.startswith("uploads/"):
+        return f"/static/{photo}"
+    return f"/static/uploads/{photo}"
+
+
+def process_and_save_photo(file_or_bytes, officer_code="NP", upload_folder=None, max_size=(800, 1000), quality=82):
+    """
+    Process, optimize, and encode staff photo.
+    Returns (data_uri, saved_filename).
+    - Auto-rotates using EXIF orientation tags (fixes mobile phone uploads)
+    - Resizes to fit within max_size preserving aspect ratio
+    - Compresses to high-quality JPEG
+    - Generates self-contained Base64 Data URL (data:image/jpeg;base64,...)
+    - Optionally writes to disk if upload_folder is accessible
+    """
+    import io
+    import base64
+    from PIL import Image, ImageOps
+    from werkzeug.utils import secure_filename
+
+    raw_bytes = None
+    if hasattr(file_or_bytes, "read"):
+        raw_bytes = file_or_bytes.read()
+    elif isinstance(file_or_bytes, bytes):
+        raw_bytes = file_or_bytes
+    elif isinstance(file_or_bytes, str):
+        if file_or_bytes.startswith("data:image"):
+            # Already a data URL
+            header, encoded = file_or_bytes.split(",", 1)
+            raw_bytes = base64.b64decode(encoded)
+        elif os.path.exists(file_or_bytes):
+            try:
+                with open(file_or_bytes, "rb") as f:
+                    raw_bytes = f.read()
+            except Exception:
+                pass
+
+    if not raw_bytes:
+        return None, None
+
+    try:
+        img = Image.open(io.BytesIO(raw_bytes))
+        # Handle EXIF rotation (mobile portrait/landscape)
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
+        # Convert to RGB (dropping alpha or palette)
+        if img.mode in ("RGBA", "LA", "P"):
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            bg.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
+            img = bg
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # Resize smoothly
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+        # Encode to JPEG
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=quality, optimize=True)
+        compressed_bytes = buf.getvalue()
+
+        b64_str = base64.b64encode(compressed_bytes).decode("utf-8")
+        data_uri = f"data:image/jpeg;base64,{b64_str}"
+
+        # Generate standard filename
+        safe_code = secure_filename(str(officer_code)).replace('-', '_')
+        filename = f"photo_{safe_code}_{int(datetime.now().timestamp())}.jpg"
+
+        # Save to disk if upload_folder is provided
+        if upload_folder:
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                with open(file_path, "wb") as f:
+                    f.write(compressed_bytes)
+            except Exception:
+                pass
+
+        return data_uri, filename
+    except Exception as e:
+        print(f"[Photo Processing Warning] {e}")
+        return None, None
+
