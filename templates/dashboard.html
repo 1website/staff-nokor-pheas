@@ -123,7 +123,7 @@
 
 <div class="dashboard-main-grid">
   <!-- Left Column: Pending Leaves & Recent Check-ins -->
-  <div>
+  <div class="dashboard-col-main">
     <!-- Pending Leaves Card -->
     <div class="card">
       <div class="card-header">
@@ -245,44 +245,44 @@
     </div>
   </div>
 
-  <!-- Right Column: Charts & Villages -->
-  <div>
+  <!-- Right Column: Charts & Financial Summary -->
+  <div class="dashboard-col-side">
     <!-- Financial Cash Flow Card (ចរន្តសាច់ប្រាក់ ចំណូល-ចំណាយ) -->
-    <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 20px;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card finance-flow-card" style="border-top: 4px solid #10b981; margin-bottom: 20px;">
+      <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i>
           <span>ចរន្តសាច់ប្រាក់ ចំណូល-ចំណាយ (ខែនេះ)</span>
         </div>
-        <a href="{{ url_for('finance_list') }}" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 3px 8px;">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i> គ្រប់គ្រងចំណាយ
+        <a href="{{ url_for('finance_list') }}" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 4px 10px; white-space: nowrap;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>គ្រប់គ្រងចំណាយ</span>
         </a>
       </div>
-      <div class="card-body" style="padding: 16px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center;">
-          <div style="background: #ecfdf5; padding: 10px 6px; border-radius: 8px; border: 1px solid #a7f3d0;">
-            <div style="font-size: 11px; color: #065f46; font-weight: 600; margin-bottom: 4px;">
+      <div class="card-body" style="padding: 14px;">
+        <div class="cashflow-grid-3">
+          <div class="cashflow-item cashflow-income">
+            <div class="cashflow-label">
               <i class="fa-solid fa-circle-arrow-down"></i> សរុបចំណូល
             </div>
-            <div style="font-size: 14px; font-weight: 700; color: #059669;">
+            <div class="cashflow-val">
               + {{ (finance_summary.income or 0) | currency }}
             </div>
           </div>
 
-          <div style="background: #fef2f2; padding: 10px 6px; border-radius: 8px; border: 1px solid #fecaca;">
-            <div style="font-size: 11px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">
+          <div class="cashflow-item cashflow-expense">
+            <div class="cashflow-label">
               <i class="fa-solid fa-circle-arrow-up"></i> សរុបចំណាយ
             </div>
-            <div style="font-size: 14px; font-weight: 700; color: #dc2626;">
+            <div class="cashflow-val">
               - {{ (finance_summary.expense or 0) | currency }}
             </div>
           </div>
 
-          <div style="background: {% if (finance_summary.net or 0) >= 0 %}#f0f9ff{% else %}#fff1f2{% endif %}; padding: 10px 6px; border-radius: 8px; border: 1px solid {% if (finance_summary.net or 0) >= 0 %}#bae6fd{% else %}#fecdd3{% endif %};">
-            <div style="font-size: 11px; color: {% if (finance_summary.net or 0) >= 0 %}#0369a1{% else %}#be123c{% endif %}; font-weight: 600; margin-bottom: 4px;">
+          <div class="cashflow-item cashflow-net {% if (finance_summary.net or 0) >= 0 %}net-positive{% else %}net-negative{% endif %}">
+            <div class="cashflow-label">
               <i class="fa-solid fa-vault"></i> តុល្យភាពនៅសល់
             </div>
-            <div style="font-size: 14px; font-weight: 700; color: {% if (finance_summary.net or 0) >= 0 %}#0284c7{% else %}#e11d48{% endif %};">
+            <div class="cashflow-val">
               {{ (finance_summary.net or 0) | currency }}
             </div>
           </div>
@@ -291,13 +291,13 @@
     </div>
 
     <!-- Chart Card -->
-    <div class="card">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card chart-summary-card">
+      <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-chart-pie text-gold"></i>
           <span>សមាសភាពមន្ត្រីតាមក្រុម</span>
         </div>
-        <span style="font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-subtle); padding: 3px 10px; border-radius: 20px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-subtle); padding: 3px 10px; border-radius: 20px; white-space: nowrap;">
           សរុប {{ total_staff | kh_num }} នាក់
         </span>
       </div>
@@ -318,7 +318,7 @@
           <div class="composition-breakdown-grid">
             <!-- 1. Council -->
             <a href="{{ url_for('staff_list', category='council') }}" class="comp-card" title="មើលបញ្ជីក្រុមប្រឹក្សាឃុំ">
-              <div class="comp-icon-box" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+              <div class="comp-icon-box comp-icon-council">
                 <i class="fa-solid fa-user-tie"></i>
               </div>
               <div class="comp-info">
@@ -332,7 +332,7 @@
 
             <!-- 2. Clerk -->
             <a href="{{ url_for('staff_list', category='clerk') }}" class="comp-card" title="មើលបញ្ជីស្មៀនឃុំ">
-              <div class="comp-icon-box" style="background: rgba(13, 148, 136, 0.12); color: #0d9488;">
+              <div class="comp-icon-box comp-icon-clerk">
                 <i class="fa-solid fa-pen-nib"></i>
               </div>
               <div class="comp-info">
@@ -346,7 +346,7 @@
 
             <!-- 3. Assistants / Contract -->
             <a href="{{ url_for('staff_list', category='contract') }}" class="comp-card" title="មើលបញ្ជីជំនួយការឃុំ">
-              <div class="comp-icon-box" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+              <div class="comp-icon-box comp-icon-contract">
                 <i class="fa-solid fa-briefcase"></i>
               </div>
               <div class="comp-info">
@@ -360,7 +360,7 @@
 
             <!-- 4. Village Chiefs -->
             <a href="{{ url_for('staff_list', category='village') }}" class="comp-card" title="មើលបញ្ជីមន្ត្រីភូមិ">
-              <div class="comp-icon-box" style="background: rgba(234, 88, 12, 0.12); color: #ea580c;">
+              <div class="comp-icon-box comp-icon-village">
                 <i class="fa-solid fa-house-chimney-user"></i>
               </div>
               <div class="comp-info">

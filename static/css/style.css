@@ -506,6 +506,19 @@ body.sidebar-open .sidebar-overlay {
   grid-template-columns: 2fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-col-main,
+.dashboard-col-side,
+.dashboard-main-grid > div {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .grid-2-col {
@@ -513,6 +526,9 @@ body.sidebar-open .sidebar-overlay {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .grid-3-col {
@@ -520,6 +536,9 @@ body.sidebar-open .sidebar-overlay {
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Chart Container Wrapper */
@@ -530,23 +549,173 @@ body.sidebar-open .sidebar-overlay {
   max-height: 240px;
 }
 
+/* Financial Cash Flow Summary Grid */
+.cashflow-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.cashflow-item {
+  padding: 10px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.cashflow-income {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.cashflow-income .cashflow-label {
+  font-size: 11px;
+  color: #065f46;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cashflow-income .cashflow-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #059669;
+  word-break: break-word;
+}
+
+.cashflow-expense {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.cashflow-expense .cashflow-label {
+  font-size: 11px;
+  color: #991b1b;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cashflow-expense .cashflow-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #dc2626;
+  word-break: break-word;
+}
+
+.cashflow-net.net-positive {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.cashflow-net.net-positive .cashflow-label {
+  font-size: 11px;
+  color: #0369a1;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cashflow-net.net-positive .cashflow-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0284c7;
+  word-break: break-word;
+}
+
+.cashflow-net.net-negative {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.cashflow-net.net-negative .cashflow-label {
+  font-size: 11px;
+  color: #be123c;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cashflow-net.net-negative .cashflow-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e11d48;
+  word-break: break-word;
+}
+
+/* Dark Mode Cashflow Cards */
+[data-theme="dark"] .cashflow-income {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+[data-theme="dark"] .cashflow-income .cashflow-label {
+  color: #34d399;
+}
+[data-theme="dark"] .cashflow-income .cashflow-val {
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .cashflow-expense {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+[data-theme="dark"] .cashflow-expense .cashflow-label {
+  color: #f87171;
+}
+[data-theme="dark"] .cashflow-expense .cashflow-val {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .cashflow-net.net-positive {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.28);
+}
+[data-theme="dark"] .cashflow-net.net-positive .cashflow-label {
+  color: #38bdf8;
+}
+[data-theme="dark"] .cashflow-net.net-positive .cashflow-val {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .cashflow-net.net-negative {
+  background: rgba(225, 29, 72, 0.12);
+  border-color: rgba(225, 29, 72, 0.28);
+}
+[data-theme="dark"] .cashflow-net.net-negative .cashflow-label {
+  color: #fb7185;
+}
+[data-theme="dark"] .cashflow-net.net-negative .cashflow-val {
+  color: #fda4af;
+}
+
 /* Staff Composition Donut & Breakdown Grid */
 .staff-composition-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .donut-chart-box {
   position: relative;
   width: 175px;
   height: 175px;
+  max-width: 100%;
   margin: 4px auto 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .donut-center-stat {
@@ -596,6 +765,9 @@ body.sidebar-open .sidebar-overlay {
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .comp-card {
@@ -610,6 +782,8 @@ body.sidebar-open .sidebar-overlay {
   transition: var(--transition);
   text-decoration: none;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .comp-card:hover {
@@ -629,6 +803,11 @@ body.sidebar-open .sidebar-overlay {
   font-size: 13px;
   flex-shrink: 0;
 }
+
+.comp-icon-council { background: rgba(2, 132, 199, 0.12); color: #0284c7; }
+.comp-icon-clerk { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
+.comp-icon-contract { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+.comp-icon-village { background: rgba(234, 88, 12, 0.12); color: #ea580c; }
 
 .comp-info {
   flex: 1;
@@ -658,6 +837,7 @@ body.sidebar-open .sidebar-overlay {
   font-size: 13px;
   color: var(--primary-dark);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .comp-count-row small {
@@ -673,6 +853,7 @@ body.sidebar-open .sidebar-overlay {
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.05);
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* Dark Mode Overrides for Composition Card */
@@ -2066,8 +2247,21 @@ body.sidebar-collapsed .col-phone {
   div[style*="grid-template-columns: 2fr 1fr"],
   div[style*="grid-template-columns: 2.8fr 1fr"],
   div[style*="grid-template-columns: 1fr 1fr"] {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 100% !important;
     gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .dashboard-col-main,
+  .dashboard-col-side,
+  .dashboard-main-grid > div,
+  .grid-2-col > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .chart-wrapper {
@@ -2078,6 +2272,85 @@ body.sidebar-collapsed .col-phone {
 
 /* 2. Tablets & Mobile Landscape (< 768px) */
 @media (max-width: 768px) {
+  /* Cash Flow Grid Mobile Row View */
+  .cashflow-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .cashflow-item {
+    padding: 10px 14px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+  }
+
+  .cashflow-item .cashflow-label {
+    margin-bottom: 0 !important;
+    font-size: 12.5px !important;
+  }
+
+  .cashflow-item .cashflow-val {
+    font-size: 15px !important;
+    text-align: right !important;
+  }
+
+  /* Donut Chart & Composition Mobile Centering */
+  .staff-composition-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .donut-chart-box {
+    margin: 4px auto 12px !important;
+    width: 160px !important;
+    height: 160px !important;
+  }
+
+  .composition-breakdown-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .comp-card {
+    padding: 7px 8px !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+  }
+
+  .comp-icon-box {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+  }
+
+  .comp-name {
+    font-size: 11.5px !important;
+  }
+
+  .comp-count-row strong {
+    font-size: 12.5px !important;
+  }
+
+  .comp-pct {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+  }
+
+  .btn-back-to-top {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+  }
   body {
     font-size: 14px;
     overflow-x: hidden !important;
@@ -2553,7 +2826,53 @@ body.sidebar-collapsed .col-phone {
   }
 }
 
-/* 4. Very Small Mobile Screens (< 380px) */
+/* 4. Small Mobile Screens (< 480px) */
+@media (max-width: 480px) {
+  .composition-breakdown-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .comp-card {
+    padding: 6px 7px !important;
+    gap: 5px !important;
+  }
+
+  .comp-icon-box {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+  }
+
+  .comp-name {
+    font-size: 10.5px !important;
+  }
+
+  .comp-count-row strong {
+    font-size: 11.5px !important;
+  }
+
+  .comp-pct {
+    font-size: 9px !important;
+    padding: 1px 3px !important;
+  }
+
+  .donut-chart-box {
+    width: 145px !important;
+    height: 145px !important;
+  }
+
+  .donut-total-num {
+    font-size: 20px !important;
+  }
+
+  .donut-total-label {
+    font-size: 10px !important;
+  }
+}
+
+/* 5. Very Small Mobile Screens (< 380px) */
 @media (max-width: 380px) {
   .topbar {
     padding: 0 6px !important;
@@ -2582,6 +2901,11 @@ body.sidebar-collapsed .col-phone {
 
   .att-badge-item .badge-val {
     font-size: 17px !important;
+  }
+
+  .composition-breakdown-grid {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
   }
 }
 

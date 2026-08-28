@@ -2188,18 +2188,96 @@ def settings_users():
             role = request.form.get("role", "staff")
             staff_id = request.form.get("staff_id") or None
 
-            cursor.execute("""
-                INSERT INTO users (username, password_hash, full_name, role, staff_id)
-                VALUES (?, ?, ?, ?, ?)
-            """, (username, generate_password_hash(password), full_name, role, staff_id))
-            conn.commit()
-            flash(f"បានបង្កើតគណនី {username} ដោយជោគជ័យ!", "success")
+            if not username or not password or not full_name:
+                flash("សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់ (ឈ្មោះគណនី, ពាក្យសម្ងាត់, ឈ្មោះពេញ)!", "warning")
+            else:
+                # Check for existing username (case-insensitive)
+                cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,))
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    flash(f"ឈ្មោះគណនី '{username}' មានរួចហើយក្នុងប្រព័ន្ធ! សូមជ្រើសរើសឈ្មោះគណនីផ្សេង។", "danger")
+                else:
+                    try:
+                        cursor.execute("""
+                            INSERT INTO users (username, password_hash, full_name, role, staff_id)
+                            VALUES (?, ?, ?, ?, ?)
+                        """, (username, generate_password_hash(password), full_name, role, staff_id))
+                        conn.commit()
+                        flash(f"បានបង្កើតគណនី '{username}' ដោយជោគជ័យ!", "success")
+                    except Exception as e:
+                        conn.rollback()
+                        flash(f"មានបញ្ហាក្នុងការបង្កើតគណនី៖ {str(e)}", "danger")
+
+        elif action == "edit":
+            uid = request.form.get("user_id")
+            full_name = request.form.get("full_name", "").strip()
+            role = request.form.get("role", "staff")
+            staff_id = request.form.get("staff_id") or None
+            new_password = request.form.get("password", "").strip()
+
+            if not uid or not full_name:
+                flash("សូមបំពេញព័ត៌មានឈ្មោះពេញ!", "warning")
+            else:
+                try:
+                    if new_password:
+                        cursor.execute("""
+                            UPDATE users SET full_name = ?, role = ?, staff_id = ?, password_hash = ?
+                            WHERE id = ?
+                        """, (full_name, role, staff_id, generate_password_hash(new_password), uid))
+                    else:
+                        cursor.execute("""
+                            UPDATE users SET full_name = ?, role = ?, staff_id = ?
+                            WHERE id = ?
+                        """, (full_name, role, staff_id, uid))
+                    conn.commit()
+                    flash("បានកែប្រែព័ត៌មានគណនីដោយជោគជ័យ!", "success")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"មានបញ្ហាក្នុងការកែប្រែព័ត៌មានគណនី៖ {str(e)}", "danger")
+
         elif action == "toggle_status":
             uid = request.form.get("user_id")
-            cursor.execute("UPDATE users SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id = ?", (uid,))
-            conn.commit()
-            flash("បានផ្លាស់ប្តូរស្ថានភាពគណនីរួចរាល់!", "info")
+            if uid:
+                if str(uid) == str(session.get("user_id")):
+                    flash("មិនអាចបិទ/ផ្អាកគណនីដែលលោកអ្នកកំពុងប្រើប្រាស់បានទេ!", "warning")
+                else:
+                    try:
+                        cursor.execute("UPDATE users SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id = ?", (uid,))
+                        conn.commit()
+                        flash("បានផ្លាស់ប្តូរស្ថានភាពគណនីរួចរាល់!", "info")
+                    except Exception as e:
+                        conn.rollback()
+                        flash(f"មិនអាចផ្លាស់ប្តូរស្ថានភាពគណនីបានទេ៖ {str(e)}", "danger")
 
+        elif action == "reset_password":
+            uid = request.form.get("user_id")
+            new_password = request.form.get("new_password", "").strip()
+            if not uid or not new_password:
+                flash("សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី!", "warning")
+            else:
+                try:
+                    cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(new_password), uid))
+                    conn.commit()
+                    flash("បានកំណត់ពាក្យសម្ងាត់ថ្មីដោយជោគជ័យ!", "success")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"មានបញ្ហាក្នុងការកំណត់ពាក្យសម្ងាត់៖ {str(e)}", "danger")
+
+        elif action == "delete":
+            uid = request.form.get("user_id")
+            if uid:
+                if str(uid) == str(session.get("user_id")):
+                    flash("មិនអាចលុបគណនីដែលកំពុងប្រើប្រាស់បានទេ!", "danger")
+                else:
+                    try:
+                        cursor.execute("DELETE FROM users WHERE id = ?", (uid,))
+                        conn.commit()
+                        flash("បានលុបគណនីដោយជោគជ័យ!", "success")
+                    except Exception as e:
+                        conn.rollback()
+                        flash(f"មានបញ្ហាក្នុងការលុបគណនី៖ {str(e)}", "danger")
+
+        conn.close()
         return redirect(url_for("settings_users"))
 
     cursor.execute("""

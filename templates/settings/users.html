@@ -36,7 +36,7 @@
             <th>តួនាទីក្នុងប្រព័ន្ធ (Role)</th>
             <th>ភ្ជាប់ជាមួយមន្ត្រី (Linked Staff)</th>
             <th>ស្ថានភាព</th>
-            <th style="text-align: center; width: 120px;">សកម្មភាព</th>
+            <th style="text-align: center; width: 220px;">សកម្មភាព</th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +45,9 @@
             <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
             <td>
               <strong style="font-family: var(--font-latin); color: var(--primary);">{{ u.username }}</strong>
+              {% if u.id == session.user_id %}
+              <span class="badge badge-gold" style="font-size: 10px; margin-left: 4px;">អ្នក</span>
+              {% endif %}
             </td>
             <td><strong>{{ u.full_name }}</strong></td>
             <td>
@@ -66,23 +69,54 @@
             </td>
             <td>
               {% if u.is_active %}
-              <span class="badge badge-success">សកម្ម (Active)</span>
+              <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> សកម្ម</span>
               {% else %}
-              <span class="badge badge-danger">អសកម្ម (Inactive)</span>
+              <span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> អសកម្ម</span>
               {% endif %}
             </td>
             <td style="text-align: center;">
-              {% if u.id != session.user_id %}
-              <form method="POST" action="{{ url_for('settings_users') }}">
-                <input type="hidden" name="action" value="toggle_status">
-                <input type="hidden" name="user_id" value="{{ u.id }}">
-                <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-success{% endif %}">
-                  {% if u.is_active %}ផ្អាក{% else %}បើក{% endif %}
+              <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                <!-- Edit Button -->
+                <button type="button" class="btn btn-sm btn-outline btn-edit-user"
+                        data-user-id="{{ u.id }}"
+                        data-username="{{ u.username }}"
+                        data-fullname="{{ u.full_name }}"
+                        data-role="{{ u.role }}"
+                        data-staff-id="{{ u.staff_id or '' }}"
+                        title="កែប្រែព័ត៌មាន">
+                  <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-              </form>
-              {% else %}
-              <span style="font-size: 11px; color: var(--text-muted);">គណនីបច្ចុប្បន្ន</span>
-              {% endif %}
+
+                <!-- Reset Password Button -->
+                <button type="button" class="btn btn-sm btn-outline btn-reset-pwd"
+                        data-user-id="{{ u.id }}"
+                        data-username="{{ u.username }}"
+                        data-fullname="{{ u.full_name }}"
+                        title="ប្តូរពាក្យសម្ងាត់">
+                  <i class="fa-solid fa-key"></i>
+                </button>
+
+                {% if u.id != session.user_id %}
+                <!-- Toggle Status Button -->
+                <form method="POST" action="{{ url_for('settings_users') }}" style="display: inline; margin: 0;">
+                  <input type="hidden" name="action" value="toggle_status">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-success{% endif %}"
+                          title="{% if u.is_active %}ផ្អាកគណនី{% else %}បើកគណនីឡើងវិញ{% endif %}">
+                    {% if u.is_active %}<i class="fa-solid fa-ban"></i>{% else %}<i class="fa-solid fa-check"></i>{% endif %}
+                  </button>
+                </form>
+
+                <!-- Delete Button -->
+                <button type="button" class="btn btn-sm btn-outline-danger btn-delete-user"
+                        data-user-id="{{ u.id }}"
+                        data-username="{{ u.username }}"
+                        data-fullname="{{ u.full_name }}"
+                        title="លុបគណនី">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -96,7 +130,7 @@
 <div id="addUserModal" class="modal-backdrop">
   <div class="modal-dialog">
     <div class="modal-header">
-      <div class="modal-title">បង្កើតគណនីប្រើប្រាស់ថ្មី</div>
+      <div class="modal-title"><i class="fa-solid fa-user-plus text-primary"></i> បង្កើតគណនីប្រើប្រាស់ថ្មី</div>
       <button class="modal-close">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('settings_users') }}">
@@ -104,12 +138,13 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">ឈ្មោះគណនី (Username) <span class="required">*</span></label>
-          <input type="text" name="username" class="form-control" placeholder="ឧ. vanna.sou, sokha.prom..." required>
+          <input type="text" name="username" class="form-control" placeholder="ឧ. vanna.sou, sokha.prom..." required autocomplete="off">
+          <small style="color: var(--text-muted); font-size: 11px;">ប្រើអក្សរឡាតាំង គ្មានដកឃ្លា (ត្រូវតែជាឈ្មោះតែមួយគត់មិនជាន់គ្នា)</small>
         </div>
 
         <div class="form-group">
           <label class="form-label">ពាក្យសម្ងាត់ (Password) <span class="required">*</span></label>
-          <input type="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." required>
+          <input type="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." required autocomplete="new-password">
         </div>
 
         <div class="form-group">
@@ -145,4 +180,168 @@
     </form>
   </div>
 </div>
+
+<!-- Modal: Edit User -->
+<div id="editUserModal" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-user-pen text-primary"></i> កែប្រែព័ត៌មានគណនី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('settings_users') }}">
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="user_id" id="edit_user_id">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះគណនី (Username)</label>
+          <input type="text" id="edit_username" class="form-control" disabled style="background: var(--bg-muted, #f1f5f9);">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះពេញ (Full Name) <span class="required">*</span></label>
+          <input type="text" name="full_name" id="edit_full_name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">សិទ្ធិប្រើប្រាស់ (User Role) <span class="required">*</span></label>
+          <select name="role" id="edit_role" class="form-select" required>
+            <option value="admin">Admin (មេឃុំ / IT) - សិទ្ធិគ្រប់គ្រងពេញលេញ</option>
+            <option value="clerk">Clerk (ស្មៀនឃុំ) - គ្រប់គ្រងវត្តមាន ច្បាប់ បៀវត្សរ៍</option>
+            <option value="staff">Staff (មន្ត្រីទូទៅ / មេភូមិ) - មើលព័ត៌មានផ្ទាល់ខ្លួន ស្នើសុំច្បាប់</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ភ្ជាប់ជាមួយមន្ត្រីក្នុងប្រព័ន្ធ</label>
+          <select name="staff_id" id="edit_staff_id" class="form-select">
+            <option value="">-- មិនភ្ជាប់ --</option>
+            {% for s in active_staff %}
+            <option value="{{ s.id }}">{{ s.name_kh }} - {{ s.position_title_kh }} ({{ s.officer_code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ពាក្យសម្ងាត់ថ្មី (ទុកនៅទទេបើមិនចង់ប្តូរ)</label>
+          <input type="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មី..." autocomplete="new-password">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> រក្សាទុក
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Reset Password -->
+<div id="resetPwdModal" class="modal-backdrop">
+  <div class="modal-dialog" style="max-width: 420px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-key text-warning"></i> ប្តូរពាក្យសម្ងាត់គណនី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('settings_users') }}">
+      <input type="hidden" name="action" value="reset_password">
+      <input type="hidden" name="user_id" id="reset_user_id">
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem;">
+          ប្តូរពាក្យសម្ងាត់សម្រាប់គណនី៖ <strong id="reset_username_text" class="text-primary"></strong> (<span id="reset_fullname_text"></span>)
+        </p>
+        <div class="form-group">
+          <label class="form-label">ពាក្យសម្ងាត់ថ្មី (New Password) <span class="required">*</span></label>
+          <input type="password" name="new_password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មី..." required autocomplete="new-password">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-warning">
+          <i class="fa-solid fa-key"></i> កំណត់ពាក្យសម្ងាត់
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Delete User -->
+<div id="deleteUserModal" class="modal-backdrop">
+  <div class="modal-dialog" style="max-width: 420px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-triangle-exclamation text-danger"></i> បញ្ជាក់ការលុបគណនី</div>
+      <button class="modal-close">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('settings_users') }}">
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="user_id" id="delete_user_id">
+      <div class="modal-body">
+        <p>តើលោកអ្នកពិតជាចង់លុបគណនី <strong id="delete_username_text" class="text-danger"></strong> (<span id="delete_fullname_text"></span>) មែនទេ?</p>
+        <p style="font-size: 12px; color: var(--text-muted);">ចំណាំ៖ ទិន្នន័យគណនីដែលបានលុបមិនអាចទាញយកមកវិញបានទេ។</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa-solid fa-trash"></i> លុបគណនី
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Edit User Trigger
+  document.querySelectorAll(".btn-edit-user").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const uid = this.dataset.userId;
+      const uname = this.dataset.username;
+      const fname = this.dataset.fullname;
+      const role = this.dataset.role;
+      const staffId = this.dataset.staffId;
+
+      document.getElementById("edit_user_id").value = uid;
+      document.getElementById("edit_username").value = uname;
+      document.getElementById("edit_full_name").value = fname;
+      document.getElementById("edit_role").value = role;
+      document.getElementById("edit_staff_id").value = staffId;
+
+      const modal = document.getElementById("editUserModal");
+      if (modal) modal.classList.add("show");
+    });
+  });
+
+  // Reset Password Trigger
+  document.querySelectorAll(".btn-reset-pwd").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const uid = this.dataset.userId;
+      const uname = this.dataset.username;
+      const fname = this.dataset.fullname;
+
+      document.getElementById("reset_user_id").value = uid;
+      document.getElementById("reset_username_text").textContent = uname;
+      document.getElementById("reset_fullname_text").textContent = fname;
+
+      const modal = document.getElementById("resetPwdModal");
+      if (modal) modal.classList.add("show");
+    });
+  });
+
+  // Delete User Trigger
+  document.querySelectorAll(".btn-delete-user").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const uid = this.dataset.userId;
+      const uname = this.dataset.username;
+      const fname = this.dataset.fullname;
+
+      document.getElementById("delete_user_id").value = uid;
+      document.getElementById("delete_username_text").textContent = uname;
+      document.getElementById("delete_fullname_text").textContent = fname;
+
+      const modal = document.getElementById("deleteUserModal");
+      if (modal) modal.classList.add("show");
+    });
+  });
+});
+</script>
 {% endblock %}
