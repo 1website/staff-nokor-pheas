@@ -5124,5 +5124,191 @@ a, button, input, select, textarea, .nav-link, .btn {
   background: #475569;
 }
 
+/* ==============================================================================
+   LOADING CIRCLE & SPINNER SYSTEM (ប្រព័ន្ធ Loading Circle ពេលរង់ចាំ/ទាញយកទិន្នន័យ)
+   ============================================================================== */
+
+/* 1. Global Glassmorphic Loading Overlay */
+.global-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.global-loading-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Loading Modal Card */
+.loading-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  max-width: 90vw;
+  width: 360px;
+  transform: scale(0.9);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.global-loading-overlay.active .loading-card {
+  transform: scale(1);
+}
+
+/* Dual-Ring Rotating Loading Circle */
+.loading-circle-wrapper {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3.5px solid transparent;
+  border-top-color: #1e3a8a;
+  border-right-color: #3b82f6;
+  border-bottom-color: #60a5fa;
+  animation: spinSmooth 0.95s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+
+[data-theme="dark"] .loading-ring-outer {
+  border-top-color: #38bdf8;
+  border-right-color: #60a5fa;
+  border-bottom-color: #818cf8;
+}
+
+.loading-ring-inner {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #f59e0b;
+  border-left-color: #fbbf24;
+  animation: spinReverse 0.8s linear infinite;
+}
+
+.loading-icon-center {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+
+.loading-pulse-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: pulseScale 1.4s ease-in-out infinite;
+}
+
+/* Loading Typography */
+.loading-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loading-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+}
+
+.loading-subtitle {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* 2. Button Small Spinner Circle */
+.spinner-circle-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spinSmooth 0.65s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.btn-outline .spinner-circle-sm,
+.btn-light .spinner-circle-sm {
+  border-color: rgba(30, 58, 138, 0.25);
+  border-top-color: #1e3a8a;
+}
+
+/* 3. In-card / In-table Inline Loading Spinner */
+.inline-loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.spinner-circle-lg {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spinSmooth 0.85s linear infinite;
+}
+
+/* Keyframe Animations */
+@keyframes spinSmooth {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes pulseScale {
+  0%, 100% { transform: scale(0.92); opacity: 0.85; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+
 
 

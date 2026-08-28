@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initFlashToasts();
   initPageTransitionsAndPrefetch();
   initBackToTop();
+  initLoadingCircleSystem();
 });
 
 // ==============================================================================
@@ -634,7 +635,161 @@ function initThemeToggle() {
 }
 
 // ==============================================================================
-// 8. PWA SERVICE WORKER & DESKTOP INSTALLATION
+// 11. GLOBAL LOADING CIRCLE SYSTEM (ប្រព័ន្ធ Loading Circle ពេលរង់ចាំ/ទាញយកទិន្នន័យ)
+// ==============================================================================
+
+/**
+ * Show the global Loading Circle overlay
+ * @param {string} title - Main loading title text in Khmer
+ * @param {string} subtitle - Subtitle/description text in Khmer
+ */
+function showLoading(title = "កំពុងដំណើរការ...", subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងទាញយកទិន្នន័យ") {
+  const overlay = document.getElementById("global-loading-overlay");
+  const titleEl = document.getElementById("global-loading-title");
+  const subtitleEl = document.getElementById("global-loading-subtitle");
+
+  if (titleEl) titleEl.textContent = title;
+  if (subtitleEl) subtitleEl.textContent = subtitle;
+
+  if (overlay) {
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+}
+
+/**
+ * Hide the global Loading Circle overlay
+ */
+function hideLoading() {
+  const overlay = document.getElementById("global-loading-overlay");
+  if (overlay) {
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+}
+
+// Attach to window object for global access
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+
+/**
+ * Set a button into loading state with inline spinning circle
+ * @param {HTMLElement} btn - The button element
+ * @param {string} text - Optional loading text
+ */
+function setButtonLoading(btn, text = "កំពុងដំណើរការ...") {
+  if (!btn) return;
+  if (btn.getAttribute("data-original-html") === null) {
+    btn.setAttribute("data-original-html", btn.innerHTML);
+  }
+  btn.disabled = true;
+  btn.classList.add("is-loading");
+  btn.innerHTML = `<span class="spinner-circle-sm"></span> <span>${text}</span>`;
+}
+
+/**
+ * Restore button from loading state
+ * @param {HTMLElement} btn - The button element
+ */
+function resetButtonLoading(btn) {
+  if (!btn) return;
+  const original = btn.getAttribute("data-original-html");
+  if (original !== null) {
+    btn.innerHTML = original;
+    btn.removeAttribute("data-original-html");
+  }
+  btn.disabled = false;
+  btn.classList.remove("is-loading");
+}
+
+window.setButtonLoading = setButtonLoading;
+window.resetButtonLoading = resetButtonLoading;
+
+function initLoadingCircleSystem() {
+  // 1. Auto-intercept form submissions (except forms marked data-no-loading)
+  document.addEventListener("submit", function (e) {
+    const form = e.target;
+    if (!form || form.tagName !== "FORM") return;
+    if (form.hasAttribute("data-no-loading") || form.classList.contains("no-loading")) return;
+
+    // Check HTML5 validity
+    if (form.checkValidity && !form.checkValidity()) {
+      return;
+    }
+
+    const action = (form.getAttribute("action") || window.location.pathname).toLowerCase();
+    const submitBtn = form.querySelector("button[type='submit'], input[type='submit']");
+
+    let title = "កំពុងដំណើរការ...";
+    let subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងទាញយក និងរក្សាទុកទិន្នន័យ";
+
+    if (action.includes("login") || form.id === "loginForm") {
+      title = "កំពុងផ្ទៀងផ្ទាត់...";
+      subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងដំណើរការចូលគណនី";
+    } else if (action.includes("payroll") && (action.includes("generate") || action.includes("calculate"))) {
+      title = "កំពុងគណនាប្រាក់បៀវត្សរ៍...";
+      subtitle = "ប្រព័ន្ធកំពុងដំណើរការគណនាប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភជូនមន្ត្រី";
+    } else if (action.includes("export") || action.includes("excel") || action.includes("pdf")) {
+      title = "កំពុងទាញយកទិន្នន័យ...";
+      subtitle = "ប្រព័ន្ធកំពុងទាញយក និងបង្កើតឯកសារ Excel/PDF...";
+      setTimeout(hideLoading, 3000);
+    } else if (action.includes("delete") || (form.getAttribute("onsubmit") && form.getAttribute("onsubmit").includes("confirm"))) {
+      title = "កំពុងលុបទិន្នន័យ...";
+      subtitle = "សូមរង់ចាំមួយភ្លែត...";
+    } else if (action.includes("handover")) {
+      title = "កំពុងផ្ទេរការកាន់កាប់...";
+      subtitle = "កំពុងកត់ត្រាការផ្ទេរការគ្រប់គ្រងសម្ភារៈ...";
+    } else if (action.includes("maintenance")) {
+      title = "កំពុងកត់ត្រាការជួសជុល...";
+      subtitle = "កំពុងរក្សាទុកប្រវត្តិថែទាំសម្ភារៈ...";
+    } else if (action.includes("attendance")) {
+      title = "កំពុងកត់ត្រាវត្តមាន...";
+      subtitle = "កំពុងរក្សាទុកទិន្នន័យវត្តមាន...";
+    } else if (form.method.toUpperCase() === "GET") {
+      title = "កំពុងស្វែងរក & ចម្រាញ់ទិន្នន័យ...";
+      subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងផ្ទុកទិន្នន័យ...";
+    } else {
+      title = "កំពុងរក្សាទុកទិន្នន័យ...";
+      subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងធ្វើបច្ចុប្បន្នភាពទិន្នន័យ";
+    }
+
+    if (submitBtn) {
+      setButtonLoading(submitBtn, "កំពុងដំណើរការ...");
+    }
+    showLoading(title, subtitle);
+  });
+
+  // 2. Auto-intercept Excel, PDF, and Reports Export download links
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+    const href = link.getAttribute("href") || "";
+
+    if (
+      href.includes("export_excel") ||
+      href.includes("export_pdf") ||
+      href.includes("/export_") ||
+      href.includes("/download") ||
+      link.classList.contains("btn-export-excel") ||
+      (link.classList.contains("btn-success") && href.includes("export"))
+    ) {
+      showLoading("កំពុងទាញយកទិន្នន័យ...", "ប្រព័ន្ធកំពុងទាញយក និងរៀបចំឯកសារ Excel/PDF...");
+      // Automatically hide overlay after 2.8s since browser file download does not unload the webpage
+      setTimeout(hideLoading, 2800);
+    }
+  });
+
+  // 3. Auto hide on page restoration (back/forward bfcache)
+  window.addEventListener("pageshow", function () {
+    hideLoading();
+    document.querySelectorAll(".is-loading").forEach(function (btn) {
+      resetButtonLoading(btn);
+    });
+  });
+}
+
+// ==============================================================================
+// 12. PWA SERVICE WORKER & DESKTOP INSTALLATION
 // ==============================================================================
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
@@ -648,4 +803,6 @@ if ("serviceWorker" in navigator) {
       });
   });
 }
+
+
 

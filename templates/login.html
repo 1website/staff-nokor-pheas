@@ -120,6 +120,22 @@
   </style>
 </head>
 <body>
+  <!-- Global Loading Circle Overlay -->
+  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true">
+    <div class="loading-card">
+      <div class="loading-circle-wrapper">
+        <div class="loading-ring-outer"></div>
+        <div class="loading-ring-inner"></div>
+        <div class="loading-icon-center">
+          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" class="loading-pulse-icon">
+        </div>
+      </div>
+      <div class="loading-text-group">
+        <div id="global-loading-title" class="loading-title">កំពុងផ្ទៀងផ្ទាត់...</div>
+        <div id="global-loading-subtitle" class="loading-subtitle">សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងដំណើរការចូលគណនី</div>
+      </div>
+    </div>
+  </div>
 
   <div class="login-card">
     <div class="login-header">
