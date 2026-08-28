@@ -189,6 +189,13 @@ FINANCE_EXPENSE_CATEGORIES = {
         'icon': 'fa-solid fa-boxes-packing',
         'color': '#0284c7'
     },
+    'social_service': {
+        'title_kh': 'ចំណាយសេវាសង្គម',
+        'title_en': 'Social Services & Welfare',
+        'badge_class': 'badge-success',
+        'icon': 'fa-solid fa-hand-holding-heart',
+        'color': '#059669'
+    },
     'utility': {
         'title_kh': 'ថ្លៃអគ្គិសនី ទឹក & អ៊ីនធឺណិត',
         'title_en': 'Utilities (Electricity/Water/Net)',
