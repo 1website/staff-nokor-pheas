@@ -2452,6 +2452,12 @@ body.sidebar-collapsed .col-phone {
     box-sizing: border-box !important;
   }
 
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
   .finance-charts-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
@@ -2487,6 +2493,67 @@ body.sidebar-collapsed .col-phone {
 
 /* 2. Tablets & Mobile Landscape (< 768px) */
 @media (max-width: 768px) {
+  /* Stat Cards on Mobile/Tablet: 2x2 Clean Grid */
+  .stats-grid-4,
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+    width: 100% !important;
+  }
+
+  .stats-grid-4 .stat-card,
+  .stats-grid .stat-card {
+    padding: 10px 10px !important;
+    gap: 8px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    border-radius: var(--radius-md) !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .stats-grid-4 .stat-icon-wrapper,
+  .stats-grid .stat-icon-wrapper {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 15px !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .stats-grid-4 .stat-details,
+  .stats-grid .stat-details {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .stats-grid-4 .stat-label,
+  .stats-grid .stat-label {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .stats-grid-4 .stat-number,
+  .stats-grid .stat-number {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .stats-grid-4 .stat-subtext,
+  .stats-grid .stat-subtext {
+    display: none !important;
+  }
+
   /* Finance Filter Card Responsive Layout */
   .finance-filter-card {
     margin-bottom: 14px !important;
@@ -3091,13 +3158,14 @@ body.sidebar-collapsed .col-phone {
     padding: 12px 10px !important;
   }
 
-  /* Single Column Stats on Mobile */
-  .stats-grid,
-  div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"],
-  div[style*="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"],
-  div[style*="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))"] {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+  /* 2x2 Mobile Stat Grid */
+  .stats-grid-4,
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
   }
 
   .page-actions .btn {
@@ -3113,6 +3181,38 @@ body.sidebar-collapsed .col-phone {
 
 /* 4. Small Mobile Screens (< 480px) */
 @media (max-width: 480px) {
+  .stats-grid-4,
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .stats-grid-4 .stat-card,
+  .stats-grid .stat-card {
+    padding: 8px 8px !important;
+    gap: 6px !important;
+  }
+
+  .stats-grid-4 .stat-icon-wrapper,
+  .stats-grid .stat-icon-wrapper {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+
+  .stats-grid-4 .stat-label,
+  .stats-grid .stat-label {
+    font-size: 10.5px !important;
+  }
+
+  .stats-grid-4 .stat-number,
+  .stats-grid .stat-number {
+    font-size: 12px !important;
+  }
+
   .composition-breakdown-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 6px !important;

@@ -40,7 +40,7 @@
     </div>
     <div class="stat-details">
       <div class="stat-label">សរុបចំណូល</div>
-      <div class="stat-number" style="font-size: 20px; color: #059669;">
+      <div class="stat-number text-income" style="color: #059669;">
         + {{ period_income | currency }}
       </div>
       <div class="stat-subtext">
@@ -57,7 +57,7 @@
     </div>
     <div class="stat-details">
       <div class="stat-label">សរុបចំណាយ</div>
-      <div class="stat-number" style="font-size: 20px; color: #dc2626;">
+      <div class="stat-number text-expense" style="color: #dc2626;">
         - {{ period_expense | currency }}
       </div>
       <div class="stat-subtext">
@@ -76,7 +76,7 @@
     <div class="stat-details">
       <div class="stat-label">តុល្យភាពសាច់ប្រាក់</div>
       <div class="stat-number"
-        style="font-size: 20px; color: {% if period_net >= 0 %}#0284c7{% else %}#dc2626{% endif %};">
+        style="color: {% if period_net >= 0 %}#0284c7{% else %}#dc2626{% endif %};">
         {{ period_net | currency }}
       </div>
       <div class="stat-subtext">
@@ -100,9 +100,9 @@
     </div>
     <div class="stat-details">
       <div class="stat-label">ចំនួនប្រតិបត្តិការសរុប</div>
-      <div class="stat-number" style="font-size: 20px;">
+      <div class="stat-number">
         {{ period_count | kh_num }} <span
-          style="font-size: 14px; font-weight: normal; color: var(--text-muted);">ប្រតិបត្តិការ</span>
+          style="font-size: 13px; font-weight: normal; color: var(--text-muted);">ប្រតិបត្តិការ</span>
       </div>
       <div class="stat-subtext">
         សៀវភៅកត់ត្រាសាច់ប្រាក់ឃុំ
