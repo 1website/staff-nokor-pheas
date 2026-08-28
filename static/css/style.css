@@ -1377,27 +1377,43 @@ body.sidebar-collapsed .main-wrapper {
 }
 
 /* Phone Column Adaptive Visibility with Sidebar */
-.col-phone {
+.col-phone,
+.col-tx-code,
+.col-payment-method {
   white-space: nowrap;
 }
 
-/* Hide Phone Number column when Sidebar is shown (default desktop expanded state) */
+/* Hide Phone Number, Transaction Code, and Payment Method when Sidebar is shown (default desktop expanded state) */
 body:not(.sidebar-collapsed) th.col-phone,
 body:not(.sidebar-collapsed) td.col-phone,
-body:not(.sidebar-collapsed) .col-phone {
+body:not(.sidebar-collapsed) .col-phone,
+body:not(.sidebar-collapsed) th.col-tx-code,
+body:not(.sidebar-collapsed) td.col-tx-code,
+body:not(.sidebar-collapsed) .col-tx-code,
+body:not(.sidebar-collapsed) th.col-payment-method,
+body:not(.sidebar-collapsed) td.col-payment-method,
+body:not(.sidebar-collapsed) .col-payment-method {
   display: none !important;
 }
 
-/* Show Phone Number column when Sidebar is collapsed/hidden (full-width view) */
+/* Show columns when Sidebar is collapsed/hidden (full-width view) */
 body.sidebar-collapsed th.col-phone,
 body.sidebar-collapsed td.col-phone,
-body.sidebar-collapsed .col-phone {
+body.sidebar-collapsed .col-phone,
+body.sidebar-collapsed th.col-tx-code,
+body.sidebar-collapsed td.col-tx-code,
+body.sidebar-collapsed .col-tx-code,
+body.sidebar-collapsed th.col-payment-method,
+body.sidebar-collapsed td.col-payment-method,
+body.sidebar-collapsed .col-payment-method {
   display: table-cell !important;
 }
 
 /* Mobile & Tablet view */
 @media (max-width: 992px) {
-  body.sidebar-open .col-phone {
+  body.sidebar-open .col-phone,
+  body.sidebar-open .col-tx-code,
+  body.sidebar-open .col-payment-method {
     display: none !important;
   }
 }
@@ -3020,7 +3036,7 @@ body.sidebar-collapsed .col-phone {
     border-radius: 4px;
   }
 
-  /* Hide Position (មុខតំណែង) and Village (ភូមិ) on mobile view as requested */
+  /* Hide Position, Village, Phone, Tx Code, and Payment Method on mobile view */
   th.col-position,
   td.col-position,
   .col-position,
@@ -3029,7 +3045,13 @@ body.sidebar-collapsed .col-phone {
   .col-village,
   th.col-phone,
   td.col-phone,
-  .col-phone {
+  .col-phone,
+  th.col-tx-code,
+  td.col-tx-code,
+  .col-tx-code,
+  th.col-payment-method,
+  td.col-payment-method,
+  .col-payment-method {
     display: none !important;
   }
 

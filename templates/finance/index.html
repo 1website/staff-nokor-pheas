@@ -268,14 +268,14 @@
         <thead>
           <tr>
             <th style="width: 50px; text-align: center;">ល.រ</th>
-            <th style="width: 130px; white-space: nowrap;">កូដប្រតិបត្តិការ</th>
+            <th class="col-tx-code" style="width: 130px; white-space: nowrap;">កូដប្រតិបត្តិការ</th>
             <th style="width: 120px; white-space: nowrap;">កាលបរិច្ឆេទ</th>
             <th style="min-width: 180px;">បរិយាយ / កិច្ចការ</th>
             <th style="width: 100px; text-align: center; white-space: nowrap;">ប្រភេទ</th>
             <th style="min-width: 160px; white-space: nowrap;">ប្រភព / ខ្ទង់</th>
             <th style="width: 145px; text-align: right; white-space: nowrap;">ចំនួនទឹកប្រាក់</th>
             <th style="width: 135px; white-space: nowrap;">អ្នកបង់ / អ្នកទទួល</th>
-            <th style="width: 130px; text-align: center; white-space: nowrap;">វិធីទូទាត់</th>
+            <th class="col-payment-method" style="width: 130px; text-align: center; white-space: nowrap;">វិធីទូទាត់</th>
             <th style="width: 65px; text-align: center;">ឯកសារ</th>
             <th style="width: 115px; text-align: center; white-space: nowrap;">សកម្មភាព</th>
           </tr>
@@ -292,7 +292,7 @@
             <td style="text-align: center; color: var(--text-muted); font-size: 12.5px;">
               {{ loop.index | kh_num }}
             </td>
-            <td>
+            <td class="col-tx-code">
               <span class="officer-code-pill" style="font-size: 11.5px;">
                 {{ t.transaction_code }}
               </span>
@@ -342,7 +342,7 @@
                 {{ t.payer_payee or '-' }}
               </div>
             </td>
-            <td style="text-align: center; white-space: nowrap;">
+            <td class="col-payment-method" style="text-align: center; white-space: nowrap;">
               <span class="badge badge-subtle">
                 <i class="{{ pay_info.icon or 'fa-solid fa-building-columns' }}"></i>
                 <span>{{ pay_info.title_kh or t.payment_method }}</span>
