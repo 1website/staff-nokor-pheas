@@ -1252,6 +1252,62 @@ body.sidebar-collapsed .col-phone {
   border: 1px solid #ddd6fe;
 }
 
+.badge-subtle,
+.badge-neutral {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .badge-success {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+[data-theme="dark"] .badge-danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .badge-info {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+[data-theme="dark"] .badge-warning {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+[data-theme="dark"] .badge-purple {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+[data-theme="dark"] .badge-council {
+  background-color: rgba(3, 105, 161, 0.2);
+  color: #7dd3fc;
+  border-color: rgba(125, 211, 252, 0.3);
+}
+
+[data-theme="dark"] .badge-clerk {
+  background-color: rgba(15, 118, 110, 0.2);
+  color: #5eead4;
+  border-color: rgba(94, 234, 212, 0.3);
+}
+
+[data-theme="dark"] .badge-contract {
+  background-color: rgba(107, 33, 168, 0.2);
+  color: #d8b4fe;
+  border-color: rgba(216, 180, 254, 0.3);
+}
+
+[data-theme="dark"] .badge-village {
+  background-color: rgba(194, 65, 12, 0.2);
+  color: #fdba74;
+  border-color: rgba(253, 186, 116, 0.3);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
