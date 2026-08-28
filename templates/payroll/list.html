@@ -125,10 +125,14 @@
             <th>គោត្តនាម-នាម</th>
             <th>មុខតំណែង</th>
             <th>ប្រាក់គោល</th>
+            {% if totals.tot_pos > 0 %}
             <th>ឧបត្ថម្ភចូលឆ្នាំ</th>
+            {% endif %}
+            {% if totals.tot_fam > 0 %}
             <th>ឧបត្ថម្ភភ្ជុំបិណ្ឌ</th>
+            {% endif %}
             <th>ប្រាក់សរុប</th>
-            <th style="min-width: 170px;">ប្រាក់កាត់ផ្សេងៗ</th>
+            <th style="min-width: 150px;">ប្រាក់កាត់ផ្សេងៗ</th>
             <th>ប្រាក់សុទ្ធ</th>
             <th style="text-align: center;">ប័ណ្ណបើកប្រាក់</th>
           </tr>
@@ -144,6 +148,7 @@
             </td>
             <td>{{ p.position_title_kh }}</td>
             <td>{{ p.base_salary | currency }}</td>
+            {% if totals.tot_pos > 0 %}
             <td>
               {% if p.position_allowance > 0 %}
               <span style="font-weight: 600; color: #0284c7;">{{ p.position_allowance | currency }}</span>
@@ -151,6 +156,8 @@
               <span style="color: #94a3b8;">-</span>
               {% endif %}
             </td>
+            {% endif %}
+            {% if totals.tot_fam > 0 %}
             <td>
               {% if p.family_allowance > 0 %}
               <span style="font-weight: 600; color: #d97706;">{{ p.family_allowance | currency }}</span>
@@ -158,6 +165,7 @@
               <span style="color: #94a3b8;">-</span>
               {% endif %}
             </td>
+            {% endif %}
             <td><strong>{{ p.gross_salary | currency }}</strong></td>
             
             <!-- Deductions Column (Line 1: Amount, Line 2: Edit Button) -->
@@ -201,7 +209,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="11" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <td colspan="{{ 9 + (1 if totals.tot_pos > 0 else 0) + (1 if totals.tot_fam > 0 else 0) }}" style="text-align: center; padding: 40px; color: var(--text-muted);">
               <i class="fa-solid fa-file-invoice-dollar" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
               <p>មិនទាន់មានទិន្នន័យប្រាក់បៀវត្សរ៍សម្រាប់ខែ {{ month_year }} នៅឡើយទេ</p>
               {% if session.role in ['admin', 'clerk'] %}
