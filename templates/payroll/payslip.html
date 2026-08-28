@@ -146,27 +146,26 @@
         </div>
         <table class="official-table" style="margin: 0; border: none;">
           <tr>
-            <td>១. ប្រាក់កាត់ផ្សេងៗ</td>
-            <td style="text-align: right; color: #dc2626;">{{ p.nssf_deduction | currency }}</td>
+            <td>១. វិភាគទាន ប.ស.ស (NSSF 2%)</td>
+            <td style="text-align: right; color: #dc2626;">{{ (p.nssf_deduction or 0) | currency }}</td>
           </tr>
           <tr>
-            <td>២. ការកាត់វត្តមាន/វិន័យ</td>
-            <td style="text-align: right;">{{ p.attendance_deduction | currency }}</td>
+            <td>២. ការកាត់អវត្តមាន / វិន័យ</td>
+            <td style="text-align: right; color: #dc2626;">{{ (p.attendance_deduction or 0) | currency }}</td>
           </tr>
           <tr>
-            <td>៣. ពន្ធលើប្រាក់បៀវត្សរ៍</td>
-            <td style="text-align: right;">{{ p.tax_deduction | currency }}</td>
+            <td>៣. ការកាត់ផ្សេងៗ / ពន្ធ</td>
+            <td style="text-align: right; color: #dc2626;">{{ (p.tax_deduction or 0) | currency }}</td>
           </tr>
           <tr style="height: 38px;">
-            <td></td>
-            <td></td>
-          </tr>
-          <tr style="height: 38px;">
-            <td></td>
-            <td></td>
+            <td colspan="2" style="font-size: 8.5pt; color: #64748b; vertical-align: middle;">
+              {% if p.remarks %}
+              <i class="fa-solid fa-circle-info"></i> ចំណាំ៖ {{ p.remarks }}
+              {% endif %}
+            </td>
           </tr>
           <tr style="background: #fef2f2; font-weight: bold; border-top: 2px solid #991b1b;">
-            <td>សរុបការកាត់កង:</td>
+            <td>សរុបការកាត់កង (Total Deductions):</td>
             <td style="text-align: right; color: #dc2626;">-{{ ((p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0)) | currency }}</td>
           </tr>
         </table>

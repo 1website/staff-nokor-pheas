@@ -90,7 +90,7 @@
     </div>
     <div class="stat-details">
       <div class="stat-label">ប្រាក់កាត់ផ្សេងៗ</div>
-      <div class="stat-number" style="font-size: 18px; color: #dc2626;">{{ (totals.tot_nssf or 0) | currency }}</div>
+      <div class="stat-number" id="stat-total-deductions" style="font-size: 18px; color: #dc2626;">{{ (totals.tot_ded or totals.tot_nssf or 0) | currency }}</div>
     </div>
   </div>
 
@@ -100,16 +100,19 @@
     </div>
     <div class="stat-details">
       <div class="stat-label">ប្រាក់សុទ្ធត្រូវបើក</div>
-      <div class="stat-number" style="font-size: 18px; color: #059669;">{{ (totals.tot_net or 0) | currency }}</div>
+      <div class="stat-number" id="stat-total-net" style="font-size: 18px; color: #059669;">{{ (totals.tot_net or 0) | currency }}</div>
     </div>
   </div>
 </div>
 
 <!-- Payroll Table Card -->
 <div class="card">
-  <div class="card-header">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <div class="card-title">
       <span>តារាងបើកផ្ដល់ប្រាក់បៀវត្សរ៍លម្អិត</span>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> លោកអ្នកអាចចុចប៊ូតុង <strong>«កែប្រាក់កាត់»</strong> ដើម្បីកាត់តាមជាក់ស្តែង (ប.ស.ស, អវត្តមាន, ឬកាត់ផ្សេងៗ)
     </div>
   </div>
   <div class="card-body" style="padding: 0;">
@@ -125,14 +128,14 @@
             <th>ឧបត្ថម្ភចូលឆ្នាំ</th>
             <th>ឧបត្ថម្ភភ្ជុំបិណ្ឌ</th>
             <th>ប្រាក់សរុប</th>
-            <th>ប្រាក់កាត់ផ្សេងៗ</th>
+            <th style="min-width: 170px;">ប្រាក់កាត់ផ្សេងៗ</th>
             <th>ប្រាក់សុទ្ធ</th>
             <th style="text-align: center;">ប័ណ្ណបើកប្រាក់</th>
           </tr>
         </thead>
         <tbody>
           {% for p in payroll_records %}
-          <tr>
+          <tr id="payroll-row-{{ p.id }}">
             <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
             <td><strong>{{ p.officer_code }}</strong></td>
             <td>
@@ -156,8 +159,39 @@
               {% endif %}
             </td>
             <td><strong>{{ p.gross_salary | currency }}</strong></td>
-            <td style="color: #dc2626;">-{{ p.nssf_deduction | currency }}</td>
-            <td style="font-weight: 700; color: #059669; font-size: 14px;">
+            
+            <!-- Deductions Column with Badges & Edit Button -->
+            <td id="ded-cell-{{ p.id }}" style="vertical-align: middle;">
+              {% set total_ded = (p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0) %}
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                {% if total_ded > 0 %}
+                <span class="ded-amount-val" style="font-weight: 700; color: #dc2626; font-size: 13.5px;">-{{ total_ded | currency }}</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 11px;">
+                  {% if p.nssf_deduction > 0 %}
+                  <span class="badge" style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; font-size: 10.5px;">ប.ស.ស: {{ p.nssf_deduction | currency }}</span>
+                  {% endif %}
+                  {% if p.attendance_deduction > 0 %}
+                  <span class="badge" style="background: #fef3c7; color: #b45309; padding: 2px 6px; font-size: 10.5px;">អវត្តមាន: {{ p.attendance_deduction | currency }}</span>
+                  {% endif %}
+                  {% if p.tax_deduction > 0 %}
+                  <span class="badge" style="background: #f1f5f9; color: #475569; padding: 2px 6px; font-size: 10.5px;">ផ្សេងៗ: {{ p.tax_deduction | currency }}</span>
+                  {% endif %}
+                </div>
+                {% else %}
+                <span class="ded-amount-val" style="color: #94a3b8; font-size: 13px;">០ រៀល</span>
+                {% endif %}
+
+                {% if session.role in ['admin', 'clerk'] %}
+                <button type="button" class="btn btn-xs btn-outline-danger" style="margin-top: 4px; padding: 2px 8px; font-size: 11.5px; align-self: flex-start;"
+                  onclick="openDeductionModal({{ p.id }}, '{{ p.name_kh }}', '{{ p.officer_code }}', '{{ p.position_title_kh }}', {{ p.base_salary or 0 }}, {{ p.gross_salary or 0 }}, {{ p.nssf_deduction or 0 }}, {{ p.attendance_deduction or 0 }}, {{ p.tax_deduction or 0 }}, '{{ p.remarks or '' }}')"
+                  title="កំណត់ ឬកែប្រែប្រាក់កាត់">
+                  <i class="fa-solid fa-pen-to-square"></i> កែប្រាក់កាត់
+                </button>
+                {% endif %}
+              </div>
+            </td>
+
+            <td id="net-cell-{{ p.id }}" style="font-weight: 700; color: #059669; font-size: 14px;">
               {{ p.net_salary | currency }}
             </td>
             <td style="text-align: center;">
@@ -187,4 +221,234 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Set / Edit Custom Deductions -->
+<div id="deductionModal" class="modal-backdrop">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-calculator" style="color: #dc2626;"></i>
+        <span>កំណត់ប្រាក់កាត់ផ្សេងៗ (Custom Deductions)</span>
+      </div>
+      <button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button>
+    </div>
+    <form id="deductionForm" method="POST" onsubmit="handleSaveDeductions(event)">
+      <div class="modal-body" style="padding: 20px;">
+        <input type="hidden" id="ded_payroll_id" name="payroll_id" value="">
+
+        <!-- Staff Info Banner -->
+        <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 700; color: var(--primary-dark); font-size: 15px;" id="ded_modal_staff_name">មី គន់</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="ded_modal_staff_pos">អត្តលេខ៖ NP-001 • មេឃុំ</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: var(--text-muted);">ប្រាក់សរុបមុនកាត់ (Gross)</div>
+            <div style="font-weight: 700; color: var(--primary); font-size: 15px;" id="ded_modal_gross_display">0 រៀល</div>
+          </div>
+        </div>
+
+        <!-- Deduction Input 1: NSSF -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin: 0; font-weight: 600; font-size: 13px;">
+              <i class="fa-solid fa-shield-heart" style="color: #dc2626;"></i> ១. វិភាគទាន ប.ស.ស (NSSF 2%)
+            </label>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn btn-xs btn-outline-primary" onclick="setNssf2Percent()" style="padding: 2px 6px; font-size: 11px;">
+                គណនា ២% ស្វ័យប្រវត្តិ
+              </button>
+              <button type="button" class="btn btn-xs btn-outline" onclick="setNssfZero()" style="padding: 2px 6px; font-size: 11px;">
+                ០៛
+              </button>
+            </div>
+          </div>
+          <div class="input-group" style="display: flex;">
+            <input type="number" id="inp_nssf_deduction" name="nssf_deduction" class="form-control" value="0" min="0" step="100" oninput="calculateModalNet()" placeholder="0">
+            <span style="background: var(--bg-main); border: 1px solid var(--border-color); border-left: none; padding: 8px 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; border-radius: 0 8px 8px 0;">រៀល</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">កាត់វិភាគទានសន្តិសុខសង្គម (តាមច្បាប់កំណត់ ២% នៃប្រាក់គោល)</div>
+        </div>
+
+        <!-- Deduction Input 2: Attendance -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">
+            <i class="fa-solid fa-user-xmark" style="color: #d97706;"></i> ២. ប្រាក់កាត់អវត្តមាន / វិន័យ (Attendance Deduction)
+          </label>
+          <div class="input-group" style="display: flex;">
+            <input type="number" id="inp_attendance_deduction" name="attendance_deduction" class="form-control" value="0" min="0" step="100" oninput="calculateModalNet()" placeholder="0">
+            <span style="background: var(--bg-main); border: 1px solid var(--border-color); border-left: none; padding: 8px 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; border-radius: 0 8px 8px 0;">រៀល</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">កាត់តាមចំនួនថ្ងៃអវត្តមាន ឬការយឺតជាក់ស្តែងប្រចាំខែ</div>
+        </div>
+
+        <!-- Deduction Input 3: Other / Tax -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">
+            <i class="fa-solid fa-receipt" style="color: #64748b;"></i> ៣. ប្រាក់កាត់ផ្សេងៗ / ពន្ធ (Other / Tax Deductions)
+          </label>
+          <div class="input-group" style="display: flex;">
+            <input type="number" id="inp_tax_deduction" name="tax_deduction" class="form-control" value="0" min="0" step="100" oninput="calculateModalNet()" placeholder="0">
+            <span style="background: var(--bg-main); border: 1px solid var(--border-color); border-left: none; padding: 8px 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; border-radius: 0 8px 8px 0;">រៀល</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">កាត់សងបុរេប្រទាន ប្រាក់កម្ចី ឬការកាត់កងផ្សេងៗតាមការព្រមព្រៀង</div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">
+            <i class="fa-solid fa-comment-dots"></i> កំណត់ចំណាំ / មូលហេតុនៃការកាត់ (Remarks)
+          </label>
+          <input type="text" id="inp_ded_remarks" name="remarks" class="form-control" placeholder="ឧ. កាត់អវត្តមាន ២ ថ្ងៃ, កាត់សងប្រាក់បុរេប្រទាន...">
+        </div>
+
+        <!-- Live Summary Calculation Card -->
+        <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+            <span style="color: var(--text-muted);">ប្រាក់សរុបមុនកាត់ (Gross):</span>
+            <strong id="summary_gross_val">0 រៀល</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+            <span style="color: #dc2626;">សរុបប្រាក់កាត់ផ្សេងៗ (Total Deductions):</span>
+            <strong style="color: #dc2626;" id="summary_ded_val">-0 រៀល</strong>
+          </div>
+          <div style="height: 1px; background: #86efac; margin: 8px 0;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; color: #059669; font-size: 14px;">ប្រាក់សុទ្ធត្រូវបើក (Net Salary):</span>
+            <span style="font-weight: 800; color: #059669; font-size: 18px;" id="summary_net_val">0 រៀល</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" class="btn btn-outline-danger" onclick="clearAllDeductions()" style="font-size: 12.5px;">
+          <i class="fa-solid fa-rotate-left"></i> កំណត់ ០៛ ទាំងអស់
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline" data-modal-close>បោះបង់</button>
+          <button type="submit" id="btn-save-deductions" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> រក្សាទុកប្រាក់កាត់
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentModalBase = 0;
+let currentModalGross = 0;
+
+function formatKhmerCurrency(num) {
+  return new Intl.NumberFormat('en-US').format(Math.round(num)) + ' រៀល';
+}
+
+function openDeductionModal(payrollId, nameKh, code, pos, base, gross, nssf, attDed, taxDed, remarks) {
+  currentModalBase = parseFloat(base) || 0;
+  currentModalGross = parseFloat(gross) || 0;
+
+  document.getElementById('ded_payroll_id').value = payrollId;
+  document.getElementById('ded_modal_staff_name').innerText = nameKh;
+  document.getElementById('ded_modal_staff_pos').innerText = `អត្តលេខ៖ ${code} • ${pos}`;
+  document.getElementById('ded_modal_gross_display').innerText = formatKhmerCurrency(currentModalGross);
+  document.getElementById('summary_gross_val').innerText = formatKhmerCurrency(currentModalGross);
+
+  document.getElementById('inp_nssf_deduction').value = nssf || 0;
+  document.getElementById('inp_attendance_deduction').value = attDed || 0;
+  document.getElementById('inp_tax_deduction').value = taxDed || 0;
+  document.getElementById('inp_ded_remarks').value = remarks || '';
+
+  calculateModalNet();
+
+  const modal = document.getElementById('deductionModal');
+  if (modal) {
+    modal.classList.add('show');
+  }
+}
+
+function calculateModalNet() {
+  const nssf = parseFloat(document.getElementById('inp_nssf_deduction').value) || 0;
+  const att = parseFloat(document.getElementById('inp_attendance_deduction').value) || 0;
+  const tax = parseFloat(document.getElementById('inp_tax_deduction').value) || 0;
+
+  const totalDed = nssf + att + tax;
+  const net = Math.max(0, currentModalGross - totalDed);
+
+  document.getElementById('summary_ded_val').innerText = totalDed > 0 ? `-${formatKhmerCurrency(totalDed)}` : '០ រៀល';
+  document.getElementById('summary_net_val').innerText = formatKhmerCurrency(net);
+}
+
+function setNssf2Percent() {
+  const nssf = Math.round(currentModalBase * 0.02);
+  document.getElementById('inp_nssf_deduction').value = nssf;
+  calculateModalNet();
+}
+
+function setNssfZero() {
+  document.getElementById('inp_nssf_deduction').value = 0;
+  calculateModalNet();
+}
+
+function clearAllDeductions() {
+  document.getElementById('inp_nssf_deduction').value = 0;
+  document.getElementById('inp_attendance_deduction').value = 0;
+  document.getElementById('inp_tax_deduction').value = 0;
+  calculateModalNet();
+}
+
+function handleSaveDeductions(e) {
+  e.preventDefault();
+  const form = document.getElementById('deductionForm');
+  const payrollId = document.getElementById('ded_payroll_id').value;
+  const btn = document.getElementById('btn-save-deductions');
+
+  if (!payrollId) return;
+
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> កំពុងរក្សាទុក...`;
+
+  const formData = new FormData(form);
+
+  fetch(`/payroll/${payrollId}/deductions`, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+
+    if (data.success) {
+      if (window.toast) {
+        toast.success(data.message, 'រក្សាទុកប្រាក់កាត់ជោគជ័យ');
+      }
+      
+      // Close modal
+      const modal = document.getElementById('deductionModal');
+      if (modal) modal.classList.remove('show');
+
+      // Reload page to reflect updated summaries cleanly
+      setTimeout(() => {
+        location.reload();
+      }, 600);
+    } else {
+      if (window.toast) {
+        toast.error(data.message || 'មានបញ្ហាក្នុងការរក្សាទុកប្រាក់កាត់!', 'កំហុស');
+      }
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    // Fallback to regular form submission
+    form.action = `/payroll/${payrollId}/deductions`;
+    form.submit();
+  });
+}
+</script>
 {% endblock %}

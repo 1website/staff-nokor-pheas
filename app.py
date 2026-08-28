@@ -1786,6 +1786,9 @@ def payroll_list():
                COALESCE(SUM(family_allowance), 0) as tot_fam,
                COALESCE(SUM(gross_salary), 0) as tot_gross,
                COALESCE(SUM(nssf_deduction), 0) as tot_nssf,
+               COALESCE(SUM(attendance_deduction), 0) as tot_att_ded,
+               COALESCE(SUM(tax_deduction), 0) as tot_tax_ded,
+               COALESCE(SUM(nssf_deduction + attendance_deduction + tax_deduction), 0) as tot_ded,
                COALESCE(SUM(net_salary), 0) as tot_net,
                COUNT(*) as total_count
         FROM payroll
@@ -1796,10 +1799,12 @@ def payroll_list():
         totals = dict(totals_row)
         totals["total_count"] = int(totals.get("total_count") or 0)
         totals["count"] = totals["total_count"]
+        totals["tot_ded"] = float(totals.get("tot_ded") or (totals.get("tot_nssf", 0) + totals.get("tot_att_ded", 0) + totals.get("tot_tax_ded", 0)))
     else:
         totals = {
             "tot_base": 0, "tot_pos": 0, "tot_miss": 0, "tot_meet": 0,
             "tot_inc": 0, "tot_fam": 0, "tot_gross": 0, "tot_nssf": 0,
+            "tot_att_ded": 0, "tot_tax_ded": 0, "tot_ded": 0,
             "tot_net": 0, "count": 0, "total_count": 0
         }
 
@@ -1817,7 +1822,7 @@ def payroll_list():
 @clerk_or_admin_required
 def payroll_generate():
     month_year = request.form.get("month_year", date.today().strftime("%Y-%m"))
-    meeting_allowance_default = float(request.form.get("meeting_allowance_default", 40000) or 40000)
+    auto_nssf = request.form.get("auto_nssf", "1") in ["1", "true", "on"]
 
     # Extract month number (e.g. '04' for April, '10' for October)
     month_num = month_year.split("-")[1] if "-" in month_year else ""
@@ -1839,8 +1844,8 @@ def payroll_generate():
         fam_all = (s["family_allowance"] or 0) if month_num == "10" else 0
 
         gross = base + pos_all + fam_all
-        nssf = round(base * 0.02)  # 2% NSSF
-        net = gross - nssf
+        nssf = round(base * 0.02) if auto_nssf else 0
+        net = max(0, gross - nssf)
 
         remarks = "ទូទាត់ប្រាក់បៀវត្សរ៍ប្រចាំខែ"
         if month_num == "04":
@@ -1864,7 +1869,7 @@ def payroll_generate():
                 family_allowance = excluded.family_allowance,
                 gross_salary = excluded.gross_salary,
                 nssf_deduction = excluded.nssf_deduction,
-                net_salary = excluded.net_salary,
+                net_salary = excluded.gross_salary - (excluded.nssf_deduction + payroll.attendance_deduction + payroll.tax_deduction),
                 remarks = excluded.remarks
         """, (
             sid, month_year, base, pos_all,
@@ -1876,6 +1881,80 @@ def payroll_generate():
 
     flash(f"បានគណនា និងបង្កើតតារាងប្រាក់បៀវត្សរ៍សម្រាប់ខែ {month_year} រួចរាល់!", "success")
     return redirect(url_for("payroll_list", month=month_year))
+
+
+@app.route("/payroll/<int:payroll_id>/deductions", methods=["POST"])
+@clerk_or_admin_required
+def payroll_update_deductions(payroll_id):
+    """Update custom deduction components (NSSF, Attendance, Tax/Other) for a payroll record."""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT p.*, s.name_kh, s.officer_code
+        FROM payroll p
+        JOIN staff s ON p.staff_id = s.id
+        WHERE p.id = ?
+    """, (payroll_id,))
+    record = cursor.fetchone()
+
+    if not record:
+        conn.close()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            return jsonify({"success": False, "message": "រកមិនឃើញទិន្នន័យប្រាក់បៀវត្សរ៍នេះទេ"}), 404
+        flash("រកមិនឃើញទិន្នន័យប្រាក់បៀវត្សរ៍នេះទេ!", "danger")
+        return redirect(url_for("payroll_list"))
+
+    try:
+        nssf_deduction = float(request.form.get("nssf_deduction", 0) or 0)
+    except (ValueError, TypeError):
+        nssf_deduction = float(record["nssf_deduction"] or 0)
+
+    try:
+        attendance_deduction = float(request.form.get("attendance_deduction", 0) or 0)
+    except (ValueError, TypeError):
+        attendance_deduction = float(record["attendance_deduction"] or 0)
+
+    try:
+        tax_deduction = float(request.form.get("tax_deduction", 0) or 0)
+    except (ValueError, TypeError):
+        tax_deduction = float(record["tax_deduction"] or 0)
+
+    remarks = request.form.get("remarks", "").strip() or record["remarks"]
+
+    gross = float(record["gross_salary"] or 0)
+    total_deductions = nssf_deduction + attendance_deduction + tax_deduction
+    net_salary = max(0, gross - total_deductions)
+
+    cursor.execute("""
+        UPDATE payroll SET
+            nssf_deduction = ?,
+            attendance_deduction = ?,
+            tax_deduction = ?,
+            net_salary = ?,
+            remarks = ?
+        WHERE id = ?
+    """, (nssf_deduction, attendance_deduction, tax_deduction, net_salary, remarks, payroll_id))
+
+    conn.commit()
+    conn.close()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({
+            "success": True,
+            "message": f"បានរក្សាទុកប្រាក់កាត់សម្រាប់មន្ត្រី {record['name_kh']} ដោយជោគជ័យ!",
+            "payroll_id": payroll_id,
+            "nssf_deduction": nssf_deduction,
+            "attendance_deduction": attendance_deduction,
+            "tax_deduction": tax_deduction,
+            "total_deductions": total_deductions,
+            "net_salary": net_salary,
+            "formatted_deductions": f"-{total_deductions:,.0f} រៀល",
+            "formatted_net_salary": f"{net_salary:,.0f} រៀល"
+        })
+
+    flash(f"បានរក្សាទុកប្រាក់កាត់សម្រាប់មន្ត្រី {record['name_kh']} រួចរាល់!", "success")
+    return redirect(url_for("payroll_list", month=record["month_year"]))
 
 
 @app.route("/payroll/<int:payroll_id>/payslip")
