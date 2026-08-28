@@ -287,7 +287,7 @@ def export_monthly_attendance_excel(month_year):
 
     sig_row += 4
     ws.merge_cells(f"A{sig_row}:E{sig_row}")
-    ws[f"A{sig_row}"] = "ស៊ូ វណ្ណា"
+    ws[f"A{sig_row}"] = "មី គន់"
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 
@@ -469,7 +469,7 @@ def export_staff_list_excel(category=None):
 
     sig_row += 4
     ws.merge_cells(f"A{sig_row}:E{sig_row}")
-    ws[f"A{sig_row}"] = "ស៊ូ វណ្ណា"
+    ws[f"A{sig_row}"] = "មី គន់"
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 
@@ -656,7 +656,7 @@ def export_payroll_excel(month_year):
 
     sig_row += 4
     ws.merge_cells(f"A{sig_row}:D{sig_row}")
-    ws[f"A{sig_row}"] = "ស៊ូ វណ្ណា"
+    ws[f"A{sig_row}"] = "មី គន់"
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 
@@ -957,7 +957,7 @@ def export_finance_excel(from_month=None, to_month=None, month_year=None, tx_typ
 
     sig_row += 4
     ws.merge_cells(f"A{sig_row}:D{sig_row}")
-    ws[f"A{sig_row}"] = "ស៊ូ វណ្ណា"
+    ws[f"A{sig_row}"] = "មី គន់"
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 

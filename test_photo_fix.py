@@ -86,8 +86,8 @@ class TestProfilePhotoSystem(unittest.TestCase):
         # Create staff without photo first
         self.client.post('/staff/new', data={
             'officer_code': 'NP-002',
-            'name_kh': 'ស៊ូ វណ្ណា',
-            'name_en': 'SOU VANNA',
+            'name_kh': 'ស៊ឹម ស៊ន',
+            'name_en': 'SIM SORN',
             'gender': 'ប្រុស',
             'dob': '1965-08-12',
             'village': 'រមៀត',

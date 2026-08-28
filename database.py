@@ -679,16 +679,28 @@ def ensure_baseline_data(conn=None):
     users_count = cursor.fetchone()[0]
     if users_count == 0:
         users_data = [
-            ("admin", PRECOMPUTED_USER_HASHES["admin"], "រដ្ឋបាលឃុំនគរភាស (Admin)", "admin", None),
-            ("clerk", PRECOMPUTED_USER_HASHES["clerk"], "ស្មៀនឃុំនគរភាស (Clerk)", "clerk", None),
-            ("it_admin", PRECOMPUTED_USER_HASHES["it_admin"], "មន្ត្រីព័ត៌មានវិទ្យា (IT Admin)", "admin", None),
-            ("staff", PRECOMPUTED_USER_HASHES["staff"], "ជំនួយការរដ្ឋបាលឃុំ (Staff)", "staff", None),
-            ("village_chief", PRECOMPUTED_USER_HASHES["village_chief"], "មេភូមិ (Village Chief)", "staff", None),
+            ("admin", PRECOMPUTED_USER_HASHES["admin"], "មី គន់ (មេឃុំ)", "admin", None),
+            ("clerk", PRECOMPUTED_USER_HASHES["clerk"], "ហេង ចាន់រិទ្ធ (ស្មៀនឃុំ)", "clerk", None),
+            ("it_admin", PRECOMPUTED_USER_HASHES["it_admin"], "សេង ដារ៉ា (មន្ត្រី IT)", "admin", None),
+            ("staff", PRECOMPUTED_USER_HASHES["staff"], "លាង ស្រីម៉ៅ (ជំនួយការឃុំ)", "staff", None),
+            ("village_chief", PRECOMPUTED_USER_HASHES["village_chief"], "ព្រុំ សុខា (មេភូមិរមៀត)", "staff", None),
         ]
         cursor.executemany(
             "INSERT INTO users (username, password_hash, full_name, role, staff_id) VALUES (?, ?, ?, ?, ?)",
             users_data
         )
+    else:
+        # Update admin user name to 'មី គន់ (មេឃុំ)'
+        try:
+            cursor.execute("UPDATE users SET full_name = 'មី គន់ (មេឃុំ)' WHERE username = 'admin' AND (full_name LIKE '%ស៊ូ វណ្ណា%' OR full_name LIKE '%រដ្ឋបាលឃុំ%')")
+        except Exception:
+            pass
+
+    # Ensure admin user links to staff NP-001 (មី គន់) if available
+    try:
+        cursor.execute("UPDATE users SET staff_id = (SELECT id FROM staff WHERE officer_code = 'NP-001' LIMIT 1) WHERE username = 'admin' AND staff_id IS NULL")
+    except Exception:
+        pass
 
     # Ensure photo integrity (convert/cache existing uploaded files to base64)
     ensure_photo_integrity(conn)
