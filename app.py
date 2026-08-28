@@ -56,8 +56,10 @@ def teardown_db(exception=None):
 
 @app.after_request
 def add_cache_headers(response):
-    if request.path.startswith('/static') or request.path == '/favicon.ico':
-        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    if request.path.startswith('/static/css') or request.path.startswith('/static/js'):
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    elif request.path.startswith('/static') or request.path == '/favicon.ico':
+        response.headers['Cache-Control'] = 'public, max-age=86400'
     return response
 
 # Route to serve uploads with fallback and fuzzy matching

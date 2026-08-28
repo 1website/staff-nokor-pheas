@@ -47,19 +47,19 @@
   </script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260828-prod">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260828-v5">
   {% block extra_head %}{% endblock %}
 </head>
 
 <body>
   <!-- Global Loading Circle Overlay (ពេលរង់ចាំ / ទាញយកទិន្នន័យ) -->
-  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true">
+  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true" style="display: none;">
     <div class="loading-card">
       <div class="loading-circle-wrapper">
         <div class="loading-ring-outer"></div>
         <div class="loading-ring-inner"></div>
-        <div class="loading-icon-center">
-          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" class="loading-pulse-icon">
+        <div class="loading-icon-center" style="width: 34px; height: 34px; border-radius: 50%; overflow: hidden;">
+          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" class="loading-pulse-icon" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
       <div class="loading-text-group">
@@ -301,7 +301,7 @@
   </button>
 
   <!-- Javascript -->
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=4.1"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=5.0"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 

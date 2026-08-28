@@ -652,8 +652,11 @@ function showLoading(title = "កំពុងដំណើរការ...", subti
   if (subtitleEl) subtitleEl.textContent = subtitle;
 
   if (overlay) {
-    overlay.classList.add("active");
-    overlay.setAttribute("aria-hidden", "false");
+    overlay.style.display = "flex";
+    requestAnimationFrame(function () {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+    });
   }
 }
 
@@ -665,6 +668,11 @@ function hideLoading() {
   if (overlay) {
     overlay.classList.remove("active");
     overlay.setAttribute("aria-hidden", "true");
+    setTimeout(function () {
+      if (!overlay.classList.contains("active")) {
+        overlay.style.display = "none";
+      }
+    }, 280);
   }
 }
 
