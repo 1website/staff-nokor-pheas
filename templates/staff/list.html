@@ -94,12 +94,12 @@
           <tr>
             <th style="width: 50px; text-align: center;">ល.រ</th>
             <th style="white-space: nowrap;">អត្តលេខ</th>
-            <th>គោត្តនាម-នាម</th>
+            <th style="white-space: nowrap;">គោត្តនាម-នាម</th>
             <th>ភេទ</th>
             <th>អាយុ</th>
-            <th>មុខតំណែង</th>
+            <th class="col-position">មុខតំណែង</th>
             <th>ក្រុមការងារ</th>
-            <th>ភូមិ</th>
+            <th class="col-village">ភូមិ</th>
             <th class="col-phone" style="white-space: nowrap;">លេខទូរស័ព្ទ</th>
             <th style="white-space: nowrap;">ប្រាក់បៀវត្សរ៍គោល</th>
             <th style="text-align: center; width: 140px;">សកម្មភាព</th>
@@ -128,7 +128,9 @@
                   <a href="{{ url_for('staff_detail', staff_id=s.id) }}" class="primary-name">
                     {{ s.name_kh }}
                   </a>
+                  {% if s.name_en %}
                   <div class="sub-name font-latin">{{ s.name_en }}</div>
+                  {% endif %}
                 </div>
               </div>
             </td>
@@ -144,7 +146,7 @@
                 {{ s.dob | kh_age }}
               </span>
             </td>
-            <td>
+            <td class="col-position">
               <strong>{{ s.position_title_kh }}</strong>
             </td>
             <td>
@@ -153,7 +155,7 @@
                 {{ cat_info.name_kh }}
               </span>
             </td>
-            <td style="white-space: nowrap;">ភូមិ{{ s.village }}</td>
+            <td class="col-village" style="white-space: nowrap;">ភូមិ{{ s.village }}</td>
             <td class="col-phone" style="white-space: nowrap;">
               <i class="fa-solid fa-phone" style="font-size: 11px; color: var(--text-muted);"></i>
               {{ s.phone or '-' }}

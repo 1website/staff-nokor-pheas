@@ -1758,14 +1758,44 @@ body.sidebar-collapsed .col-phone {
   border: 2px solid #e2e8f0;
 }
 
+.avatar-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5px;
+  min-width: 0;
+}
+
 .avatar-details .primary-name {
+  display: block;
   font-weight: 600;
+  font-size: 13.5px;
   color: var(--primary-dark);
+  line-height: 1.35;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.avatar-details .primary-name:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .avatar-details .sub-name {
-  font-size: 12px;
+  display: block;
+  font-size: 11px;
   color: var(--text-muted);
+  font-family: var(--font-latin);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .avatar-details .primary-name {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .avatar-details .sub-name {
+  color: #94a3b8;
 }
 
 /* Modal */
@@ -2684,15 +2714,31 @@ body.sidebar-collapsed .col-phone {
     border-radius: 4px;
   }
 
+  /* Hide Position (មុខតំណែង) and Village (ភូមិ) on mobile view as requested */
+  th.col-position,
+  td.col-position,
+  .col-position,
+  th.col-village,
+  td.col-village,
+  .col-village,
+  th.col-phone,
+  td.col-phone,
+  .col-phone {
+    display: none !important;
+  }
+
   /* Ensure minimum width so columns don't compress into hyphenated syllable fragments */
   .table-responsive .custom-table {
-    min-width: 560px !important;
+    min-width: 460px !important;
     width: 100% !important;
   }
 
-  .table-responsive .custom-table.filterable-table,
+  .table-responsive .custom-table.filterable-table {
+    min-width: 460px !important;
+  }
+
   .table-responsive .custom-table.table-wide {
-    min-width: 680px !important;
+    min-width: 620px !important;
   }
 
   .custom-table th,
