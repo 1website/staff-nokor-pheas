@@ -112,8 +112,7 @@
 </div>
 
 <!-- Financial Charts Row -->
-<div
-  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 24px;">
+<div class="finance-charts-grid">
   <!-- Trend Bar Chart -->
   <div class="card">
     <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
@@ -154,90 +153,102 @@
 </div>
 
 <!-- Filter Toolbar (Month Range & Criteria) -->
-<div class="card" style="margin-bottom: 24px;">
+<div class="card finance-filter-card">
+  <div class="card-header finance-filter-header">
+    <div class="card-title">
+      <i class="fa-solid fa-sliders text-gold"></i>
+      <span>ចម្រាញ់ទិន្នន័យចំណូល-ចំណាយ (Filter & Search)</span>
+    </div>
+    {% if from_month or to_month or selected_type or selected_category %}
+    <span class="badge badge-warning" style="font-size: 11px;">
+      <i class="fa-solid fa-filter"></i> កំពុង Filter
+    </span>
+    {% endif %}
+  </div>
   <div class="card-body" style="padding: 16px;">
-    <form id="financeFilterForm" method="GET" action="{{ url_for('finance_list') }}"
-      style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <form id="financeFilterForm" method="GET" action="{{ url_for('finance_list') }}" class="finance-filter-form">
+      <div class="finance-filter-grid">
+        <!-- 1. Range From Month -->
+        <div class="filter-field-group">
+          <label class="filter-field-label" for="from_month_input">
+            <i class="fa-regular fa-calendar text-primary"></i> ពីខែ
+          </label>
+          <input type="month" name="from_month" id="from_month_input" value="{{ from_month }}" class="form-control">
+        </div>
 
-      <!-- Range From Month -->
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600; white-space: nowrap;">
-          <i class="fa-regular fa-calendar"></i> ពីខែ៖
-        </label>
-        <input type="month" name="from_month" id="from_month_input" value="{{ from_month }}" class="form-control"
-          style="width: 150px; font-size: 13px;">
+        <!-- 2. Range To Month -->
+        <div class="filter-field-group">
+          <label class="filter-field-label" for="to_month_input">
+            <i class="fa-regular fa-calendar-check text-primary"></i> ដល់ខែ
+          </label>
+          <input type="month" name="to_month" id="to_month_input" value="{{ to_month }}" class="form-control">
+        </div>
+
+        <!-- 3. Quick Range Presets -->
+        <div class="filter-field-group">
+          <label class="filter-field-label">
+            <i class="fa-solid fa-bolt text-gold"></i> ចន្លោះពេលរហ័ស
+          </label>
+          <select class="form-select filter-preset-select" onchange="applyQuickPreset(this.value)">
+            <option value="">⚡ ចន្លោះរហ័ស...</option>
+            <option value="this_month">📅 ខែនេះ</option>
+            <option value="q1">ត្រីមាសទី ១ (មករា-មីនា)</option>
+            <option value="q2">ត្រីមាសទី ២ (មេសា-មិថុនា)</option>
+            <option value="q3">ត្រីមាសទី ៣ (កក្កដា-កញ្ញា)</option>
+            <option value="q4">ត្រីមាសទី ៤ (តុលា-ធ្នូ)</option>
+            <option value="s1">ឆមាសទី ១ (មករា-មិថុនា)</option>
+            <option value="s2">ឆមាសទី ២ (កក្កដា-ធ្នូ)</option>
+            <option value="full_year">ពេញមួយឆ្នាំ (មករា-ធ្នូ)</option>
+            <option value="all">គ្រប់ពេលវេលា (ទាំងអស់)</option>
+          </select>
+        </div>
+
+        <!-- 4. Type Filter -->
+        <div class="filter-field-group">
+          <label class="filter-field-label">
+            <i class="fa-solid fa-filter text-primary"></i> ប្រភេទប្រតិបត្តិការ
+          </label>
+          <select name="type" class="form-select">
+            <option value="" {% if not selected_type %}selected{% endif %}>-- ទាំងអស់ --</option>
+            <option value="income" {% if selected_type=='income' %}selected{% endif %}>🟢 ចំណូល (Income)</option>
+            <option value="expense" {% if selected_type=='expense' %}selected{% endif %}>🔴 ចំណាយ (Expense)</option>
+          </select>
+        </div>
+
+        <!-- 5. Category Filter -->
+        <div class="filter-field-group filter-field-wide">
+          <label class="filter-field-label">
+            <i class="fa-solid fa-tags text-primary"></i> ខ្ទង់/ប្រភពថវិកា
+          </label>
+          <select name="category" class="form-select">
+            <option value="">-- គ្រប់ខ្ទង់ទាំងអស់ --</option>
+            <optgroup label="-- ផ្នែកចំណូល --">
+              {% for cat_k, cat_v in FINANCE_INCOME_CATEGORIES.items() %}
+              <option value="{{ cat_k }}" {% if selected_category==cat_k %}selected{% endif %}>{{ cat_v.title_kh }}</option>
+              {% endfor %}
+            </optgroup>
+            <optgroup label="-- ផ្នែកចំណាយ --">
+              {% for cat_k, cat_v in FINANCE_EXPENSE_CATEGORIES.items() %}
+              <option value="{{ cat_k }}" {% if selected_category==cat_k %}selected{% endif %}>{{ cat_v.title_kh }}</option>
+              {% endfor %}
+            </optgroup>
+          </select>
+        </div>
       </div>
 
-      <!-- Range To Month -->
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600; white-space: nowrap;">
-          <i class="fa-regular fa-calendar-check"></i> ដល់ខែ៖
-        </label>
-        <input type="month" name="to_month" id="to_month_input" value="{{ to_month }}" class="form-control"
-          style="width: 150px; font-size: 13px;">
-      </div>
-
-      <!-- Quick Range Presets -->
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <select class="form-select" style="width: 150px; font-size: 13px; background-color: var(--bg-main);"
-          onchange="applyQuickPreset(this.value)">
-          <option value="">⚡ ចន្លោះរហ័ស...</option>
-          <option value="this_month">📅 ខែនេះ</option>
-          <option value="q1">ត្រីមាសទី ១ (មករា-មីនា)</option>
-          <option value="q2">ត្រីមាសទី ២ (មេសា-មិថុនា)</option>
-          <option value="q3">ត្រីមាសទី ៣ (កក្កដា-កញ្ញា)</option>
-          <option value="q4">ត្រីមាសទី ៤ (តុលា-ធ្នូ)</option>
-          <option value="s1">ឆមាសទី ១ (មករា-មិថុនា)</option>
-          <option value="s2">ឆមាសទី ២ (កក្កដា-ធ្នូ)</option>
-          <option value="full_year">ពេញមួយឆ្នាំ (មករា-ធ្នូ)</option>
-          <option value="all">គ្រប់ពេលវេលា (ទាំងអស់)</option>
-        </select>
-      </div>
-
-      <!-- Type Filter -->
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600; white-space: nowrap;">
-          <i class="fa-solid fa-filter"></i> ប្រភេទ៖
-        </label>
-        <select name="type" class="form-select" style="width: 135px; font-size: 13px;">
-          <option value="" {% if not selected_type %}selected{% endif %}>-- ទាំងអស់ --</option>
-          <option value="income" {% if selected_type=='income' %}selected{% endif %}>🟢 ចំណូល (Income)</option>
-          <option value="expense" {% if selected_type=='expense' %}selected{% endif %}>🔴 ចំណាយ (Expense)</option>
-        </select>
-      </div>
-
-      <!-- Category Filter -->
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600; white-space: nowrap;">
-          <i class="fa-solid fa-tags"></i> ខ្ទង់/ប្រភព៖
-        </label>
-        <select name="category" class="form-select" style="width: 210px; font-size: 13px;">
-          <option value="">-- គ្រប់ខ្ទង់ទាំងអស់ --</option>
-          <optgroup label="-- ផ្នែកចំណូល --">
-            {% for cat_k, cat_v in FINANCE_INCOME_CATEGORIES.items() %}
-            <option value="{{ cat_k }}" {% if selected_category==cat_k %}selected{% endif %}>{{ cat_v.title_kh }}
-            </option>
-            {% endfor %}
-          </optgroup>
-          <optgroup label="-- ផ្នែកចំណាយ --">
-            {% for cat_k, cat_v in FINANCE_EXPENSE_CATEGORIES.items() %}
-            <option value="{{ cat_k }}" {% if selected_category==cat_k %}selected{% endif %}>{{ cat_v.title_kh }}
-            </option>
-            {% endfor %}
-          </optgroup>
-        </select>
-      </div>
-
-      <div style="display: flex; gap: 8px;">
-        <button type="submit" class="btn btn-primary btn-sm">
-          <i class="fa-solid fa-magnifying-glass"></i> ស្វែងរក
+      <!-- Action Buttons Row -->
+      <div class="finance-filter-actions">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-magnifying-glass"></i> <span>ស្វែងរក</span>
         </button>
-        <a href="{{ url_for('finance_list') }}" class="btn btn-outline btn-sm" title="កំណត់ឡើងវិញ">
-          <i class="fa-solid fa-rotate-left"></i>
+        {% if from_month or to_month or selected_type or selected_category %}
+        <a href="{{ url_for('finance_list') }}" class="btn btn-outline" title="កំណត់ឡើងវិញ">
+          <i class="fa-solid fa-rotate-left"></i> <span>ជម្រះ Filter</span>
         </a>
+        {% endif %}
         <a href="{{ url_for('export_finance_excel_route', from_month=from_month, to_month=to_month, type=selected_type, category=selected_category) }}"
-          class="btn btn-sm btn-success" title="ទាញយក Excel តាមចន្លោះដែលបានរើស" style="white-space: nowrap;">
-          <i class="fa-solid fa-file-excel"></i> Excel
+          class="btn btn-success" title="ទាញយក Excel">
+          <i class="fa-solid fa-file-excel"></i> <span>Excel</span>
         </a>
       </div>
     </form>
@@ -872,14 +883,14 @@
             maintainAspectRatio: false,
             plugins: {
               legend: {
-                position: 'right',
+                position: window.innerWidth < 768 ? 'bottom' : 'right',
                 labels: {
-                  boxWidth: 14,
-                  boxHeight: 14,
+                  boxWidth: 12,
+                  boxHeight: 12,
                   borderRadius: 3,
                   color: textColor,
-                  font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' },
-                  padding: 10
+                  font: { family: "'Kantumruy Pro', sans-serif", size: window.innerWidth < 768 ? 10.5 : 11, weight: '500' },
+                  padding: window.innerWidth < 768 ? 6 : 10
                 }
               },
               tooltip: {
