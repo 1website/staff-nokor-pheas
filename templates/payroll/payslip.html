@@ -5,19 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ - {{ p.name_kh }} ({{ p.month_year }})</title>
   
+  <!-- High-Speed Google Fonts for Khmer & Latin UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Siemreap&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   
   <style>
-    body { background-color: #f1f5f9; padding: 20px 0; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #f1f5f9;
+      padding: 20px 0;
+      font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS Siemreap', sans-serif;
+      line-height: 1.7;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
     .payslip-paper {
       background: #ffffff;
       width: 210mm;
       min-height: 297mm;
       margin: 0 auto;
-      padding: 22mm 22mm;
+      padding: 20mm 20mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       border-radius: 4px;
+      overflow: visible;
     }
     .btn-print-bar {
       width: 210mm;
@@ -26,18 +43,107 @@
       justify-content: space-between;
       align-items: center;
     }
+    .official-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      line-height: 1.8;
+    }
+    .official-header-left {
+      line-height: 1.8;
+      font-size: 11pt;
+    }
+    .official-header-right {
+      text-align: center;
+      line-height: 1.8;
+    }
+    .org-title {
+      font-family: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', serif;
+      font-size: 11pt;
+      color: #1e3a8a;
+      line-height: 2.0;
+      padding: 2px 0;
+    }
+    .kingdom {
+      font-family: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', serif;
+      font-size: 12pt;
+      color: #1e3a8a;
+      line-height: 2.0;
+      padding: 2px 0;
+    }
+    .motto {
+      font-family: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', serif;
+      font-size: 11pt;
+      color: #1e3a8a;
+      line-height: 2.0;
+      padding: 2px 0;
+    }
+    .official-title-box {
+      text-align: center;
+      margin: 15px 0 15px;
+      overflow: visible;
+    }
+    .official-doc-title {
+      font-family: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', serif;
+      font-size: 15.5pt;
+      color: #1e3a8a;
+      line-height: 2.2;
+      margin: 0;
+      padding: 6px 0;
+      text-align: center;
+      overflow: visible;
+      letter-spacing: 0.5px;
+    }
+    .official-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS Siemreap', sans-serif;
+    }
+    .official-table th, .official-table td {
+      padding: 8px 12px;
+      line-height: 1.7;
+      vertical-align: middle;
+      border: 1px solid #cbd5e1;
+    }
     .payslip-box {
-      border: 1px solid #1e3a8a;
+      border: 1.5px solid #1e3a8a;
       border-radius: 8px;
       overflow: hidden;
-      margin: 20px 0;
+      margin: 10px 0;
     }
     .payslip-box-header {
       background: #1e3a8a;
       color: #ffffff;
-      padding: 8px 16px;
-      font-weight: bold;
+      padding: 9px 14px;
+      font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+      font-weight: 700;
       font-size: 11pt;
+      line-height: 1.7;
+    }
+    .signature-block {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 35px;
+      page-break-inside: avoid;
+    }
+    .signature-box {
+      text-align: center;
+      width: 30%;
+      line-height: 1.7;
+    }
+    .signer-title {
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-top: 4px;
+      font-size: 10pt;
+    }
+    .signer-name {
+      font-family: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', serif;
+      font-size: 11pt;
+      color: #1e3a8a;
+      margin-top: 55px;
+      line-height: 1.9;
     }
     @media print {
       body { background: transparent; padding: 0; }
@@ -73,7 +179,7 @@
       <div class="official-header-right">
         <div class="kingdom">ព្រះរាជាណាចក្រកម្ពុជា</div>
         <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
-        <div style="text-align: center; margin-top: -4px;">
+        <div style="text-align: center; margin-top: -2px;">
           <svg width="60" height="8" viewBox="0 0 60 8" fill="none">
             <path d="M0 4H60" stroke="#000000" stroke-width="1.5"/>
           </svg>
@@ -82,9 +188,9 @@
     </div>
 
     <!-- Title -->
-    <div class="official-title-box" style="margin: 15px 0 10px;">
+    <div class="official-title-box">
       <h2 class="official-doc-title">ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភ</h2>
-      <p style="font-size: 11pt; color: #1e3a8a; font-weight: bold;">
+      <p style="font-size: 11pt; color: #1e3a8a; font-weight: 700; margin-top: 4px; line-height: 1.6;">
         ប្រចាំខែ {{ p.month_year.split('-')[1] | kh_num }} ឆ្នាំ {{ p.month_year.split('-')[0] | kh_num }} (PAYSLIP)
       </p>
     </div>
@@ -92,21 +198,21 @@
     <!-- Officer Profile Banner -->
     <table class="official-table" style="margin: 15px 0; font-size: 10.5pt;">
       <tr>
-        <td style="width: 25%; font-weight: bold;">គោត្តនាម និងនាម៖</td>
+        <td style="width: 25%; font-weight: 700;">គោត្តនាម និងនាម៖</td>
         <td style="width: 35%;"><strong>{{ p.name_kh }}</strong> ({{ p.name_en }})</td>
-        <td style="width: 20%; font-weight: bold;">អត្តលេខមន្ត្រី៖</td>
-        <td style="width: 20%;"><strong>{{ p.officer_code }}</strong></td>
+        <td style="width: 20%; font-weight: 700;">អត្តលេខមន្ត្រី៖</td>
+        <td style="width: 20%; font-weight: 700; color: #1e3a8a;">{{ p.officer_code }}</td>
       </tr>
       <tr>
-        <td style="font-weight: bold;">មុខតំណែង៖</td>
+        <td style="font-weight: 700;">មុខតំណែង៖</td>
         <td>{{ p.position_title_kh }}</td>
-        <td style="font-weight: bold;">ក្រុមការងារ៖</td>
+        <td style="font-weight: 700;">ក្រុមការងារ៖</td>
         <td>{{ STAFF_CATEGORIES.get(p.category, {}).get('name_kh', p.category) }}</td>
       </tr>
       <tr>
-        <td style="font-weight: bold;">ភូមិ/អាសយដ្ឋាន៖</td>
+        <td style="font-weight: 700;">ភូមិ/អាសយដ្ឋាន៖</td>
         <td>ភូមិ{{ p.village }} ឃុំនគរភាស</td>
-        <td style="font-weight: bold;">កាលបរិច្ឆេទបើក៖</td>
+        <td style="font-weight: 700;">កាលបរិច្ឆេទបើក៖</td>
         <td>{{ p.paid_date or today_iso }}</td>
       </tr>
     </table>
@@ -121,52 +227,52 @@
         </div>
         <table class="official-table" style="margin: 0; border: none;">
           <tr>
-            <td>១. ប្រាក់បៀវត្សរ៍គោល</td>
-            <td style="text-align: right; font-weight: bold;">{{ p.base_salary | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">១. ប្រាក់បៀវត្សរ៍គោល</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 700; white-space: nowrap;">{{ p.base_salary | currency }}</td>
           </tr>
           <tr>
-            <td>២. ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ</td>
-            <td style="text-align: right;">{{ p.position_allowance | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">២. ប្រាក់ឧបត្ថម្ភចូលឆ្នាំ</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; white-space: nowrap;">{{ (p.position_allowance or 0) | currency }}</td>
           </tr>
           <tr>
-            <td>៣. ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ</td>
-            <td style="text-align: right;">{{ p.family_allowance | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">៣. ប្រាក់ឧបត្ថម្ភភ្ជុំបិណ្ឌ</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; white-space: nowrap;">{{ (p.family_allowance or 0) | currency }}</td>
           </tr>
-          <tr style="background: #f0fdf4; font-weight: bold; border-top: 2px solid #0f766e;">
-            <td>សរុបប្រាក់ចំណូល (Gross):</td>
-            <td style="text-align: right; color: #0f766e;">{{ p.gross_salary | currency }}</td>
+          <tr style="background: #f0fdf4; font-weight: 700; border-top: 2px solid #0f766e;">
+            <td style="border: none;">សរុបប្រាក់ចំណូល (Gross):</td>
+            <td style="border: none; text-align: right; color: #0f766e; white-space: nowrap; font-size: 11pt;">{{ p.gross_salary | currency }}</td>
           </tr>
         </table>
       </div>
 
       <!-- Deductions (ការកាត់កង) -->
-      <div class="payslip-box">
+      <div class="payslip-box" style="border-color: #991b1b;">
         <div class="payslip-box-header" style="background: #991b1b;">
           II. ការកាត់កង (Deductions)
         </div>
         <table class="official-table" style="margin: 0; border: none;">
           <tr>
-            <td>១. វិភាគទាន ប.ស.ស (NSSF 2%)</td>
-            <td style="text-align: right; color: #dc2626;">{{ (p.nssf_deduction or 0) | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">១. វិភាគទាន ប.ស.ស (NSSF 2%)</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; color: #dc2626; white-space: nowrap;">{{ (p.nssf_deduction or 0) | currency }}</td>
           </tr>
           <tr>
-            <td>២. ការកាត់អវត្តមាន / វិន័យ</td>
-            <td style="text-align: right; color: #dc2626;">{{ (p.attendance_deduction or 0) | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">២. ការកាត់អវត្តមាន / វិន័យ</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; color: #dc2626; white-space: nowrap;">{{ (p.attendance_deduction or 0) | currency }}</td>
           </tr>
           <tr>
-            <td>៣. ការកាត់ផ្សេងៗ / ពន្ធ</td>
-            <td style="text-align: right; color: #dc2626;">{{ (p.tax_deduction or 0) | currency }}</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0;">៣. ការកាត់ផ្សេងៗ / ពន្ធ</td>
+            <td style="border: none; border-bottom: 1px solid #e2e8f0; text-align: right; color: #dc2626; white-space: nowrap;">{{ (p.tax_deduction or 0) | currency }}</td>
           </tr>
           <tr style="height: 38px;">
-            <td colspan="2" style="font-size: 8.5pt; color: #64748b; vertical-align: middle;">
+            <td colspan="2" style="border: none; font-size: 8.5pt; color: #64748b; vertical-align: middle;">
               {% if p.remarks %}
               <i class="fa-solid fa-circle-info"></i> ចំណាំ៖ {{ p.remarks }}
               {% endif %}
             </td>
           </tr>
-          <tr style="background: #fef2f2; font-weight: bold; border-top: 2px solid #991b1b;">
-            <td>សរុបការកាត់កង (Total Deductions):</td>
-            <td style="text-align: right; color: #dc2626;">-{{ ((p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0)) | currency }}</td>
+          <tr style="background: #fef2f2; font-weight: 700; border-top: 2px solid #991b1b;">
+            <td style="border: none; font-size: 10pt;">សរុបការកាត់កង (Deductions):</td>
+            <td style="border: none; text-align: right; color: #dc2626; white-space: nowrap; font-size: 11pt;">-{{ ((p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0)) | currency }}</td>
           </tr>
         </table>
       </div>
@@ -176,16 +282,16 @@
     <!-- Net Pay Highlight Box -->
     <div style="background: #eff6ff; border: 2px solid #1e3a8a; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
       <div>
-        <div style="font-size: 11pt; color: #1e3a8a; font-weight: bold;">ប្រាក់បៀវត្សរ៍សុទ្ធត្រូវបើកជូន (NET PAY)៖</div>
-        <div style="font-size: 9.5pt; color: #475569;">វិធីសាស្ត្រទូទាត់៖ <strong>{{ p.payment_method }} (គណនីរដ្ឋបាលឃុំ)</strong></div>
+        <div style="font-size: 11pt; color: #1e3a8a; font-weight: 700; line-height: 1.6;">ប្រាក់បៀវត្សរ៍សុទ្ធត្រូវបើកជូន (NET PAY)៖</div>
+        <div style="font-size: 9.5pt; color: #475569; margin-top: 2px;">វិធីសាស្ត្រទូទាត់៖ <strong>{{ p.payment_method }} (គណនីរដ្ឋបាលឃុំ)</strong></div>
       </div>
-      <div style="font-size: 22pt; font-weight: bold; color: #1e3a8a; font-family: var(--font-heading);">
+      <div style="font-size: 20pt; font-weight: 800; color: #1e3a8a; font-family: var(--font-heading); white-space: nowrap;">
         {{ p.net_salary | currency }}
       </div>
     </div>
 
     <!-- Signatures -->
-    <div class="signature-block" style="margin-top: 40px;">
+    <div class="signature-block">
       <div class="signature-box">
         <div>បានឃើញ និងអនុម័ត</div>
         <div class="signer-title">មេឃុំនគរភាស</div>

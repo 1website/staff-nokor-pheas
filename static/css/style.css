@@ -47,9 +47,9 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 
-  --font-body: 'Kantumruy Pro', 'Battambang', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Kantumruy Pro', 'Battambang', sans-serif;
-  --font-moul: 'Moul', serif;
+  --font-body: 'Kantumruy Pro', 'Battambang', 'Khmer OS Siemreap', 'Siemreap', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Kantumruy Pro', 'Battambang', 'Khmer OS Siemreap', sans-serif;
+  --font-moul: 'Moul', 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moulpali', serif;
   --font-latin: 'Outfit', sans-serif;
 
   --radius-sm: 6px;
