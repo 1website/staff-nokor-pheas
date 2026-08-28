@@ -398,11 +398,33 @@ body.sidebar-open .sidebar-overlay {
 
 /* Main Content Area */
 .main-wrapper {
-  flex: 1;
+  flex: 1 1 auto;
   margin-left: 285px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
+  max-width: calc(100vw - 285px);
+  width: calc(100% - 285px);
+  overflow-x: hidden;
+  box-sizing: border-box;
+  transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s ease, width 0.3s ease;
+}
+
+body.sidebar-collapsed .main-wrapper {
+  margin-left: 0 !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
+
+.page-content {
+  flex: 1;
+  padding: 20px 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Top Navbar */
@@ -1237,12 +1259,12 @@ body.sidebar-open .sidebar-overlay {
 .stat-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   position: relative;
   overflow: hidden;
   transition: var(--transition);
@@ -1266,15 +1288,15 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .stat-icon-wrapper {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: var(--radius-md);
   background: var(--stat-bg, var(--primary-subtle));
   color: var(--stat-color, var(--primary));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -1285,7 +1307,7 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
@@ -1294,10 +1316,10 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .stat-number {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--primary-dark);
-  line-height: 1.25;
+  line-height: 1.2;
   margin-top: 2px;
   font-family: var(--font-heading);
   white-space: nowrap;
@@ -1306,9 +1328,9 @@ body.sidebar-open .sidebar-overlay {
 }
 
 .stat-subtext {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-light);
-  margin-top: 3px;
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1795,8 +1817,8 @@ body.sidebar-collapsed .col-phone {
 
 .finance-filter-grid {
   display: grid;
-  grid-template-columns: 130px 130px 155px 120px minmax(160px, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 120px 120px 145px 115px minmax(140px, 1fr) auto;
+  gap: 8px;
   align-items: end;
   width: 100%;
   max-width: 100%;
@@ -1812,18 +1834,18 @@ body.sidebar-collapsed .col-phone {
 }
 
 .filter-field-label {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-main);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   margin: 0;
   white-space: nowrap;
 }
 
 .filter-field-label i {
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 .filter-label-placeholder {
@@ -1836,8 +1858,8 @@ body.sidebar-collapsed .col-phone {
   width: 100%;
   min-height: 38px;
   height: 38px;
-  font-size: 13px;
-  padding: 6px 10px;
+  font-size: 12.5px;
+  padding: 5px 8px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background-color: var(--bg-main);
@@ -1854,19 +1876,19 @@ body.sidebar-collapsed .col-phone {
 .finance-inline-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   white-space: nowrap;
 }
 
 .finance-inline-actions .btn {
   height: 38px;
-  padding: 0 14px;
-  font-size: 12.5px;
+  padding: 0 12px;
+  font-size: 12px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   border-radius: var(--radius-md);
   white-space: nowrap;
 }
