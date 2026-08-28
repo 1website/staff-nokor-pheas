@@ -3036,7 +3036,7 @@ body.sidebar-collapsed .col-payment-method {
     border-radius: 4px;
   }
 
-  /* Hide Position, Village, Phone, Tx Code, and Payment Method on mobile view */
+  /* Hide Position, Village, Phone, Tx Code, Payment Method, Category, and Attachment on mobile view */
   th.col-position,
   td.col-position,
   .col-position,
@@ -3051,7 +3051,13 @@ body.sidebar-collapsed .col-payment-method {
   .col-tx-code,
   th.col-payment-method,
   td.col-payment-method,
-  .col-payment-method {
+  .col-payment-method,
+  th.col-category,
+  td.col-category,
+  .col-category,
+  th.col-attachment,
+  td.col-attachment,
+  .col-attachment {
     display: none !important;
   }
 

@@ -272,11 +272,11 @@
             <th style="width: 120px; white-space: nowrap;">កាលបរិច្ឆេទ</th>
             <th style="min-width: 180px;">បរិយាយ / កិច្ចការ</th>
             <th style="width: 100px; text-align: center; white-space: nowrap;">ប្រភេទ</th>
-            <th style="min-width: 160px; white-space: nowrap;">ប្រភព / ខ្ទង់</th>
+            <th class="col-category" style="min-width: 160px; white-space: nowrap;">ប្រភព / ខ្ទង់</th>
             <th style="width: 145px; text-align: right; white-space: nowrap;">ចំនួនទឹកប្រាក់</th>
             <th style="width: 135px; white-space: nowrap;">អ្នកបង់ / អ្នកទទួល</th>
             <th class="col-payment-method" style="width: 130px; text-align: center; white-space: nowrap;">វិធីទូទាត់</th>
-            <th style="width: 65px; text-align: center;">ឯកសារ</th>
+            <th class="col-attachment" style="width: 65px; text-align: center;">ឯកសារ</th>
             <th style="width: 115px; text-align: center; white-space: nowrap;">សកម្មភាព</th>
           </tr>
         </thead>
@@ -326,7 +326,7 @@
               </span>
               {% endif %}
             </td>
-            <td style="white-space: nowrap;">
+            <td class="col-category" style="white-space: nowrap;">
               <span class="badge {{ cat_info.badge_class or 'badge-info' }}">
                 <i class="{{ cat_info.icon or 'fa-solid fa-tag' }}"></i>
                 <span>{{ cat_info.title_kh or t.category }}</span>
@@ -348,7 +348,7 @@
                 <span>{{ pay_info.title_kh or t.payment_method }}</span>
               </span>
             </td>
-            <td style="text-align: center;">
+            <td class="col-attachment" style="text-align: center;">
               {% if t.attachment %}
               <a href="{{ url_for('static', filename='uploads/' + t.attachment) }}" target="_blank"
                 class="btn btn-xs btn-outline-primary" style="padding: 3px 7px; font-size: 11px;"
