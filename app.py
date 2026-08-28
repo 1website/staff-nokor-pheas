@@ -399,7 +399,7 @@ def staff_list():
 
     # Get villages for filter dropdown
     cursor.execute("SELECT village_name_kh FROM villages ORDER BY id")
-    village_list = [r[0] for r in cursor.fetchall()]
+    village_list = [r["village_name_kh"] if (hasattr(r, "get") and r.get("village_name_kh")) else (r[0] if len(r) > 0 else "") for r in cursor.fetchall()]
 
     conn.close()
 

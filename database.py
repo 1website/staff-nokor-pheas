@@ -39,12 +39,15 @@ PRECOMPUTED_USER_HASHES = {
 class PgRow(dict):
     """Row wrapper allowing dict key, attribute, and integer index access like sqlite3.Row"""
     def __init__(self, cols, vals):
-        super().__init__(zip(cols, vals))
-        self._vals = list(vals)
+        vals_list = list(vals) if not isinstance(vals, list) else vals
+        super().__init__(zip(cols, vals_list))
+        self._vals = vals_list
 
     def __getitem__(self, key):
         if isinstance(key, int):
-            return self._vals[key]
+            if 0 <= key < len(self._vals):
+                return self._vals[key]
+            raise IndexError(f"Tuple index out of range: {key} (length is {len(self._vals)})")
         return super().__getitem__(key)
 
     def __getattr__(self, key):
@@ -53,8 +56,10 @@ class PgRow(dict):
         raise AttributeError(f"'PgRow' object has no attribute '{key}'")
 
     def get(self, key, default=None):
-        if isinstance(key, int) and 0 <= key < len(self._vals):
-            return self._vals[key]
+        if isinstance(key, int):
+            if 0 <= key < len(self._vals):
+                return self._vals[key]
+            return default
         return super().get(key, default)
 
 
@@ -117,9 +122,9 @@ class PostgresCursorWrapper:
         if isinstance(row, PgRow):
             return row
         cols = [d[0] for d in self.cur.description]
-        if hasattr(row, 'values'):
-            return PgRow(cols, row.values())
-        return PgRow(cols, row)
+        if hasattr(row, 'values') and callable(getattr(row, 'values')):
+            return PgRow(cols, list(row.values()))
+        return PgRow(cols, list(row))
 
     def fetchone(self):
         row = self.cur.fetchone()
@@ -136,10 +141,10 @@ class PostgresCursorWrapper:
         for r in rows:
             if isinstance(r, PgRow):
                 result.append(r)
-            elif hasattr(r, 'values'):
-                result.append(PgRow(cols, r.values()))
+            elif hasattr(r, 'values') and callable(getattr(r, 'values')):
+                result.append(PgRow(cols, list(r.values())))
             else:
-                result.append(PgRow(cols, r))
+                result.append(PgRow(cols, list(r)))
         return result
 
     def fetchmany(self, size=None):
@@ -153,10 +158,10 @@ class PostgresCursorWrapper:
         for r in rows:
             if isinstance(r, PgRow):
                 result.append(r)
-            elif hasattr(r, 'values'):
-                result.append(PgRow(cols, r.values()))
+            elif hasattr(r, 'values') and callable(getattr(r, 'values')):
+                result.append(PgRow(cols, list(r.values())))
             else:
-                result.append(PgRow(cols, r))
+                result.append(PgRow(cols, list(r)))
         return result
 
     @property
