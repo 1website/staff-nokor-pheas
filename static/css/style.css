@@ -1975,6 +1975,19 @@ body.sidebar-collapsed .col-payment-method {
   cursor: not-allowed;
 }
 
+/* Payroll Action Buttons */
+.payroll-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.payroll-page-actions .payroll-calc-form {
+  display: inline-flex;
+  margin: 0;
+}
+
 /* User Avatar & Officer Badges */
 .avatar-cell {
   display: flex;
@@ -2690,6 +2703,45 @@ body.sidebar-collapsed .col-payment-method {
     padding: 6px 12px !important;
     justify-content: center !important;
   }
+
+  /* Payroll Action Buttons Side-by-Side (50% / 50% Equal Width on Mobile) */
+  .payroll-page-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+  }
+
+  .payroll-page-actions > a.btn,
+  .payroll-page-actions .payroll-calc-form {
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex: none !important;
+  }
+
+  .payroll-page-actions .payroll-calc-form button,
+  .payroll-page-actions .payroll-calc-form .btn {
+    width: 100% !important;
+    margin: 0 !important;
+    flex: none !important;
+  }
+
+  .payroll-page-actions .btn {
+    height: 44px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+    gap: 6px !important;
+    border-radius: var(--radius-md) !important;
+    box-sizing: border-box !important;
+  }
   /* Cash Flow Grid Mobile Row View */
   .cashflow-grid-3 {
     grid-template-columns: 1fr !important;
@@ -3262,7 +3314,7 @@ body.sidebar-collapsed .col-payment-method {
     width: 100% !important;
   }
 
-  .page-actions .btn {
+  .page-actions:not(.payroll-page-actions) .btn {
     flex: 1 1 100% !important;
     width: 100% !important;
   }

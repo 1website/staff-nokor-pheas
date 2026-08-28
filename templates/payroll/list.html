@@ -11,13 +11,13 @@
     </h1>
     <p>តារាងទូទាត់ប្រាក់បៀវត្សរ៍ ឧបត្ថម្ភចូលឆ្នាំ ឧបត្ថម្ភភ្ជុំបិណ្ឌ និងប័ណ្ណបើកប្រាក់ (Payslip) ប្រចាំខែ</p>
   </div>
-  <div class="page-actions">
+  <div class="page-actions payroll-page-actions">
     <a href="{{ url_for('export_payroll_excel_route', month=month_year) }}" class="btn btn-success">
       <i class="fa-solid fa-file-excel"></i>
       <span>នាំចេញជា Excel</span>
     </a>
     {% if session.role in ['admin', 'clerk'] %}
-    <form method="POST" action="{{ url_for('payroll_generate') }}" style="display: inline-block;">
+    <form method="POST" action="{{ url_for('payroll_generate') }}" class="payroll-calc-form">
       <input type="hidden" name="month_year" value="{{ month_year }}">
       <button type="submit" class="btn btn-primary" onclick="return confirm('តើអ្នកពិតជាចង់គណនាឡើងវិញនូវប្រាក់បៀវត្សរ៍ខែនេះមែនទេ?');">
         <i class="fa-solid fa-arrows-rotate"></i>
