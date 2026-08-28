@@ -160,33 +160,44 @@
             </td>
             <td><strong>{{ p.gross_salary | currency }}</strong></td>
             
-            <!-- Deductions Column with Badges & Edit Button -->
+            <!-- Deductions Column with Badges & Edit Button (Compact 2-Line Layout) -->
             <td id="ded-cell-{{ p.id }}" style="vertical-align: middle;">
               {% set total_ded = (p.nssf_deduction or 0) + (p.attendance_deduction or 0) + (p.tax_deduction or 0) %}
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                {% if total_ded > 0 %}
-                <span class="ded-amount-val" style="font-weight: 700; color: #dc2626; font-size: 13.5px;">-{{ total_ded | currency }}</span>
-                <div style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 11px;">
-                  {% if p.nssf_deduction > 0 %}
-                  <span class="badge" style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; font-size: 10.5px;">ប.ស.ស: {{ p.nssf_deduction | currency }}</span>
+              <div style="display: flex; flex-direction: column; gap: 3px; min-width: 150px;">
+                <!-- Row 1: Amount and Edit Button side-by-side -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                  {% if total_ded > 0 %}
+                  <span class="ded-amount-val" style="font-weight: 700; color: #dc2626; font-size: 13px; white-space: nowrap;">
+                    -{{ total_ded | currency }}
+                  </span>
+                  {% else %}
+                  <span class="ded-amount-val" style="color: #94a3b8; font-size: 12.5px; white-space: nowrap;">
+                    ០ រៀល
+                  </span>
                   {% endif %}
-                  {% if p.attendance_deduction > 0 %}
-                  <span class="badge" style="background: #fef3c7; color: #b45309; padding: 2px 6px; font-size: 10.5px;">អវត្តមាន: {{ p.attendance_deduction | currency }}</span>
-                  {% endif %}
-                  {% if p.tax_deduction > 0 %}
-                  <span class="badge" style="background: #f1f5f9; color: #475569; padding: 2px 6px; font-size: 10.5px;">ផ្សេងៗ: {{ p.tax_deduction | currency }}</span>
+
+                  {% if session.role in ['admin', 'clerk'] %}
+                  <button type="button" class="btn btn-xs btn-outline-danger" style="padding: 2px 7px; font-size: 11px; white-space: nowrap; line-height: 1.2;"
+                    onclick="openDeductionModal({{ p.id }}, '{{ p.name_kh }}', '{{ p.officer_code }}', '{{ p.position_title_kh }}', {{ p.base_salary or 0 }}, {{ p.gross_salary or 0 }}, {{ p.nssf_deduction or 0 }}, {{ p.attendance_deduction or 0 }}, {{ p.tax_deduction or 0 }}, '{{ p.remarks or '' }}')"
+                    title="កំណត់ ឬកែប្រែប្រាក់កាត់">
+                    <i class="fa-solid fa-pen-to-square"></i> <span>កែប្រាក់កាត់</span>
+                  </button>
                   {% endif %}
                 </div>
-                {% else %}
-                <span class="ded-amount-val" style="color: #94a3b8; font-size: 13px;">០ រៀល</span>
-                {% endif %}
 
-                {% if session.role in ['admin', 'clerk'] %}
-                <button type="button" class="btn btn-xs btn-outline-danger" style="margin-top: 4px; padding: 2px 8px; font-size: 11.5px; align-self: flex-start;"
-                  onclick="openDeductionModal({{ p.id }}, '{{ p.name_kh }}', '{{ p.officer_code }}', '{{ p.position_title_kh }}', {{ p.base_salary or 0 }}, {{ p.gross_salary or 0 }}, {{ p.nssf_deduction or 0 }}, {{ p.attendance_deduction or 0 }}, {{ p.tax_deduction or 0 }}, '{{ p.remarks or '' }}')"
-                  title="កំណត់ ឬកែប្រែប្រាក់កាត់">
-                  <i class="fa-solid fa-pen-to-square"></i> កែប្រាក់កាត់
-                </button>
+                <!-- Row 2: Breakdown Badges -->
+                {% if total_ded > 0 %}
+                <div style="display: flex; flex-wrap: wrap; gap: 3px; font-size: 10.5px;">
+                  {% if p.nssf_deduction > 0 %}
+                  <span class="badge" style="background: #fee2e2; color: #b91c1c; padding: 1px 5px; font-size: 10px;">ប.ស.ស: {{ p.nssf_deduction | currency }}</span>
+                  {% endif %}
+                  {% if p.attendance_deduction > 0 %}
+                  <span class="badge" style="background: #fef3c7; color: #b45309; padding: 1px 5px; font-size: 10px;">អវត្តមាន: {{ p.attendance_deduction | currency }}</span>
+                  {% endif %}
+                  {% if p.tax_deduction > 0 %}
+                  <span class="badge" style="background: #f1f5f9; color: #475569; padding: 1px 5px; font-size: 10px;">ផ្សេងៗ: {{ p.tax_deduction | currency }}</span>
+                  {% endif %}
+                </div>
                 {% endif %}
               </div>
             </td>
