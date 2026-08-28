@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", function () {
   initDemoAccountFiller();
   initTableSearch();
   initFlashToasts();
+  initPageTransitionsAndPrefetch();
+  initBackToTop();
 });
 
 // ==============================================================================
@@ -342,7 +344,7 @@ function triggerPrint() {
 }
 
 // ==============================================================================
-// 8. SIDEBAR CONTROLS (AUTO HIDE, COLLAPSE & MOBILE DRAWER)
+// 8. SIDEBAR CONTROLS (COLLAPSE & MOBILE DRAWER)
 // ==============================================================================
 function initSidebarControls() {
   const sidebar = document.getElementById("app-sidebar") || document.querySelector(".sidebar");
@@ -382,13 +384,6 @@ function initSidebarControls() {
   function toggleDesktopSidebar() {
     const isCollapsed = document.body.classList.toggle("sidebar-collapsed");
     localStorage.setItem("np_sidebar_collapsed", isCollapsed ? "true" : "false");
-    
-    // Smooth transition feedback
-    if (window.toast) {
-      if (isCollapsed) {
-        toast.info("បានលាក់ផ្ទាំងម៉ឺនុយ (Collapsed Sidebar)", "ប្លង់ទូលាយ");
-      }
-    }
   }
 
   // Handle Main Toggle Button (Topbar)
@@ -412,9 +407,6 @@ function initSidebarControls() {
       } else {
         document.body.classList.add("sidebar-collapsed");
         localStorage.setItem("np_sidebar_collapsed", "true");
-        if (window.toast) {
-          toast.info("បានលាក់ផ្ទាំងម៉ឺនុយ (Collapsed Sidebar)", "ប្លង់ទូលាយ");
-        }
       }
     });
   }
@@ -426,61 +418,12 @@ function initSidebarControls() {
       if (window.innerWidth <= 992) {
         closeMobileSidebar();
       } else {
-        document.body.classList.add("sidebar-collapsed");
-        localStorage.setItem("np_sidebar_collapsed", "true");
-        if (window.toast) {
-          toast.info("បានលាក់ផ្ទាំងម៉ឺនុយ (Collapsed Sidebar)", "ប្លង់ទូលាយ");
-        }
+        document.body.classList.toggle("sidebar-collapsed");
+        const isCollapsed = document.body.classList.contains("sidebar-collapsed");
+        localStorage.setItem("np_sidebar_collapsed", isCollapsed ? "true" : "false");
       }
     });
   }
-
-  // 5 Seconds Inactivity Auto-Hide Timer (5,000 ms)
-  const AUTO_HIDE_SIDEBAR_MS = 5 * 1000;
-  let autoHideTimer = null;
-  let isMouseOverSidebar = false;
-
-  sidebar.addEventListener("mouseenter", function () {
-    isMouseOverSidebar = true;
-    if (autoHideTimer) {
-      clearTimeout(autoHideTimer);
-      autoHideTimer = null;
-    }
-  });
-
-  sidebar.addEventListener("mouseleave", function () {
-    isMouseOverSidebar = false;
-    resetAutoHideTimer();
-  });
-
-  function resetAutoHideTimer() {
-    if (autoHideTimer) {
-      clearTimeout(autoHideTimer);
-      autoHideTimer = null;
-    }
-
-    if (isMouseOverSidebar) return;
-
-    const isDesktopExpanded = window.innerWidth > 992 && !document.body.classList.contains("sidebar-collapsed");
-    const isMobileOpen = window.innerWidth <= 992 && (document.body.classList.contains("sidebar-open") || sidebar.classList.contains("show"));
-
-    if (isDesktopExpanded || isMobileOpen) {
-      autoHideTimer = setTimeout(function () {
-        if (isMouseOverSidebar) return;
-        if (window.innerWidth > 992) {
-          document.body.classList.add("sidebar-collapsed");
-          localStorage.setItem("np_sidebar_collapsed", "true");
-        } else {
-          closeMobileSidebar();
-        }
-      }, AUTO_HIDE_SIDEBAR_MS);
-    }
-  }
-
-  // Reset auto-hide timer on user interaction
-  ["mousemove", "mousedown", "keydown", "touchstart", "scroll"].forEach(function (evt) {
-    document.addEventListener(evt, resetAutoHideTimer, { passive: true });
-  });
 
   // Handle Overlay Click
   if (overlay) {
@@ -523,11 +466,121 @@ function initSidebarControls() {
     } else {
       document.body.classList.remove("sidebar-collapsed");
     }
-    resetAutoHideTimer();
+  });
+}
+
+// ==============================================================================
+// 9. INSTANT NAVIGATION PROGRESS & LINK PREFETCHING
+// ==============================================================================
+function initPageTransitionsAndPrefetch() {
+  const progressBar = document.getElementById("top-progress-bar");
+  const prefetchedUrls = new Set();
+
+  function startProgress() {
+    if (!progressBar) return;
+    progressBar.classList.remove("done");
+    progressBar.classList.add("loading");
+  }
+
+  function finishProgress() {
+    if (!progressBar) return;
+    progressBar.classList.remove("loading");
+    progressBar.classList.add("done");
+    setTimeout(() => {
+      progressBar.classList.remove("done");
+    }, 400);
+  }
+
+  // Finish progress on initial load
+  finishProgress();
+
+  // Prefetch internal URLs on hover
+  function prefetchUrl(url) {
+    if (!url || prefetchedUrls.has(url)) return;
+    if (url.startsWith("#") || url.startsWith("javascript:") || url.includes("/logout")) return;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.origin !== window.location.origin) return;
+      
+      prefetchedUrls.add(url);
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = url;
+      document.head.appendChild(link);
+    } catch (e) {}
+  }
+
+  // Intercept internal link clicks for top progress bar
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+    const href = link.getAttribute("href");
+    const target = link.getAttribute("target");
+
+    if (
+      href &&
+      !href.startsWith("#") &&
+      !href.startsWith("javascript:") &&
+      !href.startsWith("tel:") &&
+      !href.startsWith("mailto:") &&
+      target !== "_blank" &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.shiftKey
+    ) {
+      try {
+        const parsed = new URL(href, window.location.origin);
+        if (parsed.origin === window.location.origin) {
+          startProgress();
+        }
+      } catch (err) {}
+    }
   });
 
-  // Start initial auto-hide countdown
-  resetAutoHideTimer();
+  // Hover prefetching on navigation links
+  document.addEventListener("mouseover", function (e) {
+    const link = e.target.closest("a");
+    if (link) {
+      const href = link.getAttribute("href");
+      if (href) prefetchUrl(href);
+    }
+  }, { passive: true });
+
+  // Handle browser back/forward buttons
+  window.addEventListener("pageshow", function (event) {
+    finishProgress();
+  });
+}
+
+// ==============================================================================
+// 10. FLOATING BACK TO TOP BUTTON
+// ==============================================================================
+function initBackToTop() {
+  const btn = document.getElementById("btn-back-to-top");
+  if (!btn) return;
+
+  let ticking = false;
+  window.addEventListener("scroll", function () {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        if (window.scrollY > 260) {
+          btn.classList.add("show");
+        } else {
+          btn.classList.remove("show");
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  btn.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
 }
 
 // ==============================================================================

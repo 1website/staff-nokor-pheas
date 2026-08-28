@@ -3,8 +3,6 @@
   Design System & Stylesheet (Khmer Unicode & Official Administrative Theme)
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Outfit:wght@400;500;600;700&display=swap');
-
 :root {
   /* Color Palette */
   --primary: #1e3a8a;
@@ -4934,5 +4932,141 @@ body.sidebar-collapsed .col-phone {
   background: #101c30 !important;
   border-top: 1px solid #243552 !important;
 }
+
+/* ==============================================================================
+   SMOOTH UX & PERFORMANCE ENHANCEMENTS (UI Polishing)
+   ============================================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Instant Tap & Touch Responsiveness (Eliminates 300ms mobile tap delay) */
+a, button, input, select, textarea, .nav-link, .btn {
+  touch-action: manipulation;
+}
+
+/* Smooth Button Active Feedback */
+.btn:active, button:active, .nav-link:active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+
+/* Top Loading Progress Bar (Instant Navigation Feedback) */
+.top-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c88a1a 0%, #38bdf8 50%, #10b981 100%);
+  z-index: 999999;
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+}
+
+.top-progress-bar.loading {
+  opacity: 1;
+  transform: scaleX(0.7);
+  transition: transform 1.5s cubic-bezier(0.1, 0.5, 0.1, 1);
+}
+
+.top-progress-bar.done {
+  opacity: 1;
+  transform: scaleX(1);
+  transition: transform 0.15s ease, opacity 0.3s ease 0.15s;
+}
+
+/* Floating Back-to-Top Button */
+.btn-back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.btn-back-to-top:hover {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #f59e0b 100%);
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 12px 24px rgba(200, 138, 26, 0.45);
+}
+
+/* Card & Table Micro-Transitions */
+.card {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.custom-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.stat-card {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Custom Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 
 

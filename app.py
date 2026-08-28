@@ -89,18 +89,25 @@ def serve_static_upload(filename):
 
     abort(404)
 
-# Ensure database tables and baseline seed data exist
+# Ultra-fast zero-latency database ready check for serverless
 @app.before_request
 def ensure_database_ready():
     if request.path.startswith('/static') or request.path == '/favicon.ico':
         return
     if not getattr(app, '_db_ready', False):
         try:
-            init_db()
-            seed_data()
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT 1 FROM users LIMIT 1")
+            cur.fetchone()
             app._db_ready = True
-        except Exception as e:
-            print(f"[Startup Notice] Database initialization: {e}")
+        except Exception:
+            try:
+                init_db()
+                seed_data()
+                app._db_ready = True
+            except Exception as e:
+                print(f"[Startup Notice] Database initialization: {e}")
 
 # Register Jinja context processors & filters
 @app.context_processor

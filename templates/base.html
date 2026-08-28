@@ -7,10 +7,15 @@
   <title>{% block title %}ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក{% endblock %} - រដ្ឋបាលឃុំនគរភាស</title>
 
   <!-- Resource Preconnects for high-speed CDN loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- Google Fonts for Khmer & Latin UI -->
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Favicons, App Icons & Desktop Shortcut Installation -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -47,6 +52,8 @@
 </head>
 
 <body>
+  <!-- Top Loading Progress Bar (Instant Navigation Feedback) -->
+  <div id="top-progress-bar" class="top-progress-bar"></div>
 
   <div class="app-container">
     <!-- Mobile Sidebar Overlay -->
@@ -264,8 +271,13 @@
     </div>
   </div>
 
+  <!-- Back to Top Floating Button -->
+  <button type="button" id="btn-back-to-top" class="btn-back-to-top" title="ឡើងលើ (Back to Top)" aria-label="ឡើងលើ">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
   <!-- Javascript -->
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=4.0"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=4.1"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 
