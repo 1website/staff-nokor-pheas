@@ -1822,7 +1822,6 @@ def payroll_list():
 @clerk_or_admin_required
 def payroll_generate():
     month_year = request.form.get("month_year", date.today().strftime("%Y-%m"))
-    auto_nssf = request.form.get("auto_nssf", "1") in ["1", "true", "on"]
 
     # Extract month number (e.g. '04' for April, '10' for October)
     month_num = month_year.split("-")[1] if "-" in month_year else ""
@@ -1844,8 +1843,9 @@ def payroll_generate():
         fam_all = (s["family_allowance"] or 0) if month_num == "10" else 0
 
         gross = base + pos_all + fam_all
-        nssf = round(base * 0.02) if auto_nssf else 0
-        net = max(0, gross - nssf)
+        # មិនកាត់ ប.ស.ស ឬប្រាក់កាត់ណាមួយស្វ័យប្រវត្តិទេ (ទុក 0៛ សម្រាប់អ្នកប្រើប្រាស់កំណត់ដោយដៃតាមជាក់ស្តែង)
+        nssf = 0
+        net = gross
 
         remarks = "ទូទាត់ប្រាក់បៀវត្សរ៍ប្រចាំខែ"
         if month_num == "04":
@@ -1859,7 +1859,7 @@ def payroll_generate():
                 meeting_allowance, incentive_allowance, family_allowance, gross_salary,
                 nssf_deduction, attendance_deduction, tax_deduction, net_salary,
                 payment_status, paid_date, payment_method, remarks
-            ) VALUES (?, ?, ?, ?, 0, 0, 0, ?, ?, ?, 0, 0, ?, 'paid', ?, 'Wing', ?)
+            ) VALUES (?, ?, ?, ?, 0, 0, 0, ?, ?, 0, 0, 0, ?, 'paid', ?, 'Wing', ?)
             ON CONFLICT(staff_id, month_year) DO UPDATE SET
                 base_salary = excluded.base_salary,
                 position_allowance = excluded.position_allowance,
@@ -1868,18 +1868,17 @@ def payroll_generate():
                 incentive_allowance = excluded.incentive_allowance,
                 family_allowance = excluded.family_allowance,
                 gross_salary = excluded.gross_salary,
-                nssf_deduction = excluded.nssf_deduction,
-                net_salary = excluded.gross_salary - (excluded.nssf_deduction + payroll.attendance_deduction + payroll.tax_deduction),
+                net_salary = excluded.gross_salary - (payroll.nssf_deduction + payroll.attendance_deduction + payroll.tax_deduction),
                 remarks = excluded.remarks
         """, (
             sid, month_year, base, pos_all,
-            fam_all, gross, nssf, net, date.today().strftime("%Y-%m-%d"), remarks
+            fam_all, gross, net, date.today().strftime("%Y-%m-%d"), remarks
         ))
 
     conn.commit()
     conn.close()
 
-    flash(f"បានគណនា និងបង្កើតតារាងប្រាក់បៀវត្សរ៍សម្រាប់ខែ {month_year} រួចរាល់!", "success")
+    flash(f"បានគណនា និងបង្កើតតារាងប្រាក់បៀវត្សរ៍សម្រាប់ខែ {month_year} រួចរាល់ (មិនកាត់ប្រាក់ស្វ័យប្រវត្តិ)!", "success")
     return redirect(url_for("payroll_list", month=month_year))
 
 

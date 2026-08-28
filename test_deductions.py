@@ -51,6 +51,8 @@ class TestPayrollDeductions(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         p1 = [r for r in rows if r["base_salary"] == 1345000][0]
         p2 = [r for r in rows if r["base_salary"] == 1000000][0]
+        self.assertEqual(p1["nssf_deduction"], 0)
+        self.assertEqual(p1["net_salary"], 1345000)
 
         # Update deductions for NP-001 (NSSF: 26900, Attendance: 50000, Tax/Other: 20000)
         res_ded = self.client.post(
