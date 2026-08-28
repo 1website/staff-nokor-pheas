@@ -305,17 +305,32 @@ def _raw_create_connection():
     return SqliteConnectionWrapper(conn)
 
 
+_DB_SCHEMA_INITIALIZED = False
+
 def get_db():
     """Returns request-scoped DB connection if within Flask request, else creates new connection."""
+    global _DB_SCHEMA_INITIALIZED
+    conn = None
     try:
         from flask import g, has_request_context
         if has_request_context():
             if not hasattr(g, 'db') or g.db is None:
                 g.db = _raw_create_connection()
-            return g.db
+            conn = g.db
     except ImportError:
         pass
-    return _raw_create_connection()
+    
+    if conn is None:
+        conn = _raw_create_connection()
+
+    if not _DB_SCHEMA_INITIALIZED:
+        _DB_SCHEMA_INITIALIZED = True
+        try:
+            init_db(conn)
+        except Exception as e:
+            print(f"[Auto Schema Init Notice] {e}")
+
+    return conn
 
 
 def close_db_connection(e=None):
@@ -331,8 +346,9 @@ def close_db_connection(e=None):
         pass
 
 
-def init_db():
-    conn = get_db()
+def init_db(conn=None):
+    if conn is None:
+        conn = get_db()
     cursor = conn.cursor()
 
     # 1. Villages Table (បញ្ជីភូមិក្នុងឃុំនគរភាស - No Foreign Keys)
