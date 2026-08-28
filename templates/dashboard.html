@@ -381,50 +381,73 @@
 
 {% block extra_scripts %}
 <script>
-  // Render Chart for Staff Categories
-  const chartCanvas = document.getElementById('categoryChart');
-  if (chartCanvas) {
-    const ctx = chartCanvas.getContext('2d');
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['ក្រុមប្រឹក្សាឃុំ', 'ស្មៀនឃុំ', 'ជំនួយការឃុំ', 'មន្ត្រីភូមិ'],
-        datasets: [{
-          data: [{{ council_count }}, {{ clerk_count }}, {{ contract_count }}, {{ village_count }}],
-          backgroundColor: ['#0284c7', '#0d9488', '#8b5cf6', '#ea580c'],
-          hoverBackgroundColor: ['#0369a1', '#0f766e', '#7c3aed', '#c2410c'],
-          borderWidth: 2,
-          borderColor: isDark ? '#152238' : '#ffffff',
-          hoverOffset: 5
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false // Using our rich interactive 2x2 grid legend cards instead
+  (function () {
+    let categoryChartInstance = null;
+
+    function renderCategoryChart() {
+      const chartCanvas = document.getElementById('categoryChart');
+      if (!chartCanvas || typeof Chart === 'undefined') return;
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const ctx = chartCanvas.getContext('2d');
+
+      if (categoryChartInstance) {
+        categoryChartInstance.destroy();
+      }
+
+      categoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ក្រុមប្រឹក្សាឃុំ', 'ស្មៀនឃុំ', 'ជំនួយការឃុំ', 'មន្ត្រីភូមិ'],
+          datasets: [{
+            data: [{{ council_count }}, {{ clerk_count }}, {{ contract_count }}, {{ village_count }}],
+            backgroundColor: ['#0284c7', '#0d9488', '#8b5cf6', '#ea580c'],
+            hoverBackgroundColor: ['#0369a1', '#0f766e', '#7c3aed', '#c2410c'],
+            borderWidth: 2,
+            borderColor: isDark ? '#152238' : '#ffffff',
+            hoverOffset: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 750
           },
-          tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.92)',
-            padding: 10,
-            cornerRadius: 8,
-            titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-            bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
-            callbacks: {
-              label: function(context) {
-                const val = context.parsed || 0;
-                const total = {{ total_staff or 1 }};
-                const pct = Math.round((val / total) * 100);
-                return ` ${val} នាក់ (${pct}%)`;
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.92)',
+              padding: 10,
+              cornerRadius: 8,
+              titleFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+              bodyFont: { family: "'Kantumruy Pro', sans-serif", size: 12 },
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed || 0;
+                  const total = {{ total_staff or 1 }};
+                  const pct = Math.round((val / total) * 100);
+                  return ` ${val} នាក់ (${pct}%)`;
+                }
               }
             }
-          }
-        },
-        cutout: '72%'
-      }
+          },
+          cutout: '72%'
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderCategoryChart);
+    } else {
+      renderCategoryChart();
+    }
+
+    window.addEventListener('themeChanged', function () {
+      setTimeout(renderCategoryChart, 50);
     });
-  }
+  })();
 </script>
 {% endblock %}

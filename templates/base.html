@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Chart.js for Visual Reports -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Theme Early Execution (Prevents Flash of Unstyled Content) -->
   <script>
@@ -53,7 +53,8 @@
 
 <body>
   <!-- Global Loading Circle Overlay (ពេលរង់ចាំ / ទាញយកទិន្នន័យ) -->
-  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true" style="display: none;">
+  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true"
+    style="display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important;">
     <div class="loading-card">
       <div class="loading-circle-wrapper">
         <div class="loading-ring-outer"></div>
