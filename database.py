@@ -612,25 +612,18 @@ def init_db():
     )
     """)
 
-    # Ensure baseline administrative data (10 Villages & System Users) exist
+    # Ensure baseline administrative data (10 Villages & System Users) exist safely (non-destructive)
     ensure_baseline_data(conn)
-
-    # One-time automated wipe of demo data for live production deployment
-    try:
-        cursor.execute("SELECT value FROM system_settings WHERE key = 'demo_cleared_prod_v2'")
-        row = cursor.fetchone()
-        if not row or row[0] != 'true':
-            clear_all_demo_data(conn)
-            cursor.execute("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('demo_cleared_prod_v2', 'true')")
-            conn.commit()
-    except Exception as e_clear:
-        print(f"[Notice] One-time demo clear check: {e_clear}")
 
     conn.commit()
 
 
 def ensure_baseline_data(conn=None):
-    """Ensure baseline system administrative data (10 Villages & System Users) exist."""
+    """
+    Ensure baseline system administrative data (10 Villages & System Users) exist.
+    Strictly non-destructive: uses INSERT OR IGNORE and checks for existing users.
+    Existing user records, passwords, and custom data will NEVER be overwritten.
+    """
     if conn is None:
         conn = get_db()
     cursor = conn.cursor()
@@ -674,8 +667,9 @@ def ensure_baseline_data(conn=None):
 
 def clear_all_demo_data(conn=None):
     """
-    Clears all demo transactions, attendance, leaves, missions, payroll, events, finance, documents, and demo staff.
+    MANUAL ONLY: Clears demo transactions, attendance, leaves, missions, payroll, events, finance, documents, and staff.
     Keeps system user logins and administrative villages intact for real production data entry.
+    This function is NEVER called automatically by the system.
     """
     if conn is None:
         conn = get_db()
@@ -712,11 +706,13 @@ def clear_all_demo_data(conn=None):
 
 
 def seed_data():
-    """Seed baseline administrative configurations (villages & users). No fake demo data."""
+    """Seed baseline administrative configurations (villages & users). Non-destructive."""
     conn = get_db()
     ensure_baseline_data(conn)
 
 
 if __name__ == "__main__":
-    clear_all_demo_data()
+    init_db()
+    print("[Database Ready] Schema and baseline administrative structures verified.")
+
 
