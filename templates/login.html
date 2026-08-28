@@ -2,7 +2,7 @@
 <html lang="km">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ចូលប្រើប្រាស់ប្រព័ន្ធ - រដ្ឋបាលឃុំនគរភាស</title>
   
   <!-- Favicons, App Icons & Desktop Shortcut Installation -->
@@ -27,31 +27,65 @@
 
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260828-prod">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260828-v20">
   
   <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-dark: #0f172a;
+      --primary-light: #3b82f6;
+      --accent-gold: #c88a1a;
+      --accent-gold-light: #fbbf24;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --font-body: 'Kantumruy Pro', 'Battambang', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-moul: 'Moul', 'Khmer OS Muol Light', serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
+      font-family: var(--font-body);
       background: radial-gradient(circle at top right, #1e3a8a 0%, #0b192c 100%);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      color: var(--text-main);
+      overflow-x: hidden;
     }
 
+    /* Login Card */
     .login-card {
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 22px;
       width: 100%;
-      max-width: 460px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      max-width: 440px;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.45);
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      position: relative;
+      z-index: 10;
+      animation: fadeInCard 0.4s ease-out;
+    }
+
+    @keyframes fadeInCard {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .login-header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-      padding: 30px 24px 24px;
+      background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 100%);
+      padding: 28px 20px 22px;
       text-align: center;
       color: #ffffff;
       position: relative;
@@ -68,17 +102,22 @@
     }
 
     .emblem-icon {
-      width: 76px;
-      height: 76px;
+      width: 74px;
+      height: 74px;
       background: #ffffff;
       border-radius: 50%;
       margin: 0 auto 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-      border: 3px solid rgba(251, 191, 36, 0.6);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      border: 3px solid rgba(251, 191, 36, 0.85);
       overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    .emblem-icon:hover {
+      transform: scale(1.05);
     }
 
     .emblem-icon img {
@@ -89,45 +128,382 @@
 
     .login-header h2 {
       font-family: var(--font-moul);
-      font-size: 15px;
+      font-size: 15.5px;
       color: #ffffff;
       margin-bottom: 4px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
     .login-header p {
       font-size: 12.5px;
       color: #cbd5e1;
+      line-height: 1.4;
     }
 
     .login-body {
-      padding: 28px 28px 24px;
+      padding: 24px 22px 24px;
     }
 
-    .demo-box {
-      margin-top: 24px;
-      padding-top: 18px;
-      border-top: 1px dashed var(--border-color);
+    .form-group {
+      margin-bottom: 18px;
     }
 
-    .demo-title {
-      font-size: 12px;
+    .form-label {
+      display: block;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .form-label i {
+      color: var(--primary);
+      margin-right: 4px;
+    }
+
+    .required {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-control {
+      width: 100%;
+      height: 48px;
+      padding: 10px 14px;
+      font-size: 14.5px;
+      font-family: var(--font-body);
+      color: #0f172a;
+      background-color: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .form-control:focus {
+      background-color: #ffffff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: #94a3b8;
+      font-size: 13.5px;
+    }
+
+    .pwd-input-wrapper .form-control {
+      padding-right: 46px;
+    }
+
+    .btn-toggle-pwd {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .btn-toggle-pwd:hover,
+    .btn-toggle-pwd:focus {
+      color: #1e3a8a;
+      background-color: rgba(0, 0, 0, 0.04);
+      outline: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.35);
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #172554 0%, #1d4ed8 100%);
+      box-shadow: 0 6px 16px rgba(30, 58, 138, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(30, 58, 138, 0.3);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .login-footer-text {
       text-align: center;
-      margin-bottom: 10px;
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-top: 18px;
+      line-height: 1.5;
+    }
+
+    /* ==============================================================================
+       GLOBAL LOADING OVERLAY & DUAL ROTATING SPINNER (SELF-CONTAINED FOR MOBILE/DESKTOP)
+       ============================================================================== */
+    .global-loading-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      z-index: 9999999 !important;
+      background: rgba(11, 25, 44, 0.78) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .global-loading-overlay.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    .loading-card {
+      background: #ffffff !important;
+      border: 1px solid rgba(226, 232, 240, 0.95) !important;
+      border-radius: 20px !important;
+      padding: 30px 24px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 16px !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
+      text-align: center !important;
+      max-width: 88vw !important;
+      width: 320px !important;
+      transform: scale(0.9) !important;
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+
+    .global-loading-overlay.active .loading-card {
+      transform: scale(1) !important;
+    }
+
+    .loading-circle-wrapper {
+      position: relative !important;
+      width: 78px !important;
+      height: 78px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
+    }
+
+    .loading-ring-outer {
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: 50% !important;
+      border: 3.5px solid transparent !important;
+      border-top-color: #1e3a8a !important;
+      border-right-color: #3b82f6 !important;
+      border-bottom-color: #60a5fa !important;
+      animation: spinSmooth 0.95s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite !important;
+    }
+
+    .loading-ring-inner {
+      position: absolute !important;
+      inset: 8px !important;
+      border-radius: 50% !important;
+      border: 3px solid transparent !important;
+      border-top-color: #f59e0b !important;
+      border-left-color: #fbbf24 !important;
+      animation: spinReverse 0.8s linear infinite !important;
+    }
+
+    .loading-icon-center {
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 50% !important;
+      overflow: hidden !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      z-index: 2 !important;
+    }
+
+    .loading-pulse-icon {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      animation: pulseScale 1.4s ease-in-out infinite !important;
+    }
+
+    .loading-text-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 5px !important;
+    }
+
+    .loading-title {
+      font-size: 15.5px !important;
+      font-weight: 700 !important;
+      color: #0f172a !important;
+      letter-spacing: -0.2px !important;
+      font-family: var(--font-body) !important;
+    }
+
+    .loading-subtitle {
+      font-size: 12.5px !important;
+      color: #475569 !important;
+      line-height: 1.45 !important;
+      font-family: var(--font-body) !important;
+    }
+
+    .spinner-circle-sm {
+      display: inline-block !important;
+      width: 15px !important;
+      height: 15px !important;
+      border: 2.2px solid rgba(255, 255, 255, 0.35) !important;
+      border-top-color: #ffffff !important;
+      border-radius: 50% !important;
+      animation: spinSmooth 0.65s linear infinite !important;
+      vertical-align: middle !important;
+      margin-right: 6px !important;
+      flex-shrink: 0 !important;
+    }
+
+    @keyframes spinSmooth {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spinReverse {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
+
+    @keyframes pulseScale {
+      0%, 100% { transform: scale(0.92); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    /* Toast container support on login */
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10000000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 90vw;
+      width: 360px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      pointer-events: auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25);
+      border-left: 4px solid #dc2626;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes toastIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Small screen responsive adjustments */
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+      .login-card {
+        border-radius: 18px;
+      }
+      .login-header {
+        padding: 24px 16px 18px;
+      }
+      .emblem-icon {
+        width: 66px;
+        height: 66px;
+        margin-bottom: 10px;
+      }
+      .login-header h2 {
+        font-size: 14px;
+      }
+      .login-header p {
+        font-size: 11.5px;
+      }
+      .login-body {
+        padding: 20px 16px 20px;
+      }
+      .form-control {
+        height: 46px;
+        font-size: 14px;
+      }
+      .btn-submit {
+        height: 46px;
+        font-size: 14.5px;
+      }
     }
   </style>
 </head>
 <body>
+
   <!-- Global Loading Circle Overlay -->
-  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true" style="display: none; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important;">
+  <div id="global-loading-overlay" class="global-loading-overlay" aria-hidden="true">
     <div class="loading-card">
       <div class="loading-circle-wrapper">
         <div class="loading-ring-outer"></div>
         <div class="loading-ring-inner"></div>
-        <div class="loading-icon-center" style="width: 34px; height: 34px; border-radius: 50%; overflow: hidden;">
-          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" class="loading-pulse-icon" style="width: 100%; height: 100%; object-fit: cover;">
+        <div class="loading-icon-center">
+          <img src="{{ url_for('static', filename='img/app-icon.png') }}" alt="Logo" class="loading-pulse-icon">
         </div>
       </div>
       <div class="loading-text-group">
@@ -156,29 +532,92 @@
         {% endif %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('login') }}">
+      <form id="loginForm" method="POST" action="{{ url_for('login') }}">
         <div class="form-group">
           <label class="form-label" for="username">
-            <i class="fa-solid fa-user" style="color: var(--primary);"></i> ឈ្មោះគណនី (Username) <span class="required">*</span>
+            <i class="fa-solid fa-user"></i> ឈ្មោះគណនី (Username) <span class="required">*</span>
           </label>
-          <input type="text" id="username" name="username" class="form-control" placeholder="បញ្ចូលឈ្មោះគណនី..." required autofocus>
+          <div class="input-wrapper">
+            <input type="text" id="username" name="username" class="form-control" placeholder="បញ្ចូលឈ្មោះគណនី..." autocomplete="username" required autofocus>
+          </div>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="password">
-            <i class="fa-solid fa-lock" style="color: var(--primary);"></i> ពាក្យសម្ងាត់ (Password) <span class="required">*</span>
+            <i class="fa-solid fa-lock"></i> ពាក្យសម្ងាត់ (Password) <span class="required">*</span>
           </label>
-          <input type="password" id="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." required>
+          <div class="input-wrapper pwd-input-wrapper">
+            <input type="password" id="password" name="password" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់..." autocomplete="current-password" required>
+            <button type="button" id="btnTogglePwd" class="btn-toggle-pwd" aria-label="បង្ហាញ/លាក់ពាក្យសម្ងាត់" title="បង្ហាញ/លាក់ពាក្យសម្ងាត់">
+              <i id="togglePwdIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 8px;">
+        <button type="submit" id="btnLoginSubmit" class="btn-submit">
           <i class="fa-solid fa-arrow-right-to-bracket"></i>
-          <span>ចូលប្រព័ន្ធ (Sign In)</span>
+          <span id="btnSubmitText">ចូលប្រព័ន្ធ (Sign In)</span>
         </button>
+
+        <div class="login-footer-text">
+          ប្រព័ន្ធទិន្នន័យសុវត្ថិភាព សម្រាប់តែមន្ត្រី និងបុគ្គលិកដែលមានការអនុញ្ញាត
+        </div>
       </form>
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=5.0"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=20260828-v20"></script>
+  <script>
+    // Password visibility toggle handler
+    const btnToggle = document.getElementById('btnTogglePwd');
+    const pwdInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('togglePwdIcon');
+
+    if (btnToggle && pwdInput && toggleIcon) {
+      btnToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (pwdInput.type === 'password') {
+          pwdInput.type = 'text';
+          toggleIcon.classList.remove('fa-eye');
+          toggleIcon.classList.add('fa-eye-slash');
+        } else {
+          pwdInput.type = 'password';
+          toggleIcon.classList.remove('fa-eye-slash');
+          toggleIcon.classList.add('fa-eye');
+        }
+      });
+    }
+
+    // Login Form Interception for Mobile UX
+    const loginForm = document.getElementById('loginForm');
+    const btnSubmit = document.getElementById('btnLoginSubmit');
+    const btnSubmitText = document.getElementById('btnSubmitText');
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', function (e) {
+        if (loginForm.checkValidity && !loginForm.checkValidity()) {
+          return;
+        }
+
+        // Dismiss mobile keyboard
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+
+        // Trigger loading circle overlay
+        if (typeof window.showLoading === 'function') {
+          window.showLoading("កំពុងផ្ទៀងផ្ទាត់...", "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងដំណើរការចូលគណនី");
+        }
+
+        // Update button state
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          if (btnSubmitText) {
+            btnSubmitText.textContent = "កំពុងចូល...";
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
