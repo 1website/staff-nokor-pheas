@@ -24,13 +24,15 @@ from utils.helpers import (
     admin_required, clerk_or_admin_required, generate_qr_base64,
     FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES,
     PAYMENT_METHODS, FINANCE_STATUSES,
+    ASSET_CATEGORIES, ASSET_CONDITIONS, ASSET_ACQUISITIONS,
     staff_photo_url, process_and_save_photo
 )
 from utils.export_excel import (
     export_monthly_attendance_excel,
     export_staff_list_excel,
     export_payroll_excel,
-    export_finance_excel
+    export_finance_excel,
+    export_assets_excel
 )
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -142,6 +144,9 @@ def inject_global_vars():
         "FINANCE_EXPENSE_CATEGORIES": FINANCE_EXPENSE_CATEGORIES,
         "PAYMENT_METHODS": PAYMENT_METHODS,
         "FINANCE_STATUSES": FINANCE_STATUSES,
+        "ASSET_CATEGORIES": ASSET_CATEGORIES,
+        "ASSET_CONDITIONS": ASSET_CONDITIONS,
+        "ASSET_ACQUISITIONS": ASSET_ACQUISITIONS,
         "to_khmer_num": to_khmer_num,
         "format_khmer_date": format_khmer_date,
         "format_currency": format_currency,
@@ -585,6 +590,10 @@ def staff_detail(staff_id):
     cursor.execute("SELECT * FROM achievements WHERE staff_id = ? ORDER BY award_date DESC", (staff_id,))
     achievements = cursor.fetchall()
 
+    # 9. Assigned State Assets
+    cursor.execute("SELECT * FROM assets WHERE custodian_staff_id = ? ORDER BY id DESC", (staff_id,))
+    assigned_assets = cursor.fetchall()
+
     conn.close()
 
     return render_template(
@@ -597,7 +606,8 @@ def staff_detail(staff_id):
         missions=missions,
         payroll_history=payroll_history,
         trainings=trainings,
-        achievements=achievements
+        achievements=achievements,
+        assigned_assets=assigned_assets
     )
 
 
@@ -3085,6 +3095,518 @@ def system_status():
     except Exception as e:
         status["db_connection"] = f"error: {e}"
     return jsonify(status)
+
+
+# ----------------------------------------------------
+# STATE ASSET MANAGEMENT MODULE (គ្រប់គ្រងទ្រព្យសម្បត្តិរដ្ឋ)
+# ----------------------------------------------------
+
+@app.route("/assets")
+@login_required
+def assets_list():
+    selected_category = request.args.get("category", "")
+    selected_condition = request.args.get("condition", "")
+    selected_custodian = request.args.get("custodian", "")
+    search_query = request.args.get("q", "").strip()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Query all active staff for custodian filter
+    cursor.execute("SELECT id, officer_code, name_kh, position_title_kh FROM staff WHERE status = 'active' ORDER BY officer_code ASC")
+    staff_list = cursor.fetchall()
+
+    # Base query for assets
+    query = """
+        SELECT a.*, s.name_kh as custodian_name, s.officer_code as custodian_code, s.position_title_kh as custodian_position, s.photo as custodian_photo
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        WHERE 1=1
+    """
+    params = []
+
+    if selected_category:
+        query += " AND a.category = ?"
+        params.append(selected_category)
+
+    if selected_condition:
+        query += " AND a.condition_status = ?"
+        params.append(selected_condition)
+
+    if selected_custodian:
+        query += " AND a.custodian_staff_id = ?"
+        params.append(selected_custodian)
+
+    if search_query:
+        s_term = f"%{search_query}%"
+        query += " AND (a.name_kh LIKE ? OR a.asset_code LIKE ? OR a.brand_model LIKE ? OR a.serial_number LIKE ? OR a.location LIKE ?)"
+        params.extend([s_term, s_term, s_term, s_term, s_term])
+
+    query += " ORDER BY a.id DESC"
+    cursor.execute(query, params)
+    asset_rows = cursor.fetchall()
+
+    # Summary Statistics
+    cursor.execute("SELECT COUNT(*), COALESCE(SUM(original_value), 0) FROM assets")
+    stats_all = cursor.fetchone()
+    total_count = stats_all[0] if stats_all else 0
+    total_value = stats_all[1] if stats_all else 0
+
+    cursor.execute("SELECT COUNT(*) FROM assets WHERE condition_status IN ('good', 'fair')")
+    in_use_count = cursor.fetchone()[0] or 0
+
+    cursor.execute("SELECT COUNT(*) FROM assets WHERE condition_status = 'needs_repair'")
+    repair_count = cursor.fetchone()[0] or 0
+
+    cursor.execute("SELECT COUNT(*) FROM assets WHERE condition_status = 'damaged'")
+    damaged_count = cursor.fetchone()[0] or 0
+
+    conn.close()
+
+    return render_template(
+        "assets/index.html",
+        assets=asset_rows,
+        staff_list=staff_list,
+        selected_category=selected_category,
+        selected_condition=selected_condition,
+        selected_custodian=selected_custodian,
+        search_query=search_query,
+        stats={
+            "total_count": total_count,
+            "total_value": total_value,
+            "in_use_count": in_use_count,
+            "repair_count": repair_count,
+            "damaged_count": damaged_count
+        }
+    )
+
+
+@app.route("/assets/new", methods=["GET", "POST"])
+@clerk_or_admin_required
+def assets_new():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+        name_kh = request.form.get("name_kh", "").strip()
+        name_en = request.form.get("name_en", "").strip()
+        category = request.form.get("category", "other")
+        brand_model = request.form.get("brand_model", "").strip()
+        serial_number = request.form.get("serial_number", "").strip()
+        acquisition_date = request.form.get("acquisition_date", date.today().strftime("%Y-%m-%d"))
+        acquisition_type = request.form.get("acquisition_type", "commune_fund")
+        
+        try:
+            original_value = float(request.form.get("original_value", 0) or 0)
+        except (ValueError, TypeError):
+            original_value = 0
+
+        condition_status = request.form.get("condition_status", "good")
+        location = request.form.get("location", "សាលាឃុំនគរភាស").strip()
+        custodian_id = request.form.get("custodian_staff_id") or None
+        if custodian_id and custodian_id.isdigit():
+            custodian_id = int(custodian_id)
+        else:
+            custodian_id = None
+
+        notes = request.form.get("notes", "").strip()
+
+        # Generate asset_code if not provided
+        asset_code = request.form.get("asset_code", "").strip()
+        if not asset_code:
+            cursor.execute("SELECT COUNT(*) FROM assets")
+            cnt = cursor.fetchone()[0] + 1
+            yr = date.today().strftime("%Y")
+            asset_code = f"NP-AST-{yr}-{cnt:03d}"
+
+        # Handle Photo Upload
+        photo_data_uri = None
+        photo_file = request.files.get("photo")
+        if photo_file and photo_file.filename != "":
+            photo_data_uri, _ = process_and_save_photo(photo_file, officer_code=asset_code)
+
+        # Handle Attachment
+        attachment_name = None
+        att_file = request.files.get("attachment")
+        if att_file and att_file.filename != "":
+            fname = secure_filename(f"att_ast_{asset_code}_{int(datetime.now().timestamp())}_{att_file.filename}")
+            save_path = os.path.join(app.config["UPLOAD_FOLDER"], fname)
+            att_file.save(save_path)
+            attachment_name = fname
+
+        try:
+            cursor.execute("""
+                INSERT INTO assets (
+                    asset_code, name_kh, name_en, category, brand_model,
+                    serial_number, acquisition_date, acquisition_type, original_value,
+                    condition_status, location, custodian_staff_id, photo,
+                    attachment, notes, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """, (
+                asset_code, name_kh, name_en, category, brand_model,
+                serial_number, acquisition_date, acquisition_type, original_value,
+                condition_status, location, custodian_id, photo_data_uri,
+                attachment_name, notes
+            ))
+
+            cursor.execute("SELECT last_insert_rowid() AS id")
+            row = cursor.fetchone()
+            asset_id = row["id"] if isinstance(row, dict) or hasattr(row, '__getitem__') else row[0]
+
+            # Initial Creation Log
+            performed_by = session.get("full_name") or session.get("username") or "Admin"
+            cursor.execute("""
+                INSERT INTO asset_logs (
+                    asset_id, action_type, action_date, performed_by,
+                    to_staff_id, description, cost, created_at
+                ) VALUES (?, 'created', ?, ?, ?, 'បានចុះបញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋថ្មី', 0, CURRENT_TIMESTAMP)
+            """, (asset_id, acquisition_date, performed_by, custodian_id))
+
+            conn.commit()
+            conn.close()
+
+            flash(f"បានចុះបញ្ជីទ្រព្យសម្បត្តិ «{name_kh}» ({asset_code}) ដោយជោគជ័យ!", "success")
+            return redirect(url_for("assets_detail", asset_id=asset_id))
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            flash(f"មិនអាចចុះបញ្ជីទ្រព្យសម្បត្តិបានទេ៖ {e}", "danger")
+            return redirect(url_for("assets_new"))
+
+    # GET Request
+    cursor.execute("SELECT id, officer_code, name_kh, position_title_kh FROM staff WHERE status = 'active' ORDER BY officer_code ASC")
+    staff_list = cursor.fetchall()
+
+    # Pre-generate next asset code
+    cursor.execute("SELECT COUNT(*) FROM assets")
+    cnt = cursor.fetchone()[0] + 1
+    yr = date.today().strftime("%Y")
+    next_code = f"NP-AST-{yr}-{cnt:03d}"
+
+    conn.close()
+
+    return render_template(
+        "assets/form.html",
+        is_edit=False,
+        staff_list=staff_list,
+        next_code=next_code,
+        today_iso=date.today().strftime("%Y-%m-%d")
+    )
+
+
+@app.route("/assets/<int:asset_id>")
+@login_required
+def assets_detail(asset_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT a.*, s.name_kh as custodian_name, s.officer_code as custodian_code,
+               s.position_title_kh as custodian_position, s.photo as custodian_photo,
+               s.phone as custodian_phone
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        WHERE a.id = ?
+    """, (asset_id,))
+    asset = cursor.fetchone()
+
+    if not asset:
+        conn.close()
+        flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
+        return redirect(url_for("assets_list"))
+
+    # Fetch logs with staff joins
+    cursor.execute("""
+        SELECT l.*,
+               sf.name_kh as from_staff_name, sf.position_title_kh as from_staff_pos,
+               st.name_kh as to_staff_name, st.position_title_kh as to_staff_pos
+        FROM asset_logs l
+        LEFT JOIN staff sf ON l.from_staff_id = sf.id
+        LEFT JOIN staff st ON l.to_staff_id = st.id
+        WHERE l.asset_id = ?
+        ORDER BY l.id DESC
+    """, (asset_id,))
+    logs = cursor.fetchall()
+
+    # Fetch active staff for handover modal
+    cursor.execute("SELECT id, officer_code, name_kh, position_title_kh FROM staff WHERE status = 'active' ORDER BY officer_code ASC")
+    staff_list = cursor.fetchall()
+
+    # Generate QR Code Data (pointing to asset info/code)
+    qr_content = f"NOKOR_PHEAS_ASSET:{asset['asset_code']}|{asset['name_kh']}|{asset['condition_status']}"
+    qr_code_base64 = generate_qr_base64(qr_content)
+
+    conn.close()
+
+    return render_template(
+        "assets/detail.html",
+        asset=asset,
+        logs=logs,
+        staff_list=staff_list,
+        qr_code_base64=qr_code_base64
+    )
+
+
+@app.route("/assets/<int:asset_id>/edit", methods=["GET", "POST"])
+@clerk_or_admin_required
+def assets_edit(asset_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM assets WHERE id = ?", (asset_id,))
+    asset = cursor.fetchone()
+
+    if not asset:
+        conn.close()
+        flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
+        return redirect(url_for("assets_list"))
+
+    if request.method == "POST":
+        name_kh = request.form.get("name_kh", "").strip()
+        name_en = request.form.get("name_en", "").strip()
+        category = request.form.get("category", "other")
+        brand_model = request.form.get("brand_model", "").strip()
+        serial_number = request.form.get("serial_number", "").strip()
+        acquisition_date = request.form.get("acquisition_date", asset["acquisition_date"])
+        acquisition_type = request.form.get("acquisition_type", "commune_fund")
+        
+        try:
+            original_value = float(request.form.get("original_value", 0) or 0)
+        except (ValueError, TypeError):
+            original_value = 0
+
+        condition_status = request.form.get("condition_status", "good")
+        location = request.form.get("location", "សាលាឃុំនគរភាស").strip()
+        custodian_id = request.form.get("custodian_staff_id") or None
+        if custodian_id and custodian_id.isdigit():
+            custodian_id = int(custodian_id)
+        else:
+            custodian_id = None
+
+        notes = request.form.get("notes", "").strip()
+
+        # Handle Photo Upload
+        photo_data_uri = asset["photo"]
+        photo_file = request.files.get("photo")
+        if photo_file and photo_file.filename != "":
+            photo_data_uri, _ = process_and_save_photo(photo_file, officer_code=asset["asset_code"])
+
+        # Handle Attachment
+        attachment_name = asset["attachment"]
+        att_file = request.files.get("attachment")
+        if att_file and att_file.filename != "":
+            fname = secure_filename(f"att_ast_{asset['asset_code']}_{int(datetime.now().timestamp())}_{att_file.filename}")
+            save_path = os.path.join(app.config["UPLOAD_FOLDER"], fname)
+            att_file.save(save_path)
+            attachment_name = fname
+
+        # Log condition change if any
+        if condition_status != asset["condition_status"]:
+            performed_by = session.get("full_name") or session.get("username") or "Admin"
+            cond_label = ASSET_CONDITIONS.get(condition_status, {}).get("title_kh", condition_status)
+            cursor.execute("""
+                INSERT INTO asset_logs (
+                    asset_id, action_type, action_date, performed_by,
+                    description, cost, created_at
+                ) VALUES (?, 'condition_update', ?, ?, ?, 0, CURRENT_TIMESTAMP)
+            """, (asset_id, date.today().strftime("%Y-%m-%d"), performed_by, f"បានកែប្រែស្ថានភាពទ្រព្យទៅជា «{cond_label}»"))
+
+        try:
+            cursor.execute("""
+                UPDATE assets SET
+                    name_kh = ?, name_en = ?, category = ?, brand_model = ?,
+                    serial_number = ?, acquisition_date = ?, acquisition_type = ?,
+                    original_value = ?, condition_status = ?, location = ?,
+                    custodian_staff_id = ?, photo = ?, attachment = ?, notes = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (
+                name_kh, name_en, category, brand_model,
+                serial_number, acquisition_date, acquisition_type,
+                original_value, condition_status, location,
+                custodian_id, photo_data_uri, attachment_name, notes,
+                asset_id
+            ))
+
+            conn.commit()
+            conn.close()
+
+            flash(f"បានកែប្រែព័ត៌មានទ្រព្យសម្បត្តិ «{name_kh}» ដោយជោគជ័យ!", "success")
+            return redirect(url_for("assets_detail", asset_id=asset_id))
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            flash(f"មិនអាចកែប្រែព័ត៌មានទ្រព្យសម្បត្តិបានទេ៖ {e}", "danger")
+            return redirect(url_for("assets_edit", asset_id=asset_id))
+
+    # GET Request
+    cursor.execute("SELECT id, officer_code, name_kh, position_title_kh FROM staff WHERE status = 'active' ORDER BY officer_code ASC")
+    staff_list = cursor.fetchall()
+    conn.close()
+
+    return render_template(
+        "assets/form.html",
+        is_edit=True,
+        asset=asset,
+        staff_list=staff_list
+    )
+
+
+@app.route("/assets/<int:asset_id>/delete", methods=["POST"])
+@clerk_or_admin_required
+def assets_delete(asset_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT name_kh, asset_code FROM assets WHERE id = ?", (asset_id,))
+    asset = cursor.fetchone()
+
+    if not asset:
+        conn.close()
+        flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
+        return redirect(url_for("assets_list"))
+
+    cursor.execute("DELETE FROM assets WHERE id = ?", (asset_id,))
+    conn.commit()
+    conn.close()
+
+    flash(f"បានលុបទ្រព្យសម្បត្តិ «{asset['name_kh']}» ({asset['asset_code']}) ចេញពីបញ្ជីសារពើភណ្ឌដោយជោគជ័យ!", "success")
+    return redirect(url_for("assets_list"))
+
+
+@app.route("/assets/<int:asset_id>/handover", methods=["POST"])
+@clerk_or_admin_required
+def assets_handover(asset_id):
+    new_custodian_id = request.form.get("to_staff_id") or None
+    if new_custodian_id and new_custodian_id.isdigit():
+        new_custodian_id = int(new_custodian_id)
+    else:
+        new_custodian_id = None
+
+    new_location = request.form.get("location", "").strip()
+    handover_date = request.form.get("action_date", date.today().strftime("%Y-%m-%d"))
+    remarks = request.form.get("description", "").strip() or "បានផ្ទេរការកាន់កាប់ និងគ្រប់គ្រង"
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT custodian_staff_id, location, name_kh FROM assets WHERE id = ?", (asset_id,))
+    asset = cursor.fetchone()
+
+    if not asset:
+        conn.close()
+        flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
+        return redirect(url_for("assets_list"))
+
+    old_custodian_id = asset["custodian_staff_id"]
+    location_to_save = new_location if new_location else asset["location"]
+    performed_by = session.get("full_name") or session.get("username") or "Admin"
+
+    cursor.execute("""
+        UPDATE assets SET
+            custodian_staff_id = ?,
+            location = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (new_custodian_id, location_to_save, asset_id))
+
+    cursor.execute("""
+        INSERT INTO asset_logs (
+            asset_id, action_type, action_date, performed_by,
+            from_staff_id, to_staff_id, description, cost, created_at
+        ) VALUES (?, 'handover', ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+    """, (asset_id, handover_date, performed_by, old_custodian_id, new_custodian_id, remarks))
+
+    conn.commit()
+    conn.close()
+
+    flash("បានកត់ត្រាការផ្ទេរ និងប្រគល់-ទទួលសម្ភារៈដោយជោគជ័យ!", "success")
+    return redirect(url_for("assets_detail", asset_id=asset_id))
+
+
+@app.route("/assets/<int:asset_id>/maintenance", methods=["POST"])
+@clerk_or_admin_required
+def assets_maintenance(asset_id):
+    action_date = request.form.get("action_date", date.today().strftime("%Y-%m-%d"))
+    new_condition = request.form.get("condition_status", "good")
+    description = request.form.get("description", "").strip()
+    
+    try:
+        cost = float(request.form.get("cost", 0) or 0)
+    except (ValueError, TypeError):
+        cost = 0
+
+    performed_by = session.get("full_name") or session.get("username") or "Admin"
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE assets SET
+            condition_status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (new_condition, asset_id))
+
+    cursor.execute("""
+        INSERT INTO asset_logs (
+            asset_id, action_type, action_date, performed_by,
+            description, cost, created_at
+        ) VALUES (?, 'maintenance', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    """, (asset_id, action_date, performed_by, description or "ថែទាំ និងជួសជុលសម្ភារៈ", cost))
+
+    conn.commit()
+    conn.close()
+
+    flash("បានកត់ត្រាការថែទាំ/ជួសជុលសម្ភារៈដោយជោគជ័យ!", "success")
+    return redirect(url_for("assets_detail", asset_id=asset_id))
+
+
+@app.route("/assets/<int:asset_id>/qr_tag")
+@login_required
+def assets_qr_tag(asset_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT a.*, s.name_kh as custodian_name, s.position_title_kh as custodian_position
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        WHERE a.id = ?
+    """, (asset_id,))
+    asset = cursor.fetchone()
+    conn.close()
+
+    if not asset:
+        flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
+        return redirect(url_for("assets_list"))
+
+    qr_content = f"NOKOR_PHEAS_ASSET:{asset['asset_code']}|{asset['name_kh']}|{asset['condition_status']}"
+    qr_code_base64 = generate_qr_base64(qr_content)
+
+    return render_template(
+        "assets/qr_tag.html",
+        asset=asset,
+        qr_code_base64=qr_code_base64
+    )
+
+
+@app.route("/assets/export_excel")
+@login_required
+def export_assets_excel_route():
+    category = request.args.get("category", "")
+    condition = request.args.get("condition", "")
+    search = request.args.get("q", "")
+
+    stream = export_assets_excel(category=category, condition=condition, search=search)
+    filename = f"បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ_ឃុំនគរភាស_{date.today().strftime('%Y%m%d')}.xlsx"
+
+    return send_file(
+        stream,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 @app.route('/settings/clear-demo-data', methods=["POST"])

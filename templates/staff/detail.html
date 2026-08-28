@@ -340,6 +340,82 @@
   </div>
 </div>
 
+<!-- Section: Assigned State Assets -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card-title">
+      <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
+      <span>ទ្រព្យសម្បត្តិរដ្ឋដែលកំពុងកាន់កាប់ប្រើប្រាស់ (Assigned State Assets)</span>
+    </div>
+    <span class="badge badge-info">{{ assigned_assets | length | kh_num }} មុខ</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    {% if assigned_assets %}
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width: 130px;">កូដសម្គាល់</th>
+            <th>ឈ្មោះសម្ភារៈ/ទ្រព្យ</th>
+            <th>ប្រភេទ</th>
+            <th>ម៉ាក & លេខស៊េរី</th>
+            <th style="text-align: right;">តម្លៃដើម</th>
+            <th style="text-align: center;">ស្ថានភាព</th>
+            <th>ទីតាំង</th>
+            <th style="text-align: center; width: 100px;">សកម្មភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assigned_assets %}
+          {% set cat_info = ASSET_CATEGORIES.get(a.category, {}) %}
+          {% set cond_info = ASSET_CONDITIONS.get(a.condition_status, {}) %}
+          <tr>
+            <td>
+              <a href="{{ url_for('assets_detail', asset_id=a.id) }}" class="officer-code-pill" style="font-size: 11.5px; text-decoration: none;">
+                {{ a.asset_code }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('assets_detail', asset_id=a.id) }}" style="font-weight: 600; color: var(--text-main); text-decoration: none;">
+                {{ a.name_kh }}
+              </a>
+            </td>
+            <td>
+              <span class="badge {{ cat_info.badge_class or 'badge-secondary' }}" style="font-size: 11px;">
+                <i class="{{ cat_info.icon or 'fa-solid fa-tag' }}"></i> {{ cat_info.title_kh or a.category }}
+              </span>
+            </td>
+            <td style="font-size: 12.5px;">
+              {{ a.brand_model or '-' }} {% if a.serial_number %}<span style="color: var(--text-muted); font-size: 11px;">(S/N: {{ a.serial_number }})</span>{% endif %}
+            </td>
+            <td style="text-align: right; font-weight: 600; color: var(--primary);">
+              {{ a.original_value | currency }}
+            </td>
+            <td style="text-align: center;">
+              <span class="badge {{ cond_info.badge_class or 'badge-secondary' }}" style="font-size: 11px;">
+                <i class="{{ cond_info.icon or 'fa-solid fa-circle' }}"></i> {{ cond_info.title_kh or a.condition_status }}
+              </span>
+            </td>
+            <td style="font-size: 12.5px;">{{ a.location or 'សាលាឃុំ' }}</td>
+            <td style="text-align: center;">
+              <a href="{{ url_for('assets_detail', asset_id=a.id) }}" class="btn btn-xs btn-outline-primary" style="padding: 3px 8px;">
+                <i class="fa-solid fa-eye"></i> មើល
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding: 24px 20px; text-align: center; color: var(--text-muted);">
+      <i class="fa-solid fa-box-open" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px; display: block;"></i>
+      <p style="margin: 0; font-size: 13px;">មន្ត្រីនេះមិនទាន់មានកាន់កាប់សម្ភារៈ ឬទ្រព្យសម្បត្តិរដ្ឋផ្ទាល់ខ្លួននៅឡើយទេ</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Modal: Upload Document -->
 <div id="uploadDocModal" class="modal-backdrop">
   <div class="modal-dialog">

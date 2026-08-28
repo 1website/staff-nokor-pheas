@@ -593,6 +593,49 @@ def init_db():
     )
     """)
 
+    # 14. State Asset Management Tables (បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        asset_code TEXT UNIQUE NOT NULL,
+        name_kh TEXT NOT NULL,
+        name_en TEXT,
+        category TEXT NOT NULL DEFAULT 'other',
+        brand_model TEXT,
+        serial_number TEXT,
+        acquisition_date TEXT,
+        acquisition_type TEXT DEFAULT 'commune_fund',
+        original_value REAL DEFAULT 0,
+        condition_status TEXT DEFAULT 'good',
+        location TEXT DEFAULT 'សាលាឃុំនគរភាស',
+        custodian_staff_id INTEGER,
+        photo TEXT,
+        attachment TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (custodian_staff_id) REFERENCES staff (id) ON DELETE SET NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS asset_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        asset_id INTEGER NOT NULL,
+        action_type TEXT NOT NULL,
+        action_date TEXT NOT NULL,
+        performed_by TEXT,
+        from_staff_id INTEGER,
+        to_staff_id INTEGER,
+        cost REAL DEFAULT 0,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (asset_id) REFERENCES assets (id) ON DELETE CASCADE,
+        FOREIGN KEY (from_staff_id) REFERENCES staff (id) ON DELETE SET NULL,
+        FOREIGN KEY (to_staff_id) REFERENCES staff (id) ON DELETE SET NULL
+    )
+    """)
+
     # Safe migration for existing DB
     try:
         cursor.execute("ALTER TABLE missions ADD COLUMN IF NOT EXISTS attachment TEXT")
@@ -618,6 +661,11 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS idx_finance_date ON finance_transactions(transaction_date)",
         "CREATE INDEX IF NOT EXISTS idx_finance_type ON finance_transactions(type)",
         "CREATE INDEX IF NOT EXISTS idx_finance_category ON finance_transactions(category)",
+        "CREATE INDEX IF NOT EXISTS idx_assets_category ON assets(category)",
+        "CREATE INDEX IF NOT EXISTS idx_assets_condition ON assets(condition_status)",
+        "CREATE INDEX IF NOT EXISTS idx_assets_custodian ON assets(custodian_staff_id)",
+        "CREATE INDEX IF NOT EXISTS idx_assets_code ON assets(asset_code)",
+        "CREATE INDEX IF NOT EXISTS idx_asset_logs_asset ON asset_logs(asset_id)",
         "CREATE INDEX IF NOT EXISTS idx_events_date ON commune_events(event_date)",
         "CREATE INDEX IF NOT EXISTS idx_events_type ON commune_events(event_type)",
         "CREATE INDEX IF NOT EXISTS idx_payroll_month ON payroll(month_year)",
@@ -773,6 +821,8 @@ def clear_all_demo_data(conn=None):
     cursor = conn.cursor()
 
     demo_tables = [
+        "asset_logs",
+        "assets",
         "finance_transactions",
         "commune_events",
         "mission_participants",

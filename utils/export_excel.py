@@ -14,7 +14,8 @@ from database import get_db
 from utils.helpers import (
     to_khmer_num, format_khmer_date, STAFF_CATEGORIES,
     calculate_age, format_khmer_age,
-    FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES, PAYMENT_METHODS
+    FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES, PAYMENT_METHODS,
+    ASSET_CATEGORIES, ASSET_CONDITIONS, ASSET_ACQUISITIONS
 )
 
 # Colors and Styling Tokens
@@ -965,6 +966,238 @@ def export_finance_excel(from_month=None, to_month=None, month_year=None, tx_typ
     ws[f"I{sig_row}"] = "ហេង ចាន់រិទ្ធ"
     ws[f"I{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
     ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+
+    conn.close()
+
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return stream
+
+
+def export_assets_excel(category=None, condition=None, search=None):
+    """
+    Generate an official Excel inventory spreadsheet of State Assets (បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ)
+    for Nokor Pheas Commune Administration.
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ"
+    ws.views.sheetView[0].showGridLines = True
+
+    # Page Setup (A4 Landscape)
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+    # Document Headers
+    ws.merge_cells("A1:M1")
+    ws["A1"] = "ព្រះរាជាណាចក្រកម្ពុជា"
+    ws["A1"].font = TITLE_FONT
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A2:M2")
+    ws["A2"] = "ជាតិ សាសនា ព្រះមហាក្សត្រ"
+    ws["A2"].font = Font(name="Khmer OS Muol Light", size=11, bold=True, color="0F2B48")
+    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A4:E4")
+    ws["A4"] = "រដ្ឋបាលខេត្តសៀមរាប"
+    ws["A4"].font = Font(name="Khmer OS Muol Light", size=9)
+
+    ws.merge_cells("A5:E5")
+    ws["A5"] = "រដ្ឋបាលស្រុកពួក"
+    ws["A5"].font = Font(name="Khmer OS Muol Light", size=9)
+
+    ws.merge_cells("A6:E6")
+    ws["A6"] = "រដ្ឋបាលឃុំនគរភាស"
+    ws["A6"].font = Font(name="Khmer OS Muol Light", size=10, bold=True, color="0F2B48")
+
+    ws.merge_cells("A8:M8")
+    ws["A8"] = "បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ (STATE ASSET & INVENTORY REGISTER)"
+    ws["A8"].font = Font(name="Khmer OS Muol Light", size=12, bold=True, color="0F2B48")
+    ws["A8"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A9:M9")
+    ws["A9"] = f"គិតត្រឹមថ្ងៃទី {to_khmer_num(date.today().day)} ខែ {format_khmer_date(date.today(), include_day_name=False).split(' ')[1]} ឆ្នាំ {to_khmer_num(date.today().year)}"
+    ws["A9"].font = SUBTITLE_FONT
+    ws["A9"].alignment = Alignment(horizontal="center", vertical="center")
+
+    headers = [
+        ("A", "ល.រ", 6),
+        ("B", "កូដសម្គាល់", 16),
+        ("C", "ឈ្មោះសម្ភារៈ / ទ្រព្យសម្បត្តិ", 30),
+        ("D", "ប្រភេទចំណាត់ថ្នាក់", 22),
+        ("E", "ម៉ាក / ម៉ូដែល", 18),
+        ("F", "លេខស៊េរី (S/N)", 16),
+        ("G", "កាលបរិច្ឆេទទទួលបាន", 16),
+        ("H", "ប្រភពទទួលបាន", 18),
+        ("I", "តម្លៃដើម (រៀល)", 18),
+        ("J", "ស្ថានភាពបច្ចុប្បន្ន", 18),
+        ("K", "ទីតាំងរក្សាទុក", 18),
+        ("L", "អ្នកកាន់កាប់/ទទួលខុសត្រូវ", 22),
+        ("M", "កំណត់ចំណាំ", 24)
+    ]
+
+    for col, text, width in headers:
+        cell = ws[f"{col}11"]
+        cell.value = text
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = THIN_BORDER
+        ws.column_dimensions[col].width = width
+
+    ws.row_dimensions[11].height = 30
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT a.*, s.name_kh as custodian_name, s.officer_code as custodian_code, s.position_title_kh as custodian_position
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        WHERE 1=1
+    """
+    params = []
+
+    if category:
+        query += " AND a.category = ?"
+        params.append(category)
+    if condition:
+        query += " AND a.condition_status = ?"
+        params.append(condition)
+    if search:
+        s_term = f"%{search}%"
+        query += " AND (a.name_kh LIKE ? OR a.asset_code LIKE ? OR a.brand_model LIKE ? OR a.serial_number LIKE ? OR a.location LIKE ?)"
+        params.extend([s_term, s_term, s_term, s_term, s_term])
+
+    query += " ORDER BY a.id ASC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    row_idx = 12
+    total_val = 0
+
+    for i, r in enumerate(rows, start=1):
+        val = r["original_value"] or 0
+        total_val += val
+
+        cat_info = ASSET_CATEGORIES.get(r["category"], {})
+        cat_kh = cat_info.get("title_kh", r["category"])
+
+        cond_info = ASSET_CONDITIONS.get(r["condition_status"], {})
+        cond_kh = cond_info.get("title_kh", r["condition_status"])
+
+        acq_info = ASSET_ACQUISITIONS.get(r["acquisition_type"], {})
+        acq_kh = acq_info.get("title_kh", r["acquisition_type"])
+
+        custodian_text = "-"
+        if r["custodian_name"]:
+            custodian_text = f"{r['custodian_name']} ({r['custodian_position'] or ''})"
+
+        ws[f"A{row_idx}"] = to_khmer_num(i)
+        ws[f"B{row_idx}"] = r["asset_code"]
+        ws[f"C{row_idx}"] = r["name_kh"]
+        ws[f"D{row_idx}"] = cat_kh
+        ws[f"E{row_idx}"] = r["brand_model"] or "-"
+        ws[f"F{row_idx}"] = r["serial_number"] or "-"
+        ws[f"G{row_idx}"] = r["acquisition_date"] or "-"
+        ws[f"H{row_idx}"] = acq_kh
+        ws[f"I{row_idx}"] = val
+        ws[f"J{row_idx}"] = cond_kh
+        ws[f"K{row_idx}"] = r["location"] or "-"
+        ws[f"L{row_idx}"] = custodian_text
+        ws[f"M{row_idx}"] = r["notes"] or ""
+
+        # Alignments
+        ws[f"A{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"B{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"C{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"D{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"E{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"F{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"G{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"H{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"I{row_idx}"].alignment = Alignment(horizontal="right", vertical="center")
+        ws[f"J{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"K{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"L{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+        ws[f"M{row_idx}"].alignment = Alignment(horizontal="left", vertical="center")
+
+        ws[f"I{row_idx}"].number_format = '#,##0'
+
+        for col, _, _ in headers:
+            cell = ws[f"{col}{row_idx}"]
+            cell.font = BODY_FONT
+            cell.border = THIN_BORDER
+            if i % 2 == 0:
+                cell.fill = ALT_ROW_FILL
+
+        ws.row_dimensions[row_idx].height = 22
+        row_idx += 1
+
+    # Totals Row
+    ws.merge_cells(f"A{row_idx}:H{row_idx}")
+    ws[f"A{row_idx}"] = f"សរុបទ្រព្យសម្បត្តិទាំងអស់ ៖ {to_khmer_num(len(rows))} មុខ"
+    ws[f"A{row_idx}"].font = SUMMARY_FONT
+    ws[f"A{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+    ws[f"A{row_idx}"].fill = HIGHLIGHT_FILL
+
+    ws[f"I{row_idx}"] = total_val
+    ws[f"I{row_idx}"].font = SUMMARY_FONT
+    ws[f"I{row_idx}"].alignment = Alignment(horizontal="right", vertical="center")
+    ws[f"I{row_idx}"].number_format = '#,##0'
+    ws[f"I{row_idx}"].fill = HIGHLIGHT_FILL
+
+    ws.merge_cells(f"J{row_idx}:M{row_idx}")
+    ws[f"J{row_idx}"] = "រៀល (KHR)"
+    ws[f"J{row_idx}"].font = SUMMARY_FONT
+    ws[f"J{row_idx}"].alignment = Alignment(horizontal="center", vertical="center")
+    ws[f"J{row_idx}"].fill = HIGHLIGHT_FILL
+
+    for col, _, _ in headers:
+        ws[f"{col}{row_idx}"].border = DOUBLE_BOTTOM_BORDER
+
+    ws.row_dimensions[row_idx].height = 26
+
+    # Signatures block
+    sig_row = row_idx + 2
+    today_kh = format_khmer_date(date.today(), include_day_name=False)
+
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "បានឃើញ និងឯកភាព"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = f"ឃុំនគរភាស, {today_kh}"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9, italic=True)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 1
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "មេឃុំនគរភាស"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = "អ្នកគ្រប់គ្រងសារពើភណ្ឌ/ស្មៀនឃុំ"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 4
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "មី គន់"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = "ហេង ចាន់រិទ្ធ"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Muol Light", size=9, bold=True)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
 
     conn.close()
 

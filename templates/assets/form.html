@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}កែប្រែព័ត៌មានទ្រព្យសម្បត្តិ{% else %}ចុះបញ្ជីសារពើភណ្ឌទ្រព្យថ្មី{% endif %} | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block page_title %}
+<div class="page-title-box">
+  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+    <i class="fa-solid fa-boxes-stacked"></i>
+  </div>
+  <div>
+    <h2>{% if is_edit %}កែប្រែព័ត៌មានទ្រព្យសម្បត្តិ «{{ asset.name_kh }}»{% else %}ចុះបញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋថ្មី{% endif %}</h2>
+    <p class="subtitle">កត់ត្រាព័ត៌មានលម្អិត តម្លៃ ប្រភព ទីតាំង និងមន្ត្រីទទួលបន្ទុកកាន់កាប់</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="page-actions-box">
+  <a href="{% if is_edit %}{{ url_for('assets_detail', asset_id=asset.id) }}{% else %}{{ url_for('assets_list') }}{% endif %}" class="btn btn-outline">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>ត្រឡប់ក្រោយ</span>
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 950px; margin: 0 auto;">
+  <div class="card">
+    <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 18px 24px;">
+      <h3 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-file-pen" style="color: var(--primary);"></i>
+        <span>ទម្រង់ព័ត៌មានសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ</span>
+      </h3>
+    </div>
+
+    <div class="card-body" style="padding: 24px;">
+      <form method="POST" enctype="multipart/form-data" action="{% if is_edit %}{{ url_for('assets_edit', asset_id=asset.id) }}{% else %}{{ url_for('assets_new') }}{% endif %}">
+        
+        <!-- SECTION 1: Category & Identification -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>១. ប្រភេទ និងកូដសម្គាល់ទ្រព្យ</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <!-- Category -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-tags text-primary"></i> ប្រភេទចំណាត់ថ្នាក់ទ្រព្យ <span class="text-danger">*</span>
+              </label>
+              <select name="category" class="form-select" required>
+                {% for cat_k, cat_v in ASSET_CATEGORIES.items() %}
+                <option value="{{ cat_k }}" {% if is_edit and asset.category == cat_k %}selected{% elif not is_edit and cat_k == 'it_equipment' %}selected{% endif %}>
+                  {{ cat_v.title_kh }} ({{ cat_v.title_en }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Asset Code -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-barcode text-primary"></i> កូដសម្គាល់ទ្រព្យ (Asset Tag/Code) <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="asset_code" class="form-control font-latin" required
+                value="{% if is_edit %}{{ asset.asset_code }}{% else %}{{ next_code }}{% endif %}"
+                placeholder="ឧ. NP-AST-2026-001">
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">ប្រព័ន្ធបង្កើតកូដស្វ័យប្រវត្តិតាមលំដាប់លំដោយ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Asset Details & Specs -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>២. ព័ត៌មានលម្អិតនៃសម្ភារៈ</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Name KH -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-font text-primary"></i> ឈ្មោះសម្ភារៈ / ទ្រព្យសម្បត្តិ (ភាសាខ្មែរ) <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="name_kh" class="form-control" required
+                value="{% if is_edit %}{{ asset.name_kh }}{% endif %}"
+                placeholder="ឧ. កុំព្យូទ័រយួរដៃ Dell Latitude 5420 ឬ តុប្រជុំវែង">
+            </div>
+
+            <!-- Name EN -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-language text-primary"></i> ឈ្មោះជាអក្សរឡាតាំង (English Name)
+              </label>
+              <input type="text" name="name_en" class="form-control font-latin"
+                value="{% if is_edit %}{{ asset.name_en or '' }}{% endif %}"
+                placeholder="e.g. Dell Laptop Latitude 5420">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Brand & Model -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-industry text-primary"></i> ម៉ាក និងម៉ូដែល (Brand & Model)
+              </label>
+              <input type="text" name="brand_model" class="form-control"
+                value="{% if is_edit %}{{ asset.brand_model or '' }}{% endif %}"
+                placeholder="ឧ. Dell, Canon LBP2900, Honda Dream 125cc...">
+            </div>
+
+            <!-- Serial Number -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-fingerprint text-primary"></i> លេខស៊េរីម៉ាស៊ីន (Serial Number / S/N)
+              </label>
+              <input type="text" name="serial_number" class="form-control font-latin"
+                value="{% if is_edit %}{{ asset.serial_number or '' }}{% endif %}"
+                placeholder="ឧ. CN-0K3T91-72872-91A-0192">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Acquisition & Valuation -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-money-check-dollar"></i>
+            <span>៣. ប្រភពទទួលបាន និងតម្លៃដើម</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <!-- Acquisition Date -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-regular fa-calendar text-primary"></i> កាលបរិច្ឆេទទទួលបាន <span class="text-danger">*</span>
+              </label>
+              <input type="date" name="acquisition_date" class="form-control" required
+                value="{% if is_edit %}{{ asset.acquisition_date }}{% else %}{{ today_iso }}{% endif %}">
+            </div>
+
+            <!-- Acquisition Type -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-hand-holding-dollar text-primary"></i> ប្រភពទទួលបាន
+              </label>
+              <select name="acquisition_type" class="form-select">
+                {% for acq_k, acq_v in ASSET_ACQUISITIONS.items() %}
+                <option value="{{ acq_k }}" {% if is_edit and asset.acquisition_type == acq_k %}selected{% endif %}>
+                  {{ acq_v.title_kh }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Original Value -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-coins text-primary"></i> តម្លៃដើមគិតជារៀល (KHR)
+              </label>
+              <div class="input-group" style="display: flex;">
+                <input type="number" name="original_value" id="original_value_input" class="form-control" min="0" step="500"
+                  value="{% if is_edit %}{{ asset.original_value | int }}{% else %}0{% endif %}"
+                  oninput="updateValuePreview(this.value)">
+                <span style="background: var(--bg-main); border: 1px solid var(--border-color); border-left: none; padding: 8px 12px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; border-radius: 0 8px 8px 0;">រៀល</span>
+              </div>
+              <div id="value_preview_text" style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 3px;">
+                {% if is_edit %}{{ asset.original_value | currency }}{% else %}០ រៀល{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: Condition, Location & Custody -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>៤. ស្ថានភាព ទីតាំង និងអ្នកកាន់កាប់ទទួលខុសត្រូវ</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <!-- Condition Status -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-heart-pulse text-primary"></i> ស្ថានភាពបច្ចុប្បន្ន <span class="text-danger">*</span>
+              </label>
+              <select name="condition_status" class="form-select" required>
+                {% for cond_k, cond_v in ASSET_CONDITIONS.items() %}
+                <option value="{{ cond_k }}" {% if is_edit and asset.condition_status == cond_k %}selected{% endif %}>
+                  {{ cond_v.title_kh }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Location -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-location-dot text-primary"></i> ទីតាំងរក្សាទុក / ប្រើប្រាស់ <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="location" class="form-control" list="location_suggestions" required
+                value="{% if is_edit %}{{ asset.location }}{% else %}សាលាឃុំនគរភាស{% endif %}"
+                placeholder="ឧ. សាលប្រជុំ, បន្ទប់មេឃុំ, បន្ទប់ស្មៀន...">
+              <datalist id="location_suggestions">
+                <option value="សាលាឃុំនគរភាស">
+                <option value="បន្ទប់មេឃុំ">
+                <option value="បន្ទប់ស្មៀន">
+                <option value="សាលប្រជុំឃុំ">
+                <option value="ប៉ុស្តិ៍នគរបាលរដ្ឋបាលឃុំ">
+                <option value="ឃ្លាំងស្តុកសម្ភារៈឃុំ">
+                <option value="បរិវេណសាលាឃុំ">
+              </datalist>
+            </div>
+
+            <!-- Custodian Staff -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-user-check text-primary"></i> មន្ត្រីទទួលបន្ទុកកាន់កាប់
+              </label>
+              <select name="custodian_staff_id" class="form-select">
+                <option value="">-- គ្មានអ្នកកាន់កាប់ផ្ទាល់ (ទ្រព្យរួម) --</option>
+                {% for st in staff_list %}
+                <option value="{{ st.id }}" {% if is_edit and asset.custodian_staff_id == st.id %}selected{% endif %}>
+                  {{ st.name_kh }} ({{ st.position_title_kh }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: Photo, Attachment & Notes -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-paperclip"></i>
+            <span>៥. រូបថតសម្ភារៈ និងឯកសារភ្ជាប់</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Photo Upload -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-camera text-primary"></i> រូបថតសម្ភារៈជាក់ស្តែង
+              </label>
+              <input type="file" name="photo" class="form-control" accept="image/*" onchange="previewAssetPhoto(this)">
+              <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                <img id="photo_preview" src="{% if is_edit and asset.photo %}{{ asset.photo }}{% else %}#{% endif %}"
+                  style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border-color); {% if not (is_edit and asset.photo) %}display: none;{% endif %}">
+                <span id="photo_preview_help" style="font-size: 11.5px; color: var(--text-muted);">
+                  {% if is_edit and asset.photo %}មានរូបថតស្រាប់ (ជ្រើសរើសដើម្បីប្តូរថ្មី){% else %}គាំទ្រប្រភេទ JPG, PNG, WEBP{% endif %}
+                </span>
+              </div>
+            </div>
+
+            <!-- Attachment File -->
+            <div>
+              <label class="form-label" style="font-weight: 600;">
+                <i class="fa-solid fa-file-lines text-primary"></i> ឯកសារភ្ជាប់ (វិក្កយបត្រ / ប័ណ្ណធានា / កិច្ចសន្យា)
+              </label>
+              <input type="file" name="attachment" class="form-control">
+              {% if is_edit and asset.attachment %}
+              <div style="margin-top: 8px; font-size: 12px;">
+                <a href="{{ url_for('static', filename='uploads/' + asset.attachment) }}" target="_blank" class="text-primary" style="text-decoration: none;">
+                  <i class="fa-solid fa-paperclip"></i> មើលឯកសារភ្ជាប់បច្ចុប្បន្ន
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="form-label" style="font-weight: 600;">
+              <i class="fa-regular fa-comment-dots text-primary"></i> កំណត់ចំណាំបន្ថែម
+            </label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="ព័ត៌មានបន្ថែមស្តីពីប្រភព ស្ថានភាពបច្ចេកទេស ឬកិច្ចសន្យាធានា...">{% if is_edit %}{{ asset.notes or '' }}{% endif %}</textarea>
+          </div>
+        </div>
+
+        <!-- Form Submit Actions -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border-color);">
+          <a href="{% if is_edit %}{{ url_for('assets_detail', asset_id=asset.id) }}{% else %}{{ url_for('assets_list') }}{% endif %}" class="btn btn-outline">
+            <i class="fa-solid fa-xmark"></i>
+            <span>បោះបង់</span>
+          </a>
+          <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{% if is_edit %}រក្សាទុកការកែប្រែ{% else %}ចុះបញ្ជីទ្រព្យសម្បត្តិ{% endif %}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateValuePreview(val) {
+    const num = parseInt(val, 10);
+    const prev = document.getElementById('value_preview_text');
+    if (!prev) return;
+    if (isNaN(num) || num <= 0) {
+      prev.textContent = '០ រៀល';
+    } else {
+      prev.textContent = new Intl.NumberFormat('km-KH').format(num) + ' រៀល';
+    }
+  }
+
+  function previewAssetPhoto(input) {
+    const preview = document.getElementById('photo_preview');
+    const help = document.getElementById('photo_preview_help');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        if (help) help.textContent = input.files[0].name;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+{% endblock %}

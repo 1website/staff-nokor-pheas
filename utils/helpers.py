@@ -248,6 +248,111 @@ FINANCE_STATUSES = {
     'cancelled': {'title_kh': 'បានលុបចោល', 'badge': 'badge-danger'}
 }
 
+# State Asset Management Constants
+ASSET_CATEGORIES = {
+    'building': {
+        'title_kh': 'អគារ និងសំណង់រដ្ឋបាល',
+        'title_en': 'Administrative Buildings',
+        'icon': 'fa-solid fa-building-flag',
+        'badge_class': 'badge-primary',
+        'color': '#2563eb'
+    },
+    'land': {
+        'title_kh': 'ដីធ្លី និងបរិវេណ',
+        'title_en': 'Land & Compounds',
+        'icon': 'fa-solid fa-map-location-dot',
+        'badge_class': 'badge-success',
+        'color': '#059669'
+    },
+    'vehicle': {
+        'title_kh': 'មធ្យោបាយធ្វើដំណើរ',
+        'title_en': 'Vehicles & Transport',
+        'icon': 'fa-solid fa-car-side',
+        'badge_class': 'badge-info',
+        'color': '#0284c7'
+    },
+    'it_equipment': {
+        'title_kh': 'កុំព្យូទ័រ & អេឡិចត្រូនិក',
+        'title_en': 'IT & Electronics',
+        'icon': 'fa-solid fa-laptop',
+        'badge_class': 'badge-purple',
+        'color': '#7c3aed'
+    },
+    'office_furniture': {
+        'title_kh': 'គ្រឿងសង្ហារិម & បរិក្ខារការិយាល័យ',
+        'title_en': 'Office Furniture',
+        'icon': 'fa-solid fa-couch',
+        'badge_class': 'badge-warning',
+        'color': '#d97706'
+    },
+    'infrastructure': {
+        'title_kh': 'ហេដ្ឋារចនាសម្ព័ន្ធសាធារណៈ',
+        'title_en': 'Public Infrastructure',
+        'icon': 'fa-solid fa-bridge-water',
+        'badge_class': 'badge-clerk',
+        'color': '#0d9488'
+    },
+    'machinery': {
+        'title_kh': 'គ្រឿងចក្រ & ឧបករណ៍បច្ចេកទេស',
+        'title_en': 'Machinery & Tools',
+        'icon': 'fa-solid fa-gears',
+        'badge_class': 'badge-dark',
+        'color': '#475569'
+    },
+    'other': {
+        'title_kh': 'សម្ភារៈផ្សេងៗ',
+        'title_en': 'Other Assets',
+        'icon': 'fa-solid fa-box-open',
+        'badge_class': 'badge-secondary',
+        'color': '#64748b'
+    }
+}
+
+ASSET_CONDITIONS = {
+    'good': {
+        'title_kh': 'ល្អ / កំពុងប្រើប្រាស់',
+        'title_en': 'In Use / Good',
+        'badge_class': 'badge-success',
+        'icon': 'fa-solid fa-circle-check',
+        'color': '#059669'
+    },
+    'fair': {
+        'title_kh': 'មធ្យម / នៅប្រើកើត',
+        'title_en': 'Fair Condition',
+        'badge_class': 'badge-info',
+        'icon': 'fa-solid fa-circle-info',
+        'color': '#0284c7'
+    },
+    'needs_repair': {
+        'title_kh': 'ត្រូវការជួសជុល',
+        'title_en': 'Needs Repair',
+        'badge_class': 'badge-warning',
+        'icon': 'fa-solid fa-triangle-exclamation',
+        'color': '#d97706'
+    },
+    'damaged': {
+        'title_kh': 'ខូចលែងប្រើកើត',
+        'title_en': 'Damaged / Broken',
+        'badge_class': 'badge-danger',
+        'icon': 'fa-solid fa-circle-xmark',
+        'color': '#dc2626'
+    },
+    'disposed': {
+        'title_kh': 'បានរំលាយចោល',
+        'title_en': 'Disposed / Written-off',
+        'badge_class': 'badge-secondary',
+        'icon': 'fa-solid fa-ban',
+        'color': '#64748b'
+    }
+}
+
+ASSET_ACQUISITIONS = {
+    'commune_fund': {'title_kh': 'ថវិកាឃុំផ្ទាល់', 'title_en': 'Commune Fund'},
+    'national_grant': {'title_kh': 'ថ្នាក់ជាតិផ្តល់ជូន', 'title_en': 'National Grant'},
+    'donation': {'title_kh': 'ជំនួយសប្បុរសជន / អង្គការ', 'title_en': 'Donation / NGO'},
+    'other': {'title_kh': 'ផ្សេងៗ', 'title_en': 'Other'}
+}
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

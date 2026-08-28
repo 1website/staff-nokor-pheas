@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name_kh }} ({{ asset.asset_code }}) | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% set cat_info = ASSET_CATEGORIES.get(asset.category, {}) %}
+{% set cond_info = ASSET_CONDITIONS.get(asset.condition_status, {}) %}
+{% set acq_info = ASSET_ACQUISITIONS.get(asset.acquisition_type, {}) %}
+
+{% block page_title %}
+<div class="page-title-box">
+  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+    <i class="{{ cat_info.icon or 'fa-solid fa-boxes-stacked' }}"></i>
+  </div>
+  <div>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <h2 style="margin: 0;">{{ asset.name_kh }}</h2>
+      <span class="officer-code-pill" style="font-size: 13px;">{{ asset.asset_code }}</span>
+      <span class="badge {{ cond_info.badge_class or 'badge-secondary' }}" style="font-size: 12px;">
+        <i class="{{ cond_info.icon or 'fa-solid fa-circle' }}"></i> {{ cond_info.title_kh or asset.condition_status }}
+      </span>
+    </div>
+    <p class="subtitle">{% if asset.name_en %}<span class="font-latin">{{ asset.name_en }}</span> • {% endif %}ទីតាំង ៖ {{ asset.location or 'សាលាឃុំនគរភាស' }}</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="page-actions-box">
+  <a href="{{ url_for('assets_list') }}" class="btn btn-outline">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>បញ្ជីសារពើភណ្ឌ</span>
+  </a>
+  <a href="{{ url_for('assets_qr_tag', asset_id=asset.id) }}" target="_blank" class="btn btn-outline-primary" title="បោះពុម្ពស្លាក QR Code">
+    <i class="fa-solid fa-qrcode"></i>
+    <span>បោះពុម្ពស្លាក QR</span>
+  </a>
+  {% if session.role in ['admin', 'clerk'] %}
+  <button type="button" class="btn btn-outline-warning" onclick="openHandoverModal()">
+    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+    <span>ផ្ទេរការកាន់កាប់</span>
+  </button>
+  <button type="button" class="btn btn-outline-info" onclick="openMaintenanceModal()">
+    <i class="fa-solid fa-wrench"></i>
+    <span>កត់ត្រាជួសជុល</span>
+  </button>
+  <a href="{{ url_for('assets_edit', asset_id=asset.id) }}" class="btn btn-primary">
+    <i class="fa-solid fa-pen-to-square"></i>
+    <span>កែប្រែ</span>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+  
+  <!-- LEFT COLUMN: Main Asset Information -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Core Details Card -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>
+          <span>ព័ត៌មានលម្អិតនៃសម្ភារៈ/ទ្រព្យសម្បត្តិ</span>
+        </h3>
+        <span class="badge {{ cat_info.badge_class or 'badge-secondary' }}">
+          <i class="{{ cat_info.icon or 'fa-solid fa-tag' }}"></i> {{ cat_info.title_kh or asset.category }}
+        </span>
+      </div>
+
+      <div class="card-body" style="padding: 20px;">
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: start; margin-bottom: 20px;">
+          <!-- Asset Photo -->
+          <div>
+            {% if asset.photo %}
+            <img src="{{ asset.photo }}" alt="{{ asset.name_kh }}"
+              style="width: 130px; height: 130px; border-radius: 12px; object-fit: cover; border: 2px solid var(--border-color); box-shadow: var(--shadow-sm);"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 130px; height: 130px; border-radius: 12px; background: var(--bg-main); border: 2px solid var(--border-color); align-items: center; justify-content: center; color: var(--text-muted); font-size: 36px;">
+              <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+            </div>
+            {% else %}
+            <div style="width: 130px; height: 130px; border-radius: 12px; background: var(--bg-main); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 36px;">
+              <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Key Highlights Table -->
+          <div>
+            <table class="custom-table" style="font-size: 13.5px;">
+              <tbody>
+                <tr>
+                  <td style="width: 150px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-color);">កូដសម្គាល់ (Asset Tag)</td>
+                  <td style="font-weight: 700; color: var(--primary); padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span class="officer-code-pill">{{ asset.asset_code }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-color);">ឈ្មោះជាភាសាខ្មែរ</td>
+                  <td style="font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--border-color);">{{ asset.name_kh }}</td>
+                </tr>
+                {% if asset.name_en %}
+                <tr>
+                  <td style="color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-color);">ឈ្មោះជាឡាតាំង</td>
+                  <td style="padding: 6px 0; border-bottom: 1px solid var(--border-color);" class="font-latin">{{ asset.name_en }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td style="color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-color);">តម្លៃដើម (Initial Value)</td>
+                  <td style="font-weight: 700; color: var(--primary); font-size: 15px; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    {{ asset.original_value | currency }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: var(--text-muted); padding: 6px 0;">កាលបរិច្ឆេទទទួលបាន</td>
+                  <td style="padding: 6px 0; font-weight: 500;">
+                    {{ asset.acquisition_date }} <span style="font-size: 11px; color: var(--text-muted);">({{ asset.acquisition_date | kh_date(include_day=false) }})</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Secondary Specs Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: var(--bg-main); padding: 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+          <div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">ម៉ាក និងម៉ូដែល (Brand & Model)</div>
+            <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">{{ asset.brand_model or '-' }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">លេខស៊េរីម៉ាស៊ីន (S/N)</div>
+            <div style="font-weight: 600; font-size: 13.5px; font-family: var(--font-latin); margin-top: 2px;">{{ asset.serial_number or '-' }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">ប្រភពទទួលបាន</div>
+            <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">{{ acq_info.title_kh or asset.acquisition_type }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">ទីតាំងរក្សាទុក/ប្រើប្រាស់</div>
+            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-main); margin-top: 2px;">
+              <i class="fa-solid fa-location-dot" style="color: var(--danger);"></i> {{ asset.location or 'សាលាឃុំ' }}
+            </div>
+          </div>
+        </div>
+
+        {% if asset.notes %}
+        <div style="margin-top: 16px; padding: 12px 16px; background: rgba(59, 130, 246, 0.05); border-left: 3px solid var(--primary); border-radius: 4px;">
+          <div style="font-weight: 600; font-size: 12px; color: var(--primary); margin-bottom: 3px;">កំណត់ចំណាំ ៖</div>
+          <div style="font-size: 13px; color: var(--text-main); line-height: 1.5;">{{ asset.notes }}</div>
+        </div>
+        {% endif %}
+
+        {% if asset.attachment %}
+        <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-paperclip" style="color: var(--primary);"></i>
+            <span style="font-size: 13px; font-weight: 500;">ឯកសារភ្ជាប់ / វិក្កយបត្រ / ប័ណ្ណធានា</span>
+          </div>
+          <a href="{{ url_for('static', filename='uploads/' + asset.attachment) }}" target="_blank" class="btn btn-xs btn-outline-primary">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> មើលឯកសារ
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Timeline & History Card -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+          <span>ប្រវត្តិផ្ទេរការកាន់កាប់ & ការថែទាំជួសជុល (Audit Logs)</span>
+        </h3>
+        <span style="font-size: 12px; color: var(--text-muted);">{{ logs | length | kh_num }} កំណត់ត្រា</span>
+      </div>
+
+      <div class="card-body" style="padding: 20px;">
+        {% if logs %}
+        <div style="display: flex; flex-direction: column; gap: 16px; position: relative; padding-left: 24px; border-left: 2px solid var(--border-color); margin-left: 8px;">
+          {% for lg in logs %}
+          <div style="position: relative;">
+            <!-- Timeline Bullet -->
+            <div style="position: absolute; left: -31px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: {% if lg.action_type == 'created' %}#10b981{% elif lg.action_type == 'handover' %}#3b82f6{% elif lg.action_type == 'maintenance' %}#f59e0b{% else %}#64748b{% endif %}; border: 2px solid var(--bg-card);"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <span class="badge {% if lg.action_type == 'created' %}badge-success{% elif lg.action_type == 'handover' %}badge-info{% elif lg.action_type == 'maintenance' %}badge-warning{% else %}badge-secondary{% endif %}" style="font-size: 11px;">
+                  {% if lg.action_type == 'created' %}<i class="fa-solid fa-plus"></i> ចុះបញ្ជីដំបូង
+                  {% elif lg.action_type == 'handover' %}<i class="fa-solid fa-arrow-right-arrow-left"></i> ផ្ទេរការកាន់កាប់
+                  {% elif lg.action_type == 'maintenance' %}<i class="fa-solid fa-wrench"></i> ថែទាំ/ជួសជុល
+                  {% elif lg.action_type == 'condition_update' %}<i class="fa-solid fa-arrows-rotate"></i> កែប្រែស្ថានភាព
+                  {% else %}{{ lg.action_type }}{% endif %}
+                </span>
+                <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">{{ lg.action_date }}</span>
+              </div>
+              <span style="font-size: 11.5px; color: var(--text-muted);">កត់ត្រាដោយ ៖ {{ lg.performed_by or 'Admin' }}</span>
+            </div>
+
+            <!-- Description & Details -->
+            <div style="margin-top: 6px; font-size: 13px; color: var(--text-main);">
+              {{ lg.description }}
+            </div>
+
+            {% if lg.action_type == 'handover' and lg.to_staff_name %}
+            <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
+              {% if lg.from_staff_name %}ពី <strong>{{ lg.from_staff_name }}</strong> ➡️ {% endif %}
+              ប្រគល់ជូន ៖ <strong style="color: var(--primary);">{{ lg.to_staff_name }}</strong> ({{ lg.to_staff_pos or '' }})
+            </div>
+            {% endif %}
+
+            {% if lg.cost and lg.cost > 0 %}
+            <div style="margin-top: 4px; font-size: 12px; font-weight: 600; color: #dc2626;">
+              ចំណាយជួសជុល ៖ {{ lg.cost | currency }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
+          មិនទាន់មានប្រវត្តិប្រតិបត្តិការនៅឡើយទេ
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Custodian & QR Code -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Custodian Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-user-check" style="color: var(--primary);"></i>
+          <span>មន្ត្រីទទួលបន្ទុកកាន់កាប់</span>
+        </h3>
+      </div>
+
+      <div class="card-body" style="padding: 20px; text-align: center;">
+        {% if asset.custodian_name %}
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          {% if asset.custodian_photo %}
+          <img src="{{ asset.custodian_photo }}" alt="{{ asset.custodian_name }}"
+            style="width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-light);">
+          {% else %}
+          <div style="width: 76px; height: 76px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700;">
+            {{ asset.custodian_name[:1] }}
+          </div>
+          {% endif %}
+          <div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text-main);">{{ asset.custodian_name }}</div>
+            <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">{{ asset.custodian_position or 'មន្ត្រីរដ្ឋបាលឃុំ' }}</div>
+            <span class="officer-code-pill" style="margin-top: 6px; display: inline-block;">{{ asset.custodian_code }}</span>
+          </div>
+
+          {% if asset.custodian_phone %}
+          <div style="font-size: 12.5px; color: var(--text-main); margin-top: 4px;">
+            <i class="fa-solid fa-phone" style="color: #10b981;"></i> {{ asset.custodian_phone }}
+          </div>
+          {% endif %}
+
+          <a href="{{ url_for('staff_detail', staff_id=asset.custodian_staff_id) }}" class="btn btn-xs btn-outline-primary" style="margin-top: 8px;">
+            <i class="fa-solid fa-id-card"></i> មើលប្រវត្តិរូបមន្ត្រី
+          </a>
+        </div>
+        {% else %}
+        <div style="padding: 20px 10px; color: var(--text-muted);">
+          <i class="fa-solid fa-user-slash" style="font-size: 36px; color: #cbd5e1; margin-bottom: 8px; display: block;"></i>
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">ទ្រព្យរួម (គ្មានអ្នកកាន់កាប់ផ្ទាល់)</div>
+          <div style="font-size: 12px; margin-top: 4px;">រក្សាទុកប្រើប្រាស់រួមនៅ <strong>{{ asset.location or 'សាលាឃុំនគរភាស' }}</strong></div>
+          {% if session.role in ['admin', 'clerk'] %}
+          <button type="button" class="btn btn-xs btn-outline-primary" style="margin-top: 12px;" onclick="openHandoverModal()">
+            <i class="fa-solid fa-user-plus"></i> ប្រគល់ជូនមន្ត្រី
+          </button>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Official QR Tag Card -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-qrcode" style="color: var(--primary);"></i>
+          <span>ស្លាកសម្គាល់ QR Code</span>
+        </h3>
+        <a href="{{ url_for('assets_qr_tag', asset_id=asset.id) }}" target="_blank" class="btn btn-xs btn-primary">
+          <i class="fa-solid fa-print"></i> បោះពុម្ព
+        </a>
+      </div>
+
+      <div class="card-body" style="padding: 20px; text-align: center;">
+        {% if qr_code_base64 %}
+        <div style="background: white; padding: 12px; border-radius: 10px; display: inline-block; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+          <img src="{{ qr_code_base64 }}" alt="QR Code" style="width: 140px; height: 140px; display: block;">
+        </div>
+        <div style="font-family: var(--font-latin); font-weight: 700; font-size: 13px; color: var(--primary-dark); margin-top: 10px;">
+          {{ asset.asset_code }}
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+          ស្កេនដើម្បីមើលព័ត៌មាន និងអ្នកទទួលខុសត្រូវ
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL 1: Handover Modal -->
+{% if session.role in ['admin', 'clerk'] %}
+<div id="handoverModal" class="modal-backdrop" style="display: none;">
+  <div class="modal-dialog" style="max-width: 500px;">
+    <div class="modal-header">
+      <div style="font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-arrow-right-arrow-left" style="color: var(--primary);"></i>
+        <span>ផ្ទេរការកាន់កាប់សម្ភារៈ</span>
+      </div>
+      <button type="button" class="modal-close" onclick="closeHandoverModal()">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('assets_handover', asset_id=asset.id) }}">
+      <div class="modal-body" style="padding: 20px;">
+        <div style="background: var(--bg-main); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+          សម្ភារៈ ៖ <strong>{{ asset.name_kh }}</strong> ({{ asset.asset_code }})
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-user-check text-primary"></i> ជ្រើសរើសមន្ត្រីទទួលកាន់កាប់ថ្មី <span class="text-danger">*</span>
+          </label>
+          <select name="to_staff_id" class="form-select" required>
+            <option value="">-- គ្មានអ្នកកាន់កាប់ផ្ទាល់ (ទុកជាទ្រព្យរួម) --</option>
+            {% for st in staff_list %}
+            <option value="{{ st.id }}" {% if asset.custodian_staff_id == st.id %}selected{% endif %}>
+              {{ st.name_kh }} ({{ st.position_title_kh }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-location-dot text-primary"></i> ទីតាំងថ្មី (Location)
+          </label>
+          <input type="text" name="location" class="form-control" value="{{ asset.location or 'សាលាឃុំនគរភាស' }}" placeholder="ឧ. បន្ទប់ស្មៀន...">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-regular fa-calendar text-primary"></i> កាលបរិច្ឆេទប្រគល់-ទទួល
+          </label>
+          <input type="date" name="action_date" class="form-control" value="{{ today_iso }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-comment-dots text-primary"></i> មូលហេតុ / កំណត់ចំណាំ
+          </label>
+          <textarea name="description" class="form-control" rows="2" placeholder="ឧ. ផ្ទេរការគ្រប់គ្រងតាមការចាត់តាំងការងារថ្មី..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeHandoverModal()">បោះបង់</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-check"></i> រក្សាទុកការផ្ទេរ
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: Maintenance Modal -->
+<div id="maintenanceModal" class="modal-backdrop" style="display: none;">
+  <div class="modal-dialog" style="max-width: 500px;">
+    <div class="modal-header">
+      <div style="font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-wrench" style="color: #f59e0b;"></i>
+        <span>កត់ត្រាការថែទាំ និងជួសជុលសម្ភារៈ</span>
+      </div>
+      <button type="button" class="modal-close" onclick="closeMaintenanceModal()">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('assets_maintenance', asset_id=asset.id) }}">
+      <div class="modal-body" style="padding: 20px;">
+        <div style="background: var(--bg-main); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+          សម្ភារៈ ៖ <strong>{{ asset.name_kh }}</strong> ({{ asset.asset_code }})
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-heart-pulse text-warning"></i> ស្ថានភាពបច្ចុប្បន្នក្រោយជួសជុល <span class="text-danger">*</span>
+          </label>
+          <select name="condition_status" class="form-select" required>
+            {% for cond_k, cond_v in ASSET_CONDITIONS.items() %}
+            <option value="{{ cond_k }}" {% if cond_k == 'good' %}selected{% endif %}>
+              {{ cond_v.title_kh }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-regular fa-calendar text-primary"></i> កាលបរិច្ឆេទជួសជុល
+          </label>
+          <input type="date" name="action_date" class="form-control" value="{{ today_iso }}" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-coins text-warning"></i> ទឹកប្រាក់ចំណាយជួសជុល (រៀល)
+          </label>
+          <div class="input-group" style="display: flex;">
+            <input type="number" name="cost" class="form-control" min="0" step="500" value="0" placeholder="0">
+            <span style="background: var(--bg-main); border: 1px solid var(--border-color); border-left: none; padding: 8px 12px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; border-radius: 0 8px 8px 0;">រៀល</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600; font-size: 13px;">
+            <i class="fa-solid fa-comment-dots text-primary"></i> ខ្លឹមសារជួសជុល / ផ្នែកដែលបានផ្លាស់ប្តូរ <span class="text-danger">*</span>
+          </label>
+          <textarea name="description" class="form-control" rows="3" required placeholder="ឧ. បានផ្លាស់ប្តូរ Drum ម៉ាស៊ីនព្រីន និងចាក់ទឹកថ្នាំថ្មី..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeMaintenanceModal()">បោះបង់</button>
+        <button type="submit" class="btn btn-warning btn-sm" style="color: white;">
+          <i class="fa-solid fa-check"></i> រក្សាទុកកំណត់ត្រា
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  function openHandoverModal() {
+    const m = document.getElementById('handoverModal');
+    if (m) m.style.display = 'flex';
+  }
+  function closeHandoverModal() {
+    const m = document.getElementById('handoverModal');
+    if (m) m.style.display = 'none';
+  }
+
+  function openMaintenanceModal() {
+    const m = document.getElementById('maintenanceModal');
+    if (m) m.style.display = 'flex';
+  }
+  function closeMaintenanceModal() {
+    const m = document.getElementById('maintenanceModal');
+    if (m) m.style.display = 'none';
+  }
+</script>
+{% endblock %}

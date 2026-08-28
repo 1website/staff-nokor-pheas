@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}គ្រប់គ្រងទ្រព្យសម្បត្តិរដ្ឋ | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block page_title %}
+<div class="page-title-box">
+  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+    <i class="fa-solid fa-boxes-stacked"></i>
+  </div>
+  <div>
+    <h2>បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ</h2>
+    <p class="subtitle">គ្រប់គ្រងអចលនទ្រព្យ ចលនទ្រព្យ បរិក្ខារការិយាល័យ យានយន្ត និងប្រវត្តិកាន់កាប់</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="page-actions-box">
+  <a href="{{ url_for('export_assets_excel_route', category=selected_category, condition=selected_condition, q=search_query) }}"
+    class="btn btn-success" title="ទាញយកបញ្ជីសារពើភណ្ឌជា Excel">
+    <i class="fa-solid fa-file-excel"></i>
+    <span>ទាញយក Excel</span>
+  </a>
+  {% if session.role in ['admin', 'clerk'] %}
+  <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus-circle"></i>
+    <span>ចុះបញ្ជីទ្រព្យថ្មី</span>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- 1. Key Statistics Cards -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+  <!-- Total Assets Count -->
+  <div class="stat-card" style="--stat-color: #3b82f6; --stat-bg: rgba(59, 130, 246, 0.1);">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ចំនួនទ្រព្យសម្បត្តិសរុប</div>
+      <div class="stat-number">{{ stats.total_count | kh_num }} <span style="font-size: 13px; font-weight: normal; color: var(--text-muted);">មុខ</span></div>
+      <div class="stat-subtext">ចុះក្នុងបញ្ជីសារពើភណ្ឌ</div>
+    </div>
+  </div>
+
+  <!-- Total Asset Value -->
+  <div class="stat-card" style="--stat-color: #10b981; --stat-bg: rgba(16, 185, 129, 0.1);">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-vault"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">តម្លៃទ្រព្យសម្បត្តិសរុប</div>
+      <div class="stat-number" style="font-size: 19px; white-space: nowrap;">{{ stats.total_value | currency }}</div>
+      <div class="stat-subtext">តម្លៃដើមគិតជារៀល</div>
+    </div>
+  </div>
+
+  <!-- In Use / Good Condition -->
+  <div class="stat-card" style="--stat-color: #059669; --stat-bg: rgba(5, 150, 105, 0.1);">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">កំពុងប្រើប្រាស់ / ល្អ</div>
+      <div class="stat-number" style="color: #059669;">{{ stats.in_use_count | kh_num }} <span style="font-size: 13px; font-weight: normal; color: var(--text-muted);">មុខ</span></div>
+      <div class="stat-subtext">ដំណើរការធម្មតា</div>
+    </div>
+  </div>
+
+  <!-- Needs Repair -->
+  <div class="stat-card" style="--stat-color: #d97706; --stat-bg: rgba(217, 119, 6, 0.1);">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ត្រូវការជួសជុល</div>
+      <div class="stat-number" style="color: #d97706;">{{ stats.repair_count | kh_num }} <span style="font-size: 13px; font-weight: normal; color: var(--text-muted);">មុខ</span></div>
+      <div class="stat-subtext">រង់ចាំការថែទាំ</div>
+    </div>
+  </div>
+
+  <!-- Damaged / Written-off -->
+  <div class="stat-card" style="--stat-color: #dc2626; --stat-bg: rgba(220, 38, 38, 0.1);">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-circle-xmark"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ខូចលែងប្រើកើត</div>
+      <div class="stat-number" style="color: #dc2626;">{{ stats.damaged_count | kh_num }} <span style="font-size: 13px; font-weight: normal; color: var(--text-muted);">មុខ</span></div>
+      <div class="stat-subtext">ស្នើសុំរំលាយចោល</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Filter Toolbar -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-body" style="padding: 16px;">
+    <form method="GET" action="{{ url_for('assets_list') }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <!-- Search Input -->
+      <div style="flex: 1; min-width: 220px; position: relative;">
+        <input type="text" name="q" value="{{ search_query }}" class="form-control"
+          placeholder="ស្វែងរកតាម ឈ្មោះ, កូដ, ម៉ាក, ស៊េរី, ទីតាំង..." style="padding-left: 36px; font-size: 13px;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+      </div>
+
+      <!-- Category Filter -->
+      <div style="min-width: 170px;">
+        <select name="category" class="form-select" style="font-size: 13px;" onchange="this.form.submit()">
+          <option value="">-- គ្រប់ប្រភេទទាំងអស់ --</option>
+          {% for cat_k, cat_v in ASSET_CATEGORIES.items() %}
+          <option value="{{ cat_k }}" {% if selected_category == cat_k %}selected{% endif %}>{{ cat_v.title_kh }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Condition Filter -->
+      <div style="min-width: 160px;">
+        <select name="condition" class="form-select" style="font-size: 13px;" onchange="this.form.submit()">
+          <option value="">-- គ្រប់ស្ថានភាព --</option>
+          {% for cond_k, cond_v in ASSET_CONDITIONS.items() %}
+          <option value="{{ cond_k }}" {% if selected_condition == cond_k %}selected{% endif %}>{{ cond_v.title_kh }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Custodian Filter -->
+      <div style="min-width: 180px;">
+        <select name="custodian" class="form-select" style="font-size: 13px;" onchange="this.form.submit()">
+          <option value="">-- គ្រប់អ្នកកាន់កាប់ --</option>
+          {% for st in staff_list %}
+          <option value="{{ st.id }}" {% if selected_custodian == (st.id | string) %}selected{% endif %}>{{ st.name_kh }} ({{ st.position_title_kh }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-filter"></i> ចម្រាញ់
+        </button>
+        <a href="{{ url_for('assets_list') }}" class="btn btn-outline btn-sm" title="កំណត់ឡើងវិញ">
+          <i class="fa-solid fa-rotate-left"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. Assets Inventory Table Card -->
+<div class="card">
+  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <h3 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+      <span>បញ្ជីសារពើភណ្ឌជាក់ស្តែង</span>
+    </h3>
+    <span style="font-size: 13px; color: var(--text-muted);">
+      រកឃើញសរុប <strong>{{ assets | length | kh_num }}</strong> មុខ
+    </span>
+  </div>
+
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table filterable-table" style="width: 100%; min-width: 1100px;">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">ល.រ</th>
+            <th style="width: 140px; white-space: nowrap;">កូដសម្គាល់ & រូបភាព</th>
+            <th style="min-width: 200px;">ឈ្មោះសម្ភារៈ & ម៉ាក/ម៉ូដែល</th>
+            <th style="width: 150px; white-space: nowrap;">ប្រភេទចំណាត់ថ្នាក់</th>
+            <th style="width: 135px; text-align: right; white-space: nowrap;">តម្លៃដើម (រៀល)</th>
+            <th style="width: 130px; text-align: center; white-space: nowrap;">ស្ថានភាព</th>
+            <th style="width: 150px; white-space: nowrap;">ទីតាំង</th>
+            <th style="width: 150px; white-space: nowrap;">អ្នកកាន់កាប់</th>
+            <th style="width: 120px; text-align: center; white-space: nowrap;">សកម្មភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if assets %}
+          {% for a in assets %}
+          {% set cat_info = ASSET_CATEGORIES.get(a.category, {}) %}
+          {% set cond_info = ASSET_CONDITIONS.get(a.condition_status, {}) %}
+
+          <tr>
+            <!-- Index -->
+            <td style="text-align: center; color: var(--text-muted); font-size: 12.5px;">
+              {{ loop.index | kh_num }}
+            </td>
+
+            <!-- Code & Photo -->
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                {% if a.photo %}
+                <img src="{{ a.photo }}" alt="{{ a.name_kh }}"
+                  style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border-color);"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 38px; height: 38px; border-radius: 6px; background: var(--bg-main); border: 1px solid var(--border-color); align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px;">
+                  <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+                </div>
+                {% else %}
+                <div style="width: 38px; height: 38px; border-radius: 6px; background: var(--bg-main); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px;">
+                  <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+                </div>
+                {% endif %}
+                <div>
+                  <a href="{{ url_for('assets_detail', asset_id=a.id) }}" class="officer-code-pill" style="font-size: 11.5px; text-decoration: none;">
+                    {{ a.asset_code }}
+                  </a>
+                </div>
+              </div>
+            </td>
+
+            <!-- Name & Specs -->
+            <td>
+              <a href="{{ url_for('assets_detail', asset_id=a.id) }}" style="font-weight: 700; color: var(--text-main); font-size: 13.5px; text-decoration: none; display: block;">
+                {{ a.name_kh }}
+              </a>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                {% if a.brand_model %}<span>{{ a.brand_model }}</span>{% endif %}
+                {% if a.serial_number %}<span style="margin-left: 6px; font-family: var(--font-latin);">S/N: {{ a.serial_number }}</span>{% endif %}
+              </div>
+            </td>
+
+            <!-- Category -->
+            <td style="white-space: nowrap;">
+              <span class="badge {{ cat_info.badge_class or 'badge-secondary' }}" style="font-size: 11.5px;">
+                <i class="{{ cat_info.icon or 'fa-solid fa-tag' }}"></i>
+                <span>{{ cat_info.title_kh or a.category }}</span>
+              </span>
+            </td>
+
+            <!-- Value -->
+            <td style="text-align: right; white-space: nowrap; font-weight: 700; color: var(--primary);">
+              {{ a.original_value | currency }}
+            </td>
+
+            <!-- Condition -->
+            <td style="text-align: center; white-space: nowrap;">
+              <span class="badge {{ cond_info.badge_class or 'badge-secondary' }}" style="font-size: 11.5px;">
+                <i class="{{ cond_info.icon or 'fa-solid fa-circle' }}"></i>
+                <span>{{ cond_info.title_kh or a.condition_status }}</span>
+              </span>
+            </td>
+
+            <!-- Location -->
+            <td>
+              <div style="font-size: 12.5px; color: var(--text-main); display: flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-location-dot" style="color: var(--danger); font-size: 11px;"></i>
+                <span>{{ a.location or 'សាលាឃុំ' }}</span>
+              </div>
+            </td>
+
+            <!-- Custodian -->
+            <td>
+              {% if a.custodian_name %}
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-main);">
+                {{ a.custodian_name }}
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                {{ a.custodian_position or '' }}
+              </div>
+              {% else %}
+              <span style="color: var(--text-light); font-size: 12px;">- គ្មានអ្នកកាន់កាប់ -</span>
+              {% endif %}
+            </td>
+
+            <!-- Actions -->
+            <td style="text-align: center; white-space: nowrap;">
+              <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                <a href="{{ url_for('assets_detail', asset_id=a.id) }}" class="btn btn-xs btn-outline-primary" style="padding: 4px 7px;" title="មើលព័ត៌មានលម្អិត">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                <a href="{{ url_for('assets_qr_tag', asset_id=a.id) }}" target="_blank" class="btn btn-xs btn-outline" style="padding: 4px 7px;" title="បោះពុម្ពស្លាក QR Code">
+                  <i class="fa-solid fa-qrcode"></i>
+                </a>
+                {% if session.role in ['admin', 'clerk'] %}
+                <a href="{{ url_for('assets_edit', asset_id=a.id) }}" class="btn btn-xs btn-outline-secondary" style="padding: 4px 7px;" title="កែប្រែ">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <form method="POST" action="{{ url_for('assets_delete', asset_id=a.id) }}" style="display: inline-block; margin: 0;"
+                  onsubmit="return confirm('តើអ្នកពិតជាចង់លុបទ្រព្យសម្បត្តិ «{{ a.name_kh }}» ({% if a.asset_code %}{{ a.asset_code }}{% endif %}) នេះចេញពីបញ្ជីសារពើភណ្ឌមែនទេ?');">
+                  <button type="submit" class="btn btn-xs btn-outline-danger" style="padding: 4px 7px;" title="លុប">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+              <i class="fa-solid fa-boxes-stacked" style="font-size: 40px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+              <p style="font-size: 15px; font-weight: 500; margin-bottom: 8px;">មិនទាន់មានទិន្នន័យទ្រព្យសម្បត្តិរដ្ឋនៅក្នុងបញ្ជីនៅឡើយទេ</p>
+              {% if session.role in ['admin', 'clerk'] %}
+              <a href="{{ url_for('assets_new') }}" class="btn btn-primary btn-sm" style="margin-top: 6px;">
+                <i class="fa-solid fa-plus"></i> ចុះបញ្ជីទ្រព្យដំបូង
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

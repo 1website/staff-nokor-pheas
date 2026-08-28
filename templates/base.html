@@ -153,21 +153,28 @@
           <span>គ្រប់គ្រងចំណាយ</span>
         </a>
 
-        <div class="menu-category">៦. វគ្គបណ្តុះបណ្តាល</div>
+        <div class="menu-category">៦. ទ្រព្យសម្បត្តិរដ្ឋ</div>
+        <a href="{{ url_for('assets_list') }}"
+          class="nav-link {% if request.path.startswith('/assets') %}active{% endif %}">
+          <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
+          <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
+        </a>
+
+        <div class="menu-category">៧. វគ្គបណ្តុះបណ្តាល</div>
         <a href="{{ url_for('evaluation_trainings') }}"
           class="nav-link {% if request.path == '/evaluation/trainings' %}active{% endif %}">
           <i class="fa-solid fa-graduation-cap"></i>
           <span>វគ្គបណ្តុះបណ្តាល</span>
         </a>
 
-        <div class="menu-category">៧. របាយការណ៍ & នាំចេញ</div>
+        <div class="menu-category">៨. របាយការណ៍ & នាំចេញ</div>
         <a href="{{ url_for('reports_hub') }}" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
           <i class="fa-solid fa-file-excel"></i>
           <span>មជ្ឈមណ្ឌលរបាយការណ៍</span>
         </a>
 
         {% if session.role in ['admin', 'clerk'] %}
-        <div class="menu-category">៨. ការកំណត់ប្រព័ន្ធ</div>
+        <div class="menu-category">៩. ការកំណត់ប្រព័ន្ធ</div>
         <a href="{{ url_for('settings_villages') }}"
           class="nav-link {% if request.path == '/settings/villages' %}active{% endif %}">
           <i class="fa-solid fa-tree-city"></i>
