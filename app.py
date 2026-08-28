@@ -2868,6 +2868,14 @@ def manifest():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'manifest.json', mimetype='application/manifest+json')
 
 
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory(os.path.join(app.root_path, 'static'), 'sw.js', mimetype='application/javascript')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
 @app.route('/status')
 def system_status():
     db_mode = "PostgreSQL (Neon)" if os.environ.get("DATABASE_URL") else "SQLite"

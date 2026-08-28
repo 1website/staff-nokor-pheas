@@ -579,3 +579,20 @@ function initThemeToggle() {
     }
   });
 }
+
+// ==============================================================================
+// 8. PWA SERVICE WORKER & DESKTOP INSTALLATION
+// ==============================================================================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(function (reg) {
+        console.log("[PWA] Service Worker registered:", reg.scope);
+      })
+      .catch(function (err) {
+        console.log("[PWA] Service Worker registration notice:", err);
+      });
+  });
+}
+
