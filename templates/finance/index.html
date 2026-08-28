@@ -32,7 +32,7 @@
 </div>
 
 <!-- Summary Metric Cards -->
-<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+<div class="stats-grid-4">
   <!-- Card 1: Total Income -->
   <div class="stat-card" style="--stat-color: #059669; --stat-bg: #ecfdf5;">
     <div class="stat-icon-wrapper">
@@ -883,14 +883,14 @@
             maintainAspectRatio: false,
             plugins: {
               legend: {
-                position: window.innerWidth < 768 ? 'bottom' : 'right',
+                position: 'bottom',
                 labels: {
                   boxWidth: 12,
                   boxHeight: 12,
                   borderRadius: 3,
                   color: textColor,
-                  font: { family: "'Kantumruy Pro', sans-serif", size: window.innerWidth < 768 ? 10.5 : 11, weight: '500' },
-                  padding: window.innerWidth < 768 ? 6 : 10
+                  font: { family: "'Kantumruy Pro', sans-serif", size: 11, weight: '500' },
+                  padding: 10
                 }
               },
               tooltip: {
