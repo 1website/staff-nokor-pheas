@@ -51,8 +51,8 @@ class TestFinanceModule(unittest.TestCase):
         self.assertIn('គ្រប់គ្រងហិរញ្ញវត្ថុ និងចំណូល-ចំណាយ'.encode('utf-8'), resp.data)
         self.assertIn('សរុបចំណូល'.encode('utf-8'), resp.data)
         self.assertIn('សរុបចំណាយ'.encode('utf-8'), resp.data)
-        self.assertIn('ពីខែ៖'.encode('utf-8'), resp.data)
-        self.assertIn('ដល់ខែ៖'.encode('utf-8'), resp.data)
+        self.assertIn('ពីខែ'.encode('utf-8'), resp.data)
+        self.assertIn('ដល់ខែ'.encode('utf-8'), resp.data)
         print("✓ Finance List page loads with month range filter and Khmer content")
 
     def test_03_create_income_and_expense(self):

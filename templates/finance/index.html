@@ -258,7 +258,7 @@
       <span>បញ្ជីប្រតិបត្តិការសាច់ប្រាក់ ({% if from_month and to_month %}{% if from_month == to_month %}ខែ {{ from_month }}{% else %}ពី {{ from_month }} ដល់ {{ to_month }}{% endif %}{% else %}ទាំងអស់{% endif %})</span>
     </h3>
     <span style="font-size: 13px; color: var(--text-muted);">
-      រកឃើញសរុប <strong>{{ transactions | length | kh_num }}</strong> ប្រតិបត្តិការ
+      រកឃើញសរុប <strong>{{ total_transactions | kh_num }}</strong> ប្រតិបត្តិការ
     </span>
   </div>
 
@@ -290,7 +290,7 @@
 
           <tr>
             <td style="text-align: center; color: var(--text-muted); font-size: 12.5px;">
-              {{ loop.index | kh_num }}
+              {{ (offset + loop.index) | kh_num }}
             </td>
             <td class="col-tx-code">
               <span class="officer-code-pill" style="font-size: 11.5px;">
@@ -409,6 +409,52 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Footer -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <div class="pagination-info">
+        បង្ហាញពី <strong>{{ (offset + 1) | kh_num }}</strong> ដល់ <strong>{{ ([offset + per_page, total_transactions] | min) | kh_num }}</strong> នៃសរុប <strong>{{ total_transactions | kh_num }}</strong> ប្រតិបត្តិការ (ទំព័រទី <strong>{{ page | kh_num }} / {{ total_pages | kh_num }}</strong>)
+      </div>
+      <div class="pagination-controls">
+        <!-- Previous Page Button -->
+        {% if page > 1 %}
+        <a href="{{ url_for('finance_list', page=page-1, from_month=from_month, to_month=to_month, type=selected_type, category=selected_category, q=search_q) }}"
+          class="page-btn" title="ទំព័រមុន">
+          <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
+        {% endif %}
+
+        <!-- Page Numbers -->
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+            {% if p == page %}
+            <span class="page-btn active">{{ p | kh_num }}</span>
+            {% else %}
+            <a href="{{ url_for('finance_list', page=p, from_month=from_month, to_month=to_month, type=selected_type, category=selected_category, q=search_q) }}"
+              class="page-btn">
+              {{ p | kh_num }}
+            </a>
+            {% endif %}
+          {% elif p == page - 3 or p == page + 3 %}
+            <span class="page-btn disabled">...</span>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next Page Button -->
+        {% if page < total_pages %}
+        <a href="{{ url_for('finance_list', page=page+1, from_month=from_month, to_month=to_month, type=selected_type, category=selected_category, q=search_q) }}"
+          class="page-btn" title="ទំព័របន្ទាប់">
+          <i class="fa-solid fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 

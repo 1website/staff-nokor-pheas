@@ -2733,6 +2733,11 @@ def finance_list():
     selected_category = request.args.get("category", "").strip()
     search_q = request.args.get("q", "").strip()
 
+    page = request.args.get("page", 1, type=int)
+    if not page or page < 1:
+        page = 1
+    per_page = 20
+
     # Base query for table
     query = "SELECT * FROM finance_transactions WHERE 1=1"
     params = []
@@ -2758,8 +2763,19 @@ def finance_list():
         term = f"%{search_q}%"
         params.extend([term, term, term, term])
 
-    query += " ORDER BY transaction_date DESC, id DESC"
-    cursor.execute(query, tuple(params))
+    # Count total transactions matching filters
+    count_query = query.replace("SELECT * FROM", "SELECT COUNT(*) as cnt FROM", 1)
+    cursor.execute(count_query, tuple(params))
+    cnt_row = cursor.fetchone()
+    total_transactions = cnt_row["cnt"] if cnt_row else 0
+    total_pages = max(1, (total_transactions + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+
+    query += " ORDER BY transaction_date DESC, id DESC LIMIT ? OFFSET ?"
+    paginated_params = list(params) + [per_page, offset]
+    cursor.execute(query, tuple(paginated_params))
     transactions = cursor.fetchall()
 
     # Calculate Period Totals (for filtered range)
@@ -2894,6 +2910,11 @@ def finance_list():
         trend_expenses=trend_expenses,
         income_categories_breakdown=income_categories_breakdown,
         expense_categories_breakdown=expense_categories_breakdown,
+        page=page,
+        total_pages=total_pages,
+        total_transactions=total_transactions,
+        per_page=per_page,
+        offset=offset,
         FINANCE_INCOME_CATEGORIES=FINANCE_INCOME_CATEGORIES,
         FINANCE_EXPENSE_CATEGORIES=FINANCE_EXPENSE_CATEGORIES,
         PAYMENT_METHODS=PAYMENT_METHODS,
