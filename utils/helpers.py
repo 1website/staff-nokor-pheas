@@ -23,10 +23,19 @@ KHMER_DAYS = [
 ]
 
 def to_khmer_num(number_or_str):
-    """Convert Arabic numbers to Khmer numerals"""
+    """Convert Arabic numbers to Khmer numerals safely"""
     if number_or_str is None:
         return ""
+    if callable(number_or_str):
+        try:
+            val = number_or_str()
+            return to_khmer_num(val)
+        except Exception:
+            return "០"
     s = str(number_or_str)
+    # Guard against accidental stringification of built-in method or object representations
+    if s.startswith("<built-in") or s.startswith("<function") or s.startswith("<method"):
+        return "០"
     return "".join(KHMER_DIGITS.get(ch, ch) for ch in s)
 
 def format_khmer_date(date_val, include_day_name=True):

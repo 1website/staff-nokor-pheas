@@ -56,7 +56,7 @@
   </form>
 
   <div style="font-size: 14px; font-weight: 600; color: var(--primary);">
-    សរុបទូទាត់ខែនេះ៖ <strong>{{ (totals.tot_net or 0) | currency }}</strong> ({{ (totals.count or 0) | kh_num }} នាក់)
+    សរុបទូទាត់ខែនេះ៖ <strong>{{ (totals.tot_net or totals['tot_net'] or 0) | currency }}</strong> ({{ (totals.total_count or totals['total_count'] or totals.count or totals['count'] or 0) | kh_num }} នាក់)
   </div>
 </div>
 

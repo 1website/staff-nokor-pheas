@@ -267,13 +267,13 @@ def dashboard():
 
     # 2. Today's Attendance Breakdown
     cursor.execute("""
-        SELECT status, COUNT(*) as count 
+        SELECT status, COUNT(*) as status_count 
         FROM attendance 
         WHERE date = ? 
         GROUP BY status
     """, (today_str,))
     att_rows = cursor.fetchall()
-    att_stats = {r["status"]: r["count"] for r in att_rows}
+    att_stats = {r["status"]: (r.get("status_count") or r.get("count") or 0) for r in att_rows}
 
     # 3. Pending Leave Requests
     cursor.execute("""
@@ -296,11 +296,14 @@ def dashboard():
 
     # 5. Monthly Payroll Summary
     cursor.execute("""
-        SELECT SUM(gross_salary) as total_gross, SUM(net_salary) as total_net, COUNT(*) as count
+        SELECT SUM(gross_salary) as total_gross, SUM(net_salary) as total_net, COUNT(*) as total_count
         FROM payroll
         WHERE month_year = ?
     """, (current_month_str,))
     payroll_sum = cursor.fetchone()
+    if payroll_sum:
+        payroll_sum = dict(payroll_sum)
+        payroll_sum["count"] = int(payroll_sum.get("total_count") or 0)
 
     # 6. Today's recent check-in list
     cursor.execute("""
@@ -549,12 +552,12 @@ def staff_detail(staff_id):
     # 3. Attendance Summary (Total Days this year)
     cur_year = str(date.today().year)
     cursor.execute("""
-        SELECT status, COUNT(*) as count 
+        SELECT status, COUNT(*) as status_count 
         FROM attendance 
         WHERE staff_id = ? AND substr(date, 1, 4) = ?
         GROUP BY status
     """, (staff_id, cur_year))
-    att_counts = {r["status"]: r["count"] for r in cursor.fetchall()}
+    att_counts = {r["status"]: (r.get("status_count") or r.get("count") or 0) for r in cursor.fetchall()}
 
     # 4. Leave History
     cursor.execute("SELECT * FROM leave_requests WHERE staff_id = ? ORDER BY created_at DESC", (staff_id,))
@@ -1784,18 +1787,20 @@ def payroll_list():
                COALESCE(SUM(gross_salary), 0) as tot_gross,
                COALESCE(SUM(nssf_deduction), 0) as tot_nssf,
                COALESCE(SUM(net_salary), 0) as tot_net,
-               COUNT(*) as count
+               COUNT(*) as total_count
         FROM payroll
         WHERE month_year = ?
     """, (month_year,))
     totals_row = cursor.fetchone()
     if totals_row and totals_row["tot_base"] is not None:
-        totals = totals_row
+        totals = dict(totals_row)
+        totals["total_count"] = int(totals.get("total_count") or 0)
+        totals["count"] = totals["total_count"]
     else:
         totals = {
             "tot_base": 0, "tot_pos": 0, "tot_miss": 0, "tot_meet": 0,
             "tot_inc": 0, "tot_fam": 0, "tot_gross": 0, "tot_nssf": 0,
-            "tot_net": 0, "count": 0
+            "tot_net": 0, "count": 0, "total_count": 0
         }
 
     conn.close()
@@ -1996,7 +2001,7 @@ def reports_hub():
 
     # Demographic breakdown by Category & Gender
     cursor.execute("""
-        SELECT category, gender, COUNT(*) as count
+        SELECT category, gender, COUNT(*) as staff_count
         FROM staff
         WHERE status = 'active'
         GROUP BY category, gender

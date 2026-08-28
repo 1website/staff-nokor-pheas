@@ -37,7 +37,7 @@ PRECOMPUTED_USER_HASHES = {
 
 
 class PgRow(dict):
-    """Row wrapper allowing both dict key and integer index access like sqlite3.Row"""
+    """Row wrapper allowing dict key, attribute, and integer index access like sqlite3.Row"""
     def __init__(self, cols, vals):
         super().__init__(zip(cols, vals))
         self._vals = list(vals)
@@ -46,6 +46,11 @@ class PgRow(dict):
         if isinstance(key, int):
             return self._vals[key]
         return super().__getitem__(key)
+
+    def __getattr__(self, key):
+        if key in self:
+            return self[key]
+        raise AttributeError(f"'PgRow' object has no attribute '{key}'")
 
     def get(self, key, default=None):
         if isinstance(key, int) and 0 <= key < len(self._vals):
@@ -109,9 +114,11 @@ class PostgresCursorWrapper:
             return None
         if not self.cur.description:
             return row
-        if hasattr(row, 'keys'):
+        if isinstance(row, PgRow):
             return row
         cols = [d[0] for d in self.cur.description]
+        if hasattr(row, 'values'):
+            return PgRow(cols, row.values())
         return PgRow(cols, row)
 
     def fetchone(self):
@@ -122,19 +129,35 @@ class PostgresCursorWrapper:
         rows = self.cur.fetchall()
         if not rows:
             return []
-        if not self.cur.description or hasattr(rows[0], 'keys'):
+        if not self.cur.description:
             return rows
         cols = [d[0] for d in self.cur.description]
-        return [PgRow(cols, r) for r in rows]
+        result = []
+        for r in rows:
+            if isinstance(r, PgRow):
+                result.append(r)
+            elif hasattr(r, 'values'):
+                result.append(PgRow(cols, r.values()))
+            else:
+                result.append(PgRow(cols, r))
+        return result
 
     def fetchmany(self, size=None):
         rows = self.cur.fetchmany(size) if size else self.cur.fetchmany()
         if not rows:
             return []
-        if not self.cur.description or hasattr(rows[0], 'keys'):
+        if not self.cur.description:
             return rows
         cols = [d[0] for d in self.cur.description]
-        return [PgRow(cols, r) for r in rows]
+        result = []
+        for r in rows:
+            if isinstance(r, PgRow):
+                result.append(r)
+            elif hasattr(r, 'values'):
+                result.append(PgRow(cols, r.values()))
+            else:
+                result.append(PgRow(cols, r))
+        return result
 
     @property
     def rowcount(self):

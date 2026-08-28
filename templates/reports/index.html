@@ -152,7 +152,7 @@
               <span class="badge {{ cat_info.badge_class }}">{{ cat_info.name_kh }}</span>
             </td>
             <td>{{ r.gender }}</td>
-            <td style="text-align: right; font-weight: 700;">{{ r.count | kh_num }} នាក់</td>
+            <td style="text-align: right; font-weight: 700;">{{ (r.staff_count or r['staff_count'] or r.count or r['count'] or 0) | kh_num }} នាក់</td>
           </tr>
           {% endfor %}
         </tbody>
