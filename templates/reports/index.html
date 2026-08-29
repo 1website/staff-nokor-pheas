@@ -3,37 +3,55 @@
 {% block title %}មជ្ឈមណ្ឌលរបាយការណ៍ និងនាំចេញឯកសារ - រដ្ឋបាលឃុំនគរភាស{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div class="page-header-title">
-    <h1>
-      <i class="fa-solid fa-file-excel text-gold"></i>
+<!-- Hero Header -->
+<div class="card" style="background: linear-gradient(135deg, #0d1f3f 0%, #13284f 50%, #0b172e 100%); color: #ffffff; border-radius: 20px; padding: 24px 28px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.12); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4);">
+  <div style="position: absolute; right: -15px; bottom: -20px; opacity: 0.08; font-size: 140px; pointer-events: none; user-select: none;">
+    <i class="fa-solid fa-file-excel"></i>
+  </div>
+  <div style="position: relative; z-index: 2;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Official Reporting Hub</span>
+      </span>
+      <span style="font-size: 11.5px; color: #bfdbfe; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1);">
+        រដ្ឋបាលឃុំនគរភាស • ស្រុកអង្គរជុំ ខេត្តសៀមរាប
+      </span>
+    </div>
+    <h1 style="font-size: 24px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; display: flex; align-items: center; gap: 10px;">
+      <i class="fa-solid fa-file-excel" style="color: #fbbf24;"></i>
       <span>មជ្ឈមណ្ឌលរបាយការណ៍ និងការនាំចេញឯកសារ (Reporting & Export Hub)</span>
     </h1>
-    <p>ទាញយករបាយការណ៍ផ្លូវការជាទម្រង់ Excel (.xlsx) សម្រាប់ផ្ញើទៅសាលាស្រុកអង្គរជុំ និងតម្កល់ទុកនៅសាលាឃុំ</p>
+    <p style="font-size: 13px; color: #cbd5e1; margin: 0; max-width: 800px; line-height: 1.5;">
+      ទាញយករបាយការណ៍ផ្លូវការជាទម្រង់ Excel (.xlsx) សម្រាប់ផ្ញើជូនរដ្ឋបាលស្រុកអង្គរជុំ និងតម្កល់ទុកជាឯកសាររដ្ឋបាលសាលាឃុំ
+    </p>
   </div>
 </div>
 
-<!-- 1-Click Export Cards (Responsive 4-Card Grid) -->
+<!-- 4 របាយការណ៍ស្នូលរដ្ឋបាលឃុំ (4 Core 1-Click Export Cards) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 28px;">
   
   <!-- Export 1: District Attendance Report -->
-  <div class="card" style="border-top: 4px solid #1e3a8a; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 18px;">
+  <div class="card" style="border-top: 4px solid #3b82f6; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
+    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">
       <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(30, 58, 138, 0.15); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
             <i class="fa-solid fa-calendar-check"></i>
           </div>
-          <h3 style="font-size: 15px; font-weight: 700; margin: 0; line-height: 1.3;">តារាងស្រង់វត្តមានប្រចាំខែ</h3>
+          <span class="badge" style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-weight: 700; padding: 3px 8px; border-radius: 9999px;">
+            ប្រចាំខែ
+          </span>
         </div>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">តារាងស្រង់វត្តមានប្រចាំខែ</h3>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; min-height: 36px;">
           សម្រាប់ផ្ញើជូនរដ្ឋបាលស្រុកអង្គរជុំ ដើម្បីបូកសរុប និងពិនិត្យ
         </p>
       </div>
-      <form method="GET" action="{{ url_for('export_attendance_excel_route') }}" style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <form method="GET" action="{{ url_for('export_attendance_excel_route') }}" style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
         <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px;" required>
-          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 7px 10px; border-radius: 10px;" required>
+          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
             <i class="fa-solid fa-download"></i> Excel
           </button>
         </div>
@@ -42,29 +60,32 @@
   </div>
 
   <!-- Export 2: Staff Master Census -->
-  <div class="card" style="border-top: 4px solid #059669; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 18px;">
+  <div class="card" style="border-top: 4px solid #10b981; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
+    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">
       <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 150, 105, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(16, 185, 129, 0.25);">
             <i class="fa-solid fa-address-book"></i>
           </div>
-          <h3 style="font-size: 15px; font-weight: 700; margin: 0; line-height: 1.3;">បញ្ជីរាយនាមមន្ត្រី-បុគ្គលិក</h3>
+          <span class="badge" style="font-size: 10px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; padding: 3px 8px; border-radius: 9999px;">
+            បញ្ជីនាម
+          </span>
         </div>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">បញ្ជីរាយនាមមន្ត្រី-បុគ្គលិក</h3>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; min-height: 36px;">
           បញ្ជីឈ្មោះមន្ត្រីសាលាឃុំ និងថ្នាក់ដឹកនាំភូមិទាំង ១០
         </p>
       </div>
-      <form method="GET" action="{{ url_for('export_staff_excel_route') }}" style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <form method="GET" action="{{ url_for('export_staff_excel_route') }}" style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
         <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-          <select name="category" class="form-select" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 8px;">
+          <select name="category" class="form-select" style="flex: 1; min-width: 0; font-size: 12px; padding: 7px 8px; border-radius: 10px;">
             <option value="">-- ទាំងអស់ --</option>
             <option value="council">ក្រុមប្រឹក្សាឃុំ</option>
             <option value="clerk">ស្មៀនឃុំ</option>
             <option value="contract">ជំនួយការឃុំ</option>
             <option value="village">មន្ត្រីភូមិ</option>
           </select>
-          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
             <i class="fa-solid fa-download"></i> Excel
           </button>
         </div>
@@ -73,23 +94,26 @@
   </div>
 
   <!-- Export 3: Payroll Sheet -->
-  <div class="card" style="border-top: 4px solid #d97706; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 18px;">
+  <div class="card" style="border-top: 4px solid #f59e0b; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
+    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">
       <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(217, 119, 6, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(245, 158, 11, 0.25);">
             <i class="fa-solid fa-money-check-dollar"></i>
           </div>
-          <h3 style="font-size: 15px; font-weight: 700; margin: 0; line-height: 1.3;">តារាងបើកប្រាក់បៀវត្សរ៍</h3>
+          <span class="badge" style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700; padding: 3px 8px; border-radius: 9999px;">
+            បៀវត្សរ៍
+          </span>
         </div>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">តារាងបើកប្រាក់បៀវត្សរ៍</h3>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; min-height: 36px;">
-          តារាងទូទាត់ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភផ្សេងៗ
+          តារាងទូទាត់ប្រាក់បៀវត្សរ៍ និងប្រាក់ឧបត្ថម្ភផ្សេងៗរបស់មន្ត្រី
         </p>
       </div>
-      <form method="GET" action="{{ url_for('export_payroll_excel_route') }}" style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <form method="GET" action="{{ url_for('export_payroll_excel_route') }}" style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
         <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px;" required>
-          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 7px 10px; border-radius: 10px;" required>
+          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
             <i class="fa-solid fa-download"></i> Excel
           </button>
         </div>
@@ -98,23 +122,26 @@
   </div>
 
   <!-- Export 4: Cash Book (ចំណូល-ចំណាយ) -->
-  <div class="card" style="border-top: 4px solid #10b981; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 18px;">
+  <div class="card" style="border-top: 4px solid #14b8a6; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
+    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">
       <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(20, 184, 166, 0.15); color: #14b8a6; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(20, 184, 166, 0.25);">
             <i class="fa-solid fa-scale-balanced"></i>
           </div>
-          <h3 style="font-size: 15px; font-weight: 700; margin: 0; line-height: 1.3;">សៀវភៅកត់ត្រាសាច់ប្រាក់</h3>
+          <span class="badge" style="font-size: 10px; background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); font-weight: 700; padding: 3px 8px; border-radius: 9999px;">
+            ហិរញ្ញវត្ថុ
+          </span>
         </div>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">សៀវភៅកត់ត្រាសាច់ប្រាក់</h3>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; min-height: 36px;">
-          សៀវភៅកត់ត្រាចំណូល-ចំណាយ និងហិរញ្ញវត្ថុឃុំ
+          សៀវភៅកត់ត្រាចំណូល-ចំណាយ និងហិរញ្ញវត្ថុរបស់រដ្ឋបាលឃុំ
         </p>
       </div>
-      <form method="GET" action="{{ url_for('export_finance_excel_route') }}" style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <form method="GET" action="{{ url_for('export_finance_excel_route') }}" style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
         <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px;">
-          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <input type="month" name="month" value="{{ current_month_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 7px 10px; border-radius: 10px;">
+          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
             <i class="fa-solid fa-download"></i> Excel
           </button>
         </div>
@@ -128,10 +155,10 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
   
   <!-- Demographic: By Category and Gender -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">
-        <i class="fa-solid fa-chart-bar text-gold"></i>
+  <div class="card" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
+    <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <div class="card-title" style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700;">
+        <i class="fa-solid fa-chart-bar text-gold" style="color: #f59e0b;"></i>
         <span>ស្ថិតិកម្លាំងពលកម្មតាមមុខតំណែង និងភេទ</span>
       </div>
     </div>
@@ -161,10 +188,10 @@
   </div>
 
   <!-- Demographic: By Village -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">
-        <i class="fa-solid fa-tree-city text-gold"></i>
+  <div class="card" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
+    <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <div class="card-title" style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700;">
+        <i class="fa-solid fa-tree-city text-gold" style="color: #f59e0b;"></i>
         <span>ស្ថិតិមន្ត្រីតាមភូមិ (១០ ភូមិ)</span>
       </div>
     </div>
