@@ -376,32 +376,52 @@ def staff_list():
     search = request.args.get("q", "").strip()
     status = request.args.get("status", "active").strip()
 
+    try:
+        page = int(request.args.get("page", 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
+    per_page = 10
+
     conn = get_db()
     cursor = conn.cursor()
 
-    query = "SELECT * FROM staff WHERE 1=1"
+    base_where = " WHERE 1=1"
     params = []
 
     if status and status != "all":
-        query += " AND status = ?"
+        base_where += " AND status = ?"
         params.append(status)
 
     if category and category in STAFF_CATEGORIES:
-        query += " AND category = ?"
+        base_where += " AND category = ?"
         params.append(category)
 
     if village:
-        query += " AND village = ?"
+        base_where += " AND village = ?"
         params.append(village)
 
     if search:
-        query += " AND (name_kh LIKE ? OR name_en LIKE ? OR officer_code LIKE ? OR phone LIKE ? OR position_title_kh LIKE ?)"
+        base_where += " AND (name_kh LIKE ? OR name_en LIKE ? OR officer_code LIKE ? OR phone LIKE ? OR position_title_kh LIKE ?)"
         pattern = f"%{search}%"
         params.extend([pattern, pattern, pattern, pattern, pattern])
 
-    query += " ORDER BY CASE category WHEN 'council' THEN 1 WHEN 'clerk' THEN 2 WHEN 'contract' THEN 3 ELSE 4 END, id"
+    # Total matching staff for pagination
+    count_query = f"SELECT COUNT(*) FROM staff{base_where}"
+    cursor.execute(count_query, params)
+    total_staff = cursor.fetchone()[0]
 
-    cursor.execute(query, params)
+    total_pages = max(1, (total_staff + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+
+    order_clause = " ORDER BY CASE category WHEN 'council' THEN 1 WHEN 'clerk' THEN 2 WHEN 'contract' THEN 3 ELSE 4 END, id"
+    data_query = f"SELECT * FROM staff{base_where}{order_clause} LIMIT ? OFFSET ?"
+    data_params = params + [per_page, offset]
+
+    cursor.execute(data_query, data_params)
     staff_rows = cursor.fetchall()
 
     # Get villages for filter dropdown
@@ -417,7 +437,12 @@ def staff_list():
         selected_village=village,
         selected_status=status,
         search_query=search,
-        village_list=village_list
+        village_list=village_list,
+        page=page,
+        per_page=per_page,
+        total_staff=total_staff,
+        total_pages=total_pages,
+        offset=offset
     )
 
 

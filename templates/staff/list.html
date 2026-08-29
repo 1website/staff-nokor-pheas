@@ -81,7 +81,7 @@
 <div class="card">
   <div class="card-header">
     <div class="card-title">
-      <span>ចំនួនមន្ត្រីសរុប៖ <strong>{{ staff_rows | length | kh_num }} នាក់</strong></span>
+      <span>ចំនួនមន្ត្រីសរុប៖ <strong>{{ total_staff | kh_num }} នាក់</strong></span>
     </div>
     <div style="font-size: 12.5px; color: var(--text-muted);">
       ឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប
@@ -108,7 +108,7 @@
         <tbody>
           {% for s in staff_rows %}
           <tr>
-            <td style="text-align: center; color: var(--text-muted);">{{ loop.index | kh_num }}</td>
+            <td style="text-align: center; color: var(--text-muted);">{{ (offset + loop.index) | kh_num }}</td>
             <td style="white-space: nowrap;">
               <span class="officer-code-pill">{{ s.officer_code }}</span>
             </td>
@@ -193,6 +193,53 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Footer (10 items per page) -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <div class="pagination-info">
+        បង្ហាញពី <strong>{{ (offset + 1) | kh_num }}</strong> ដល់ <strong>{{ ([offset + per_page, total_staff] | min) | kh_num }}</strong> នៃសរុប <strong>{{ total_staff | kh_num }}</strong> នាក់ (ទំព័រទី <strong>{{ page | kh_num }} / {{ total_pages | kh_num }}</strong>)
+      </div>
+      <div class="pagination-controls">
+        <!-- Previous Page Button -->
+        {% if page > 1 %}
+        <a href="{{ url_for('staff_list', page=page-1, category=selected_category, village=selected_village, status=selected_status, q=search_query) }}"
+          class="page-btn" title="ទំព័រមុន">
+          <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
+        {% endif %}
+
+        <!-- Page Numbers -->
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+            {% if p == page %}
+            <span class="page-btn active">{{ p | kh_num }}</span>
+            {% else %}
+            <a href="{{ url_for('staff_list', page=p, category=selected_category, village=selected_village, status=selected_status, q=search_query) }}"
+              class="page-btn">
+              {{ p | kh_num }}
+            </a>
+            {% endif %}
+          {% elif p == page - 3 or p == page + 3 %}
+            <span class="page-btn-ellipsis">...</span>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next Page Button -->
+        {% if page < total_pages %}
+        <a href="{{ url_for('staff_list', page=page+1, category=selected_category, village=selected_village, status=selected_status, q=search_query) }}"
+          class="page-btn" title="ទំព័របន្ទាប់">
+          <i class="fa-solid fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}
