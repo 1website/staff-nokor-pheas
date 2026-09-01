@@ -1225,12 +1225,12 @@ def export_daily_attendance_excel(target_date_str):
     kh_date_full = format_khmer_date(target_dt)
 
     # 1. Official Letterhead
-    ws.merge_cells("A1:L1")
+    ws.merge_cells("A1:K1")
     ws["A1"] = "ព្រះរាជាណាចក្រកម្ពុជា"
     ws["A1"].font = Font(name="Khmer OS Muol Light", size=12, bold=True, color="0F2B48")
     ws["A1"].alignment = Alignment(horizontal="center")
 
-    ws.merge_cells("A2:L2")
+    ws.merge_cells("A2:K2")
     ws["A2"] = "ជាតិ សាសនា ព្រះមហាក្សត្រ"
     ws["A2"].font = Font(name="Khmer OS Muol Light", size=11, bold=True, color="0F2B48")
     ws["A2"].alignment = Alignment(horizontal="center")
@@ -1243,12 +1243,12 @@ def export_daily_attendance_excel(target_date_str):
     ws["A6"].font = Font(name="Khmer OS Muol Light", size=10, bold=True, color="1E3A8A")
 
     # Title
-    ws.merge_cells("A8:L8")
+    ws.merge_cells("A8:K8")
     ws["A8"] = "តារាងកត់ត្រាវត្តមានមន្ត្រី និងបុគ្គលិករដ្ឋបាលឃុំនគរភាស"
     ws["A8"].font = TITLE_FONT
     ws["A8"].alignment = Alignment(horizontal="center", vertical="center")
 
-    ws.merge_cells("A9:L9")
+    ws.merge_cells("A9:K9")
     ws["A9"] = f"ប្រចាំ{kh_date_full}"
     ws["A9"].font = Font(name="Khmer OS Siemreap", size=11, bold=True, italic=True, color="1E3A8A")
     ws["A9"].alignment = Alignment(horizontal="center", vertical="center")
@@ -1257,7 +1257,7 @@ def export_daily_attendance_excel(target_date_str):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT s.id, s.officer_code, s.name_kh, s.name_en, s.gender, s.position_title_kh, s.category, s.village,
+        SELECT s.id, s.officer_code, s.name_kh, s.gender, s.position_title_kh, s.category, s.village,
                a.check_in_time, a.check_out_time, a.status, a.remarks
         FROM staff s
         LEFT JOIN attendance a ON s.id = a.staff_id AND a.date = ?
@@ -1287,8 +1287,8 @@ def export_daily_attendance_excel(target_date_str):
         ("C", "D", "វត្តមានទាន់ពេល", f"{to_khmer_num(cnt_present)} នាក់", "065F46", "ECFDF5"),
         ("E", "F", "មកយឺត (Late)", f"{to_khmer_num(cnt_late)} នាក់", "92400E", "FEF3C7"),
         ("G", "H", "ច្បាប់ (Leave)", f"{to_khmer_num(cnt_leave)} នាក់", "1E40AF", "EFF6FF"),
-        ("I", "J", "បេសកកម្ម", f"{to_khmer_num(cnt_mission)} នាក់", "6B21A8", "F5F3FF"),
-        ("K", "L", "អវត្តមាន", f"{to_khmer_num(cnt_absent + cnt_unrecorded)} នាក់", "991B1B", "FEF2F2"),
+        ("I", "I", "បេសកកម្ម", f"{to_khmer_num(cnt_mission)} នាក់", "6B21A8", "F5F3FF"),
+        ("J", "K", "អវត្តមាន", f"{to_khmer_num(cnt_absent + cnt_unrecorded)} នាក់", "991B1B", "FEF2F2"),
     ]
 
     for start_col, end_col, label, val, text_color, bg_color in kpis:
@@ -1314,16 +1314,15 @@ def export_daily_attendance_excel(target_date_str):
     table_headers = [
         ("A", "ល.រ", 5),
         ("B", "អត្តលេខ", 12),
-        ("C", "គោត្តនាម-នាម", 22),
-        ("D", "ឈ្មោះឡាតាំង", 18),
-        ("E", "ភេទ", 8),
-        ("F", "តួនាទី / មុខតំណែង", 22),
-        ("G", "ក្រុមការងារ", 16),
-        ("H", "ភូមិ", 14),
-        ("I", "ម៉ោងចូល", 12),
-        ("J", "ម៉ោងចេញ", 12),
-        ("K", "ស្ថានភាពវត្តមាន", 18),
-        ("L", "កំណត់សម្គាល់", 28),
+        ("C", "គោត្តនាម និងនាម", 25),
+        ("D", "ភេទ", 8),
+        ("E", "តួនាទី / មុខតំណែង", 24),
+        ("F", "ក្រុមការងារ", 18),
+        ("G", "ភូមិ", 15),
+        ("H", "ម៉ោងចូល", 12),
+        ("I", "ម៉ោងចេញ", 12),
+        ("J", "ស្ថានភាពវត្តមាន", 18),
+        ("K", "កំណត់សម្គាល់", 28),
     ]
 
     header_row = 14
@@ -1366,25 +1365,24 @@ def export_daily_attendance_excel(target_date_str):
         ws[f"A{current_row}"] = to_khmer_num(idx)
         ws[f"B{current_row}"] = r["officer_code"] or ""
         ws[f"C{current_row}"] = r["name_kh"] or ""
-        ws[f"D{current_row}"] = r["name_en"] or ""
-        ws[f"E{current_row}"] = r["gender"] or ""
-        ws[f"F{current_row}"] = r["position_title_kh"] or ""
-        ws[f"G{current_row}"] = cat_kh
-        ws[f"H{current_row}"] = f"ភូមិ{r['village']}" if r["village"] else ""
-        ws[f"I{current_row}"] = r["check_in_time"] or "--:--"
-        ws[f"J{current_row}"] = r["check_out_time"] or "--:--"
-        ws[f"K{current_row}"] = st_text
-        ws[f"L{current_row}"] = r["remarks"] or ""
+        ws[f"D{current_row}"] = r["gender"] or ""
+        ws[f"E{current_row}"] = r["position_title_kh"] or ""
+        ws[f"F{current_row}"] = cat_kh
+        ws[f"G{current_row}"] = f"ភូមិ{r['village']}" if r["village"] else ""
+        ws[f"H{current_row}"] = r["check_in_time"] or "--:--"
+        ws[f"I{current_row}"] = r["check_out_time"] or "--:--"
+        ws[f"J{current_row}"] = st_text
+        ws[f"K{current_row}"] = r["remarks"] or ""
 
         # Alignments & Fonts
-        for col_letter in ["A", "B", "E", "I", "J"]:
+        for col_letter in ["A", "B", "D", "H", "I"]:
             c = ws[f"{col_letter}{current_row}"]
             c.alignment = Alignment(horizontal="center", vertical="center")
             c.font = BODY_FONT
             c.fill = row_fill
             c.border = THIN_BORDER
 
-        for col_letter in ["C", "D", "F", "G", "H", "L"]:
+        for col_letter in ["C", "E", "F", "G", "K"]:
             c = ws[f"{col_letter}{current_row}"]
             c.alignment = Alignment(horizontal="left", vertical="center")
             c.font = BOLD_BODY_FONT if col_letter == "C" else BODY_FONT
@@ -1392,7 +1390,7 @@ def export_daily_attendance_excel(target_date_str):
             c.border = THIN_BORDER
 
         # Status Cell Highlight
-        c_status = ws[f"K{current_row}"]
+        c_status = ws[f"J{current_row}"]
         c_status.alignment = Alignment(horizontal="center", vertical="center")
         c_status.font = Font(name="Khmer OS Siemreap", size=9, bold=True, color=st_fg)
         c_status.fill = PatternFill(start_color=st_bg, end_color=st_bg, fill_type="solid")
@@ -1403,10 +1401,10 @@ def export_daily_attendance_excel(target_date_str):
 
     # 5. Signatures Block
     sig_row = current_row + 2
-    ws.merge_cells(f"I{sig_row}:L{sig_row}")
-    ws[f"I{sig_row}"] = f"នគរភាស, {kh_date_full}"
-    ws[f"I{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, italic=True)
-    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+    ws.merge_cells(f"H{sig_row}:K{sig_row}")
+    ws[f"H{sig_row}"] = f"នគរភាស, {kh_date_full}"
+    ws[f"H{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, italic=True)
+    ws[f"H{sig_row}"].alignment = Alignment(horizontal="center")
 
     sig_row += 1
     ws.merge_cells(f"A{sig_row}:D{sig_row}")
@@ -1414,10 +1412,10 @@ def export_daily_attendance_excel(target_date_str):
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 
-    ws.merge_cells(f"I{sig_row}:L{sig_row}")
-    ws[f"I{sig_row}"] = "អ្នកស្រង់វត្តមាន / ស្មៀនឃុំ"
-    ws[f"I{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
-    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+    ws.merge_cells(f"H{sig_row}:K{sig_row}")
+    ws[f"H{sig_row}"] = "អ្នកស្រង់វត្តមាន / ស្មៀនឃុំ"
+    ws[f"H{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
+    ws[f"H{sig_row}"].alignment = Alignment(horizontal="center")
 
     sig_row += 1
     ws.merge_cells(f"A{sig_row}:D{sig_row}")
@@ -1431,10 +1429,10 @@ def export_daily_attendance_excel(target_date_str):
     ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
     ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
 
-    ws.merge_cells(f"I{sig_row}:L{sig_row}")
-    ws[f"I{sig_row}"] = "សួន វណ្ណា"
-    ws[f"I{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
-    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+    ws.merge_cells(f"H{sig_row}:K{sig_row}")
+    ws[f"H{sig_row}"] = "សួន វណ្ណា"
+    ws[f"H{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"H{sig_row}"].alignment = Alignment(horizontal="center")
 
     conn.close()
 
