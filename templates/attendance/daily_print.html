@@ -481,7 +481,7 @@
           <td class="text-left" style="font-family: var(--font-latin); font-size: 9pt;">{{ r.name_en or '' }}</td>
           <td class="text-center">{{ r.gender }}</td>
           <td class="text-left">{{ r.position_title_kh }}</td>
-          <td class="text-left">{{ categories.get(r.category, r.category) }}</td>
+          <td class="text-left">{{ categories.get(r.category, {}).get('name_kh', r.category) }}</td>
           <td class="text-left">{% if r.village %}ភូមិ{{ r.village }}{% endif %}</td>
           <td class="text-center" style="font-family: var(--font-latin); font-size: 9pt;">
             {% if r.check_in_time %}{{ r.check_in_time }}{% else %}--:--{% endif %}
