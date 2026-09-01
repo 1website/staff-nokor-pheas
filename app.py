@@ -25,7 +25,8 @@ from utils.helpers import (
     FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES,
     PAYMENT_METHODS, FINANCE_STATUSES,
     ASSET_CATEGORIES, ASSET_CONDITIONS, ASSET_ACQUISITIONS,
-    staff_photo_url, process_and_save_photo
+    staff_photo_url, process_and_save_photo,
+    CAMBODIA_TZ, get_now, get_today, get_today_str, get_now_time_str, get_current_month_str
 )
 from utils.export_excel import (
     export_monthly_attendance_excel,
@@ -249,8 +250,8 @@ def logout():
 def dashboard():
     conn = get_db()
     cursor = conn.cursor()
-    today_str = date.today().strftime("%Y-%m-%d")
-    current_month_str = date.today().strftime("%Y-%m")
+    today_str = get_today_str()
+    current_month_str = get_current_month_str()
 
     # 1. Staff Statistics (Combined single query)
     cursor.execute("""
@@ -1059,7 +1060,7 @@ def document_delete(doc_id):
 @app.route("/attendance/daily", methods=["GET", "POST"])
 @login_required
 def attendance_daily():
-    target_date = request.args.get("date", date.today().strftime("%Y-%m-%d"))
+    target_date = request.args.get("date", get_today_str())
 
     conn = get_db()
     cursor = conn.cursor()
@@ -1120,17 +1121,18 @@ def quick_checkin():
     if not user_staff_id:
         return jsonify({"success": False, "message": "គណនីនេះមិនបានភ្ជាប់ជាមួយមន្ត្រីណាមួយទេ!"})
 
+    today_dt = get_today()
     # Reject on weekends (Saturday = 5, Sunday = 6)
-    if date.today().weekday() in [5, 6]:
-        day_kh = "ថ្ងៃសៅរ៍" if date.today().weekday() == 5 else "ថ្ងៃអាទិត្យ"
+    if today_dt.weekday() in [5, 6]:
+        day_kh = "ថ្ងៃសៅរ៍" if today_dt.weekday() == 5 else "ថ្ងៃអាទិត្យ"
         return jsonify({
             "success": False,
             "is_weekend": True,
             "message": f"មិនអាចកត់ត្រាវត្តមានបានទេ! ថ្ងៃនេះជា{day_kh} (ថ្ងៃឈប់សម្រាកចុងសប្តាហ៍)"
         })
 
-    today_str = date.today().strftime("%Y-%m-%d")
-    now_time = datetime.now().strftime("%H:%M")
+    today_str = get_today_str()
+    now_time = get_now_time_str()
 
     conn = get_db()
     cursor = conn.cursor()
@@ -1171,7 +1173,7 @@ def quick_checkin():
 @app.route("/attendance/monthly")
 @login_required
 def attendance_monthly():
-    month_year = request.args.get("month", date.today().strftime("%Y-%m"))
+    month_year = request.args.get("month", get_current_month_str())
     year, month = map(int, month_year.split("-"))
     num_days = calendar.monthrange(year, month)[1]
 
@@ -1228,7 +1230,8 @@ def attendance_monthly():
 @app.route("/attendance/scan")
 @login_required
 def attendance_scan():
-    today_str = date.today().strftime("%Y-%m-%d")
+    today_dt = get_today()
+    today_str = get_today_str()
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1252,7 +1255,6 @@ def attendance_scan():
     today_records = cursor.fetchall()
     conn.close()
 
-    today_dt = date.today()
     is_weekend = today_dt.weekday() in [5, 6]
     day_name_kh = "ថ្ងៃសៅរ៍" if today_dt.weekday() == 5 else ("ថ្ងៃអាទិត្យ" if today_dt.weekday() == 6 else "")
 
@@ -1275,13 +1277,13 @@ def attendance_scan():
 def api_attendance_scan():
     data = request.get_json() or {}
     raw_code = data.get("code", "").strip()
-    scan_date = data.get("date", date.today().strftime("%Y-%m-%d"))
+    scan_date = data.get("date", get_today_str())
 
     # Check if scan date is weekend (Saturday = 5, Sunday = 6)
     try:
         scan_dt = datetime.strptime(scan_date, "%Y-%m-%d").date()
     except Exception:
-        scan_dt = date.today()
+        scan_dt = get_today()
 
     if scan_dt.weekday() in [5, 6]:
         day_kh = "ថ្ងៃសៅរ៍" if scan_dt.weekday() == 5 else "ថ្ងៃអាទិត្យ"
@@ -1319,8 +1321,7 @@ def api_attendance_scan():
         return jsonify({"success": False, "message": f"រកមិនឃើញមន្ត្រីដែលមានអត្តលេខ '{officer_code}' ក្នុងប្រព័ន្ធទេ!"}), 404
 
     staff_id = staff["id"]
-    now_dt = datetime.now()
-    now_time = now_dt.strftime("%H:%M")
+    now_time = get_now_time_str()
 
     # Check today's attendance record for this staff
     cursor.execute("SELECT * FROM attendance WHERE staff_id = ? AND date = ?", (staff_id, scan_date))
@@ -1417,9 +1418,11 @@ def api_attendance_scan():
 @login_required
 def attendance_kiosk_qr():
     # Generate Commune QR code for general kiosk check-in
-    kiosk_payload = f"NP-KIOSK:NOKOR_PHEAS|{date.today().strftime('%Y-%m-%d')}"
+    today_dt = get_today()
+    today_str = get_today_str()
+    kiosk_payload = f"NP-KIOSK:NOKOR_PHEAS|{today_str}"
     kiosk_qr_b64 = generate_qr_base64(kiosk_payload)
-    today_kh = format_khmer_date(date.today())
+    today_kh = format_khmer_date(today_dt)
 
     return render_template(
         "attendance/kiosk_qr.html",

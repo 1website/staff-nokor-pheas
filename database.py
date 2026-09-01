@@ -769,7 +769,66 @@ def ensure_baseline_data(conn=None):
     # Ensure photo integrity (convert/cache existing uploaded files to base64)
     ensure_photo_integrity(conn)
 
+    # Ensure attendance records are in Cambodia Timezone (UTC+7)
+    fix_utc_attendance_records(conn)
+
     conn.commit()
+
+
+def fix_utc_attendance_records(conn=None):
+    """
+    Auto-corrects existing attendance records that were inadvertently recorded
+    in UTC timezone (e.g. 00:00 to 05:59 AM) instead of Cambodia local time (UTC+7).
+    """
+    if conn is None:
+        conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, date, check_in_time, check_out_time, status, remarks FROM attendance")
+        rows = cursor.fetchall()
+        for r in rows:
+            rec_id = r["id"]
+            cin = r["check_in_time"]
+            cout = r["check_out_time"]
+            status = r["status"]
+            needs_update = False
+            new_cin = cin
+            new_cout = cout
+            new_status = status
+
+            # Check if check_in_time is UTC (00:00 to 05:59)
+            if cin and len(cin) >= 5 and cin[:2].isdigit():
+                h = int(cin[:2])
+                m = cin[3:5]
+                # If recorded before 6 AM, it's definitely UTC recorded during daytime in Cambodia
+                if 0 <= h < 6:
+                    new_h = h + 7
+                    new_cin = f"{new_h:02d}:{m}"
+                    needs_update = True
+                    # Recalculate status based on Cambodia working hours
+                    if new_cin <= "12:00":
+                        new_status = "late" if new_cin > "07:30" else "present"
+                    else:
+                        new_status = "late" if new_cin > "14:15" else "present"
+
+            # Check if check_out_time is UTC (00:00 to 05:59)
+            if cout and len(cout) >= 5 and cout[:2].isdigit():
+                h = int(cout[:2])
+                m = cout[3:5]
+                if 0 <= h < 6:
+                    new_h = h + 7
+                    new_cout = f"{new_h:02d}:{m}"
+                    needs_update = True
+
+            if needs_update:
+                cursor.execute("""
+                    UPDATE attendance
+                    SET check_in_time = ?, check_out_time = ?, status = ?
+                    WHERE id = ?
+                """, (new_cin, new_cout, new_status, rec_id))
+        conn.commit()
+    except Exception as e:
+        print(f"[Attendance Timezone Migration Notice] {e}")
 
 
 def ensure_photo_integrity(conn=None):

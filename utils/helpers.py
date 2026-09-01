@@ -4,8 +4,31 @@ Helper functions for Khmer formatting, dates, currency, and authentication
 
 import os
 from functools import wraps
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from flask import session, redirect, url_for, flash, abort
+
+# Cambodia Standard Time (ICT / UTC+7)
+CAMBODIA_TZ = timezone(timedelta(hours=7))
+
+def get_now():
+    """Returns current datetime in Cambodia Time (UTC+7)."""
+    return datetime.now(CAMBODIA_TZ)
+
+def get_today():
+    """Returns current date in Cambodia Time (UTC+7)."""
+    return datetime.now(CAMBODIA_TZ).date()
+
+def get_today_str():
+    """Returns current date string 'YYYY-MM-DD' in Cambodia Time (UTC+7)."""
+    return datetime.now(CAMBODIA_TZ).strftime("%Y-%m-%d")
+
+def get_now_time_str():
+    """Returns current time string 'HH:MM' in Cambodia Time (UTC+7)."""
+    return datetime.now(CAMBODIA_TZ).strftime("%H:%M")
+
+def get_current_month_str():
+    """Returns current month string 'YYYY-MM' in Cambodia Time (UTC+7)."""
+    return datetime.now(CAMBODIA_TZ).strftime("%Y-%m")
 
 KHMER_DIGITS = {
     '0': '០', '1': '១', '2': '២', '3': '៣', '4': '៤',

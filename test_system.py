@@ -272,6 +272,15 @@ class TestNokorPheasStaffSystem(unittest.TestCase):
 
     def test_13_qr_attendance_scanner_and_api(self):
         self.login('admin', 'admin123')
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR IGNORE INTO staff (id, officer_code, name_kh, name_en, gender, dob, village, category, position_title_kh, status)
+            VALUES (1, 'NP-001', 'មី គន់', 'Mi Kun', 'ប្រុស', '1965-01-01', 'នគរភាស១', 'council', 'មេឃុំ', 'active'),
+                   (2, 'NP-002', 'សួន វណ្ណា', 'Suon Vanna', 'ប្រុស', '1980-01-01', 'នគរភាស១', 'clerk', 'ស្មៀន', 'active')
+        """)
+        conn.commit()
+
         # Scanner page
         res_scanner = self.client.get('/attendance/scan')
         self.assertEqual(res_scanner.status_code, 200)
