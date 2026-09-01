@@ -1253,6 +1253,15 @@ def attendance_scan():
         ORDER BY a.id DESC
     """, (today_str,))
     today_records = cursor.fetchall()
+
+    # All active staff for search combobox
+    cursor.execute("""
+        SELECT id, officer_code, name_kh, name_en, photo, position_title_kh, village, category
+        FROM staff
+        WHERE status = 'active'
+        ORDER BY CASE category WHEN 'council' THEN 1 WHEN 'clerk' THEN 2 WHEN 'contract' THEN 3 ELSE 4 END, id ASC
+    """)
+    all_active_staff = cursor.fetchall()
     conn.close()
 
     is_weekend = today_dt.weekday() in [5, 6]
@@ -1267,6 +1276,7 @@ def attendance_scan():
         total_staff=total_staff,
         today_present=today_present,
         today_records=today_records,
+        all_active_staff=all_active_staff,
         categories=STAFF_CATEGORIES,
         statuses=ATTENDANCE_STATUSES
     )
@@ -1294,13 +1304,19 @@ def api_attendance_scan():
         }), 400
 
     if not raw_code:
-        return jsonify({"success": False, "message": "មិនមានទិន្នន័យ QR Code ត្រូវបានបញ្ជូនមកទេ!"}), 400
+        return jsonify({"success": False, "message": "មិនមានទិន្នន័យ QR Code ឬឈ្មោះមន្ត្រីត្រូវបានបញ្ជូនមកទេ!"}), 400
 
-    # Parse QR payload (e.g. NP-STAFF:NP-001|... or NP-001 or integer ID)
+    # Parse QR payload (e.g. NP-STAFF:NP-001|... or "មី គន់ (NP-001)" or NP-001 or integer ID)
     officer_code = ""
     if raw_code.startswith("NP-STAFF:"):
         parts = raw_code.replace("NP-STAFF:", "").split("|")
         officer_code = parts[0].strip()
+    elif "(" in raw_code and ")" in raw_code:
+        code_inside = raw_code[raw_code.find("(") + 1:raw_code.find(")")].strip()
+        if code_inside.startswith("NP-") or code_inside.startswith("np-") or code_inside.isdigit():
+            officer_code = code_inside.upper()
+        else:
+            officer_code = raw_code.strip()
     elif raw_code.startswith("NP-") or raw_code.startswith("np-"):
         officer_code = raw_code.upper()
     else:
@@ -1309,16 +1325,20 @@ def api_attendance_scan():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Look up staff by officer_code or id
+    # Look up staff by officer_code, id, name_kh, or name_en
     cursor.execute("""
         SELECT * FROM staff 
-        WHERE (UPPER(officer_code) = UPPER(?) OR id = ?) AND status = 'active'
-    """, (officer_code, officer_code if officer_code.isdigit() else -1))
+        WHERE (UPPER(officer_code) = UPPER(?) 
+               OR id = ? 
+               OR UPPER(name_kh) = UPPER(?) 
+               OR (name_en IS NOT NULL AND UPPER(name_en) = UPPER(?))) 
+          AND status = 'active'
+    """, (officer_code, officer_code if officer_code.isdigit() else -1, officer_code, officer_code))
     staff = cursor.fetchone()
 
     if not staff:
         conn.close()
-        return jsonify({"success": False, "message": f"រកមិនឃើញមន្ត្រីដែលមានអត្តលេខ '{officer_code}' ក្នុងប្រព័ន្ធទេ!"}), 404
+        return jsonify({"success": False, "message": f"រកមិនឃើញមន្ត្រី '{officer_code}' ក្នុងប្រព័ន្ធទេ!"}), 404
 
     staff_id = staff["id"]
     now_time = get_now_time_str()
