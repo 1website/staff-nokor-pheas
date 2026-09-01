@@ -1206,3 +1206,241 @@ def export_assets_excel(category=None, condition=None, search=None):
     stream.seek(0)
     return stream
 
+
+def export_daily_attendance_excel(target_date_str):
+    """
+    Generate Official Daily Attendance Report (តារាងស្រង់វត្តមានប្រចាំថ្ងៃផ្លូវការ)
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"វត្តមាន-{target_date_str}"
+    ws.views.sheetView[0].showGridLines = True
+
+    try:
+        target_dt = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+    except Exception:
+        target_dt = date.today()
+        target_date_str = target_dt.strftime("%Y-%m-%d")
+
+    kh_date_full = format_khmer_date(target_dt)
+
+    # 1. Official Letterhead
+    ws.merge_cells("A1:L1")
+    ws["A1"] = "ព្រះរាជាណាចក្រកម្ពុជា"
+    ws["A1"].font = Font(name="Khmer OS Muol Light", size=12, bold=True, color="0F2B48")
+    ws["A1"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells("A2:L2")
+    ws["A2"] = "ជាតិ សាសនា ព្រះមហាក្សត្រ"
+    ws["A2"].font = Font(name="Khmer OS Muol Light", size=11, bold=True, color="0F2B48")
+    ws["A2"].alignment = Alignment(horizontal="center")
+
+    ws["A4"] = "រដ្ឋបាលខេត្តសៀមរាប"
+    ws["A4"].font = Font(name="Khmer OS Siemreap", size=10, bold=True)
+    ws["A5"] = "រដ្ឋបាលស្រុកអង្គរជុំ"
+    ws["A5"].font = Font(name="Khmer OS Siemreap", size=10, bold=True)
+    ws["A6"] = "រដ្ឋបាលឃុំនគរភាស"
+    ws["A6"].font = Font(name="Khmer OS Muol Light", size=10, bold=True, color="1E3A8A")
+
+    # Title
+    ws.merge_cells("A8:L8")
+    ws["A8"] = "តារាងកត់ត្រាវត្តមានមន្ត្រី និងបុគ្គលិករដ្ឋបាលឃុំនគរភាស"
+    ws["A8"].font = TITLE_FONT
+    ws["A8"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A9:L9")
+    ws["A9"] = f"ប្រចាំ{kh_date_full}"
+    ws["A9"].font = Font(name="Khmer OS Siemreap", size=11, bold=True, italic=True, color="1E3A8A")
+    ws["A9"].alignment = Alignment(horizontal="center", vertical="center")
+
+    # Query Data
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT s.id, s.officer_code, s.name_kh, s.name_en, s.gender, s.position_title_kh, s.category, s.village,
+               a.check_in_time, a.check_out_time, a.status, a.remarks
+        FROM staff s
+        LEFT JOIN attendance a ON s.id = a.staff_id AND a.date = ?
+        WHERE s.status = 'active'
+        ORDER BY 
+            CASE s.category 
+                WHEN 'council' THEN 1 
+                WHEN 'clerk' THEN 2 
+                WHEN 'contract' THEN 3 
+                ELSE 4 
+            END, s.id ASC
+    """, (target_date_str,))
+    records = cursor.fetchall()
+
+    # Calculate Statistics
+    total_staff = len(records)
+    cnt_present = sum(1 for r in records if r["status"] == "present")
+    cnt_late = sum(1 for r in records if r["status"] == "late")
+    cnt_leave = sum(1 for r in records if r["status"] == "leave")
+    cnt_mission = sum(1 for r in records if r["status"] == "mission")
+    cnt_absent = sum(1 for r in records if r["status"] == "absent")
+    cnt_unrecorded = sum(1 for r in records if not r["status"])
+
+    # 2. KPI Summary Boxes (Row 11-12)
+    kpis = [
+        ("A", "B", "មន្ត្រីសរុប", f"{to_khmer_num(total_staff)} នាក់", "1E3A8A", "F1F5F9"),
+        ("C", "D", "វត្តមានទាន់ពេល", f"{to_khmer_num(cnt_present)} នាក់", "065F46", "ECFDF5"),
+        ("E", "F", "មកយឺត (Late)", f"{to_khmer_num(cnt_late)} នាក់", "92400E", "FEF3C7"),
+        ("G", "H", "ច្បាប់ (Leave)", f"{to_khmer_num(cnt_leave)} នាក់", "1E40AF", "EFF6FF"),
+        ("I", "J", "បេសកកម្ម", f"{to_khmer_num(cnt_mission)} នាក់", "6B21A8", "F5F3FF"),
+        ("K", "L", "អវត្តមាន", f"{to_khmer_num(cnt_absent + cnt_unrecorded)} នាក់", "991B1B", "FEF2F2"),
+    ]
+
+    for start_col, end_col, label, val, text_color, bg_color in kpis:
+        ws.merge_cells(f"{start_col}11:{end_col}11")
+        ws.merge_cells(f"{start_col}12:{end_col}12")
+        c1 = ws[f"{start_col}11"]
+        c2 = ws[f"{start_col}12"]
+        c1.value = label
+        c1.font = Font(name="Khmer OS Siemreap", size=8.5, bold=True, color=text_color)
+        c1.alignment = Alignment(horizontal="center", vertical="center")
+        c1.fill = PatternFill(start_color=bg_color, end_color=bg_color, fill_type="solid")
+
+        c2.value = val
+        c2.font = Font(name="Khmer OS Siemreap", size=10.5, bold=True, color=text_color)
+        c2.alignment = Alignment(horizontal="center", vertical="center")
+        c2.fill = PatternFill(start_color=bg_color, end_color=bg_color, fill_type="solid")
+
+        for r in range(11, 13):
+            for c_letter in [start_col, end_col]:
+                ws[f"{c_letter}{r}"].border = THIN_BORDER
+
+    # 3. Table Column Headers (Row 14)
+    table_headers = [
+        ("A", "ល.រ", 5),
+        ("B", "អត្តលេខ", 12),
+        ("C", "គោត្តនាម-នាម", 22),
+        ("D", "ឈ្មោះឡាតាំង", 18),
+        ("E", "ភេទ", 8),
+        ("F", "តួនាទី / មុខតំណែង", 22),
+        ("G", "ក្រុមការងារ", 16),
+        ("H", "ភូមិ", 14),
+        ("I", "ម៉ោងចូល", 12),
+        ("J", "ម៉ោងចេញ", 12),
+        ("K", "ស្ថានភាពវត្តមាន", 18),
+        ("L", "កំណត់សម្គាល់", 28),
+    ]
+
+    header_row = 14
+    for col_letter, title, width in table_headers:
+        cell = ws[f"{col_letter}{header_row}"]
+        cell.value = title
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = THIN_BORDER
+        ws.column_dimensions[col_letter].width = width
+
+    ws.row_dimensions[header_row].height = 28
+
+    # Status Definitions & Colors
+    status_map = {
+        "present": ("វត្តមាន (ទាន់ពេល)", "065F46", "ECFDF5"),
+        "late": ("មកយឺត (Late)", "92400E", "FEF3C7"),
+        "leave": ("ច្បាប់ (Leave)", "1E40AF", "EFF6FF"),
+        "mission": ("បេសកកម្ម (Mission)", "6B21A8", "F5F3FF"),
+        "absent": ("អវត្តមាន (Absent)", "991B1B", "FEF2F2"),
+    }
+
+    # 4. Data Rows
+    current_row = 15
+    for idx, r in enumerate(records, 1):
+        cat_info = STAFF_CATEGORIES.get(r["category"], {})
+        if isinstance(cat_info, dict):
+            cat_kh = cat_info.get("name_kh", r["category"] or "")
+        else:
+            cat_kh = str(cat_info or r["category"] or "")
+
+        st_code = r["status"]
+        st_text, st_fg, st_bg = status_map.get(st_code, ("មិនទាន់កត់ត្រា", "64748B", "F8FAFC"))
+
+        row_fill = PatternFill(start_color="F8FAFC" if idx % 2 == 0 else "FFFFFF",
+                               end_color="F8FAFC" if idx % 2 == 0 else "FFFFFF",
+                               fill_type="solid")
+
+        ws[f"A{current_row}"] = to_khmer_num(idx)
+        ws[f"B{current_row}"] = r["officer_code"] or ""
+        ws[f"C{current_row}"] = r["name_kh"] or ""
+        ws[f"D{current_row}"] = r["name_en"] or ""
+        ws[f"E{current_row}"] = r["gender"] or ""
+        ws[f"F{current_row}"] = r["position_title_kh"] or ""
+        ws[f"G{current_row}"] = cat_kh
+        ws[f"H{current_row}"] = f"ភូមិ{r['village']}" if r["village"] else ""
+        ws[f"I{current_row}"] = r["check_in_time"] or "--:--"
+        ws[f"J{current_row}"] = r["check_out_time"] or "--:--"
+        ws[f"K{current_row}"] = st_text
+        ws[f"L{current_row}"] = r["remarks"] or ""
+
+        # Alignments & Fonts
+        for col_letter in ["A", "B", "E", "I", "J"]:
+            c = ws[f"{col_letter}{current_row}"]
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.font = BODY_FONT
+            c.fill = row_fill
+            c.border = THIN_BORDER
+
+        for col_letter in ["C", "D", "F", "G", "H", "L"]:
+            c = ws[f"{col_letter}{current_row}"]
+            c.alignment = Alignment(horizontal="left", vertical="center")
+            c.font = BOLD_BODY_FONT if col_letter == "C" else BODY_FONT
+            c.fill = row_fill
+            c.border = THIN_BORDER
+
+        # Status Cell Highlight
+        c_status = ws[f"K{current_row}"]
+        c_status.alignment = Alignment(horizontal="center", vertical="center")
+        c_status.font = Font(name="Khmer OS Siemreap", size=9, bold=True, color=st_fg)
+        c_status.fill = PatternFill(start_color=st_bg, end_color=st_bg, fill_type="solid")
+        c_status.border = THIN_BORDER
+
+        ws.row_dimensions[current_row].height = 24
+        current_row += 1
+
+    # 5. Signatures Block
+    sig_row = current_row + 2
+    ws.merge_cells(f"I{sig_row}:L{sig_row}")
+    ws[f"I{sig_row}"] = f"នគរភាស, {kh_date_full}"
+    ws[f"I{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, italic=True)
+    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 1
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "បានឃើញ និងឯកភាព"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"I{sig_row}:L{sig_row}")
+    ws[f"I{sig_row}"] = "អ្នកស្រង់វត្តមាន / ស្មៀនឃុំ"
+    ws[f"I{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
+    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 1
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "មេឃុំនគរភាស"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True, color="0F2B48")
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 4
+    ws.merge_cells(f"A{sig_row}:D{sig_row}")
+    ws[f"A{sig_row}"] = "មី គន់"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"I{sig_row}:L{sig_row}")
+    ws[f"I{sig_row}"] = "សួន វណ្ណា"
+    ws[f"I{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"I{sig_row}"].alignment = Alignment(horizontal="center")
+
+    conn.close()
+
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return stream
+
+

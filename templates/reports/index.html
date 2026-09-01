@@ -28,9 +28,37 @@
   </div>
 </div>
 
-<!-- 4 របាយការណ៍ស្នូលរដ្ឋបាលឃុំ (4 Core 1-Click Export Cards) -->
+<!-- Core 1-Click Export Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 28px;">
   
+  <!-- Export 0: Daily Attendance Report -->
+  <div class="card" style="border-top: 4px solid #06b6d4; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
+    <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(6, 182, 212, 0.15); color: #06b6d4; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(6, 182, 212, 0.25);">
+            <i class="fa-solid fa-clipboard-user"></i>
+          </div>
+          <span class="badge" style="font-size: 10px; background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); font-weight: 700; padding: 3px 8px; border-radius: 9999px;">
+            ប្រចាំថ្ងៃ
+          </span>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">តារាងវត្តមានប្រចាំថ្ងៃ</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; min-height: 36px;">
+          របាយការណ៍វត្តមានមន្ត្រី-បុគ្គលិកចូល/ចេញ និងស្ថានភាពប្រចាំថ្ងៃ
+        </p>
+      </div>
+      <form method="GET" action="{{ url_for('export_daily_attendance_excel_route') }}" style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+        <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+          <input type="date" name="date" value="{{ today_iso }}" class="form-control" style="flex: 1; min-width: 0; font-size: 12px; padding: 7px 8px; border-radius: 10px;" required>
+          <button type="submit" class="btn btn-sm btn-success" style="flex-shrink: 0; white-space: nowrap; font-weight: 700; padding: 7px 12px; display: inline-flex; align-items: center; gap: 5px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+            <i class="fa-solid fa-download"></i> Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Export 1: District Attendance Report -->
   <div class="card" style="border-top: 4px solid #3b82f6; display: flex; flex-direction: column; justify-content: space-between; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: transform 0.25s ease, box-shadow 0.25s ease; overflow: hidden;">
     <div class="card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px;">

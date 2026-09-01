@@ -30,6 +30,7 @@ from utils.helpers import (
 )
 from utils.export_excel import (
     export_monthly_attendance_excel,
+    export_daily_attendance_excel,
     export_staff_list_excel,
     export_payroll_excel,
     export_finance_excel,
@@ -2171,6 +2172,74 @@ def reports_hub():
         cat_gender_rows=cat_gender_rows,
         village_dist=village_dist,
         salary_by_cat=salary_by_cat
+    )
+
+
+@app.route("/reports/export/attendance-daily-excel")
+@login_required
+def export_daily_attendance_excel_route():
+    target_date = request.args.get("date", get_today_str())
+    excel_stream = export_daily_attendance_excel(target_date)
+    filename = f"Daily_Attendance_NokorPheas_{target_date}.xlsx"
+    return send_file(
+        excel_stream,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@app.route("/attendance/daily-print")
+@login_required
+def attendance_daily_print():
+    target_date = request.args.get("date", get_today_str())
+    try:
+        target_dt = datetime.strptime(target_date, "%Y-%m-%d").date()
+    except Exception:
+        target_dt = get_today()
+        target_date = get_today_str()
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT s.id, s.officer_code, s.name_kh, s.name_en, s.gender, s.position_title_kh, s.category, s.village,
+               a.check_in_time, a.check_out_time, a.status, a.remarks
+        FROM staff s
+        LEFT JOIN attendance a ON s.id = a.staff_id AND a.date = ?
+        WHERE s.status = 'active'
+        ORDER BY 
+            CASE s.category 
+                WHEN 'council' THEN 1 
+                WHEN 'clerk' THEN 2 
+                WHEN 'contract' THEN 3 
+                ELSE 4 
+            END, s.id ASC
+    """, (target_date,))
+    records = cursor.fetchall()
+    conn.close()
+
+    total_staff = len(records)
+    cnt_present = sum(1 for r in records if r["status"] == "present")
+    cnt_late = sum(1 for r in records if r["status"] == "late")
+    cnt_leave = sum(1 for r in records if r["status"] == "leave")
+    cnt_mission = sum(1 for r in records if r["status"] == "mission")
+    cnt_absent = sum(1 for r in records if r["status"] == "absent")
+    cnt_unrecorded = sum(1 for r in records if not r["status"])
+
+    return render_template(
+        "attendance/daily_print.html",
+        target_date=target_date,
+        target_date_kh=format_khmer_date(target_dt),
+        records=records,
+        total_staff=total_staff,
+        cnt_present=cnt_present,
+        cnt_late=cnt_late,
+        cnt_leave=cnt_leave,
+        cnt_mission=cnt_mission,
+        cnt_absent=cnt_absent,
+        cnt_unrecorded=cnt_unrecorded,
+        categories=STAFF_CATEGORIES,
+        statuses=ATTENDANCE_STATUSES
     )
 
 

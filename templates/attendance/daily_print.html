@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>របាយការណ៍វត្តមានប្រចាំថ្ងៃ - {{ target_date }} - រដ្ឋបាលឃុំនគរភាស</title>
+  
+  <!-- Google Fonts for Khmer Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Siemreap&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    :root {
+      --font-moul: 'Moul', 'Khmer OS Muol Light', serif;
+      --font-khmer: 'Kantumruy Pro', 'Siemreap', sans-serif;
+      --font-latin: 'Outfit', sans-serif;
+      --primary: #0f2b48;
+      --border-color: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      font-family: var(--font-khmer);
+      color: #0f172a;
+      padding: 24px 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    /* Top Action Bar (Screen Only) */
+    .action-bar {
+      width: 297mm;
+      max-width: 96%;
+      margin: 0 auto 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--border-color);
+    }
+
+    .action-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--font-khmer);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #172554 0%, #1d4ed8 100%);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: #ffffff;
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    /* A4 Landscape Paper Layout */
+    .print-paper {
+      background: #ffffff;
+      width: 297mm;
+      min-height: 210mm;
+      margin: 0 auto;
+      padding: 18mm 18mm;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+      position: relative;
+    }
+
+    /* Official Letterhead */
+    .official-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .header-left {
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    .header-left .org-province {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .header-left .org-district {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .header-left .org-commune {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .header-left .doc-no {
+      font-size: 9.5pt;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .header-right {
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .header-right .kingdom {
+      font-family: var(--font-moul);
+      font-size: 12.5pt;
+      color: var(--primary);
+    }
+
+    .header-right .motto {
+      font-family: var(--font-moul);
+      font-size: 11pt;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .header-right .symbol {
+      margin-top: 4px;
+      letter-spacing: 4px;
+      font-size: 10pt;
+      color: #d97706;
+    }
+
+    /* Title Block */
+    .report-title-box {
+      text-align: center;
+      margin: 14px 0 16px 0;
+    }
+
+    .report-title {
+      font-family: var(--font-moul);
+      font-size: 13pt;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .report-date {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #1e3a8a;
+      font-style: italic;
+    }
+
+    /* KPI Summary Stats Bar */
+    .kpi-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      padding: 8px 10px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      background: #f8fafc;
+    }
+
+    .kpi-label {
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .kpi-val {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .kpi-present { background: #ecfdf5; border-color: #a7f3d0; }
+    .kpi-present .kpi-label { color: #065f46; }
+    .kpi-present .kpi-val { color: #059669; }
+
+    .kpi-late { background: #fef3c7; border-color: #fde68a; }
+    .kpi-late .kpi-label { color: #92400e; }
+    .kpi-late .kpi-val { color: #d97706; }
+
+    .kpi-leave { background: #eff6ff; border-color: #bfdbfe; }
+    .kpi-leave .kpi-label { color: #1e40af; }
+    .kpi-leave .kpi-val { color: #2563eb; }
+
+    .kpi-mission { background: #f5f3ff; border-color: #ddd6fe; }
+    .kpi-mission .kpi-label { color: #6b21a8; }
+    .kpi-mission .kpi-val { color: #7c3aed; }
+
+    .kpi-absent { background: #fef2f2; border-color: #fecaca; }
+    .kpi-absent .kpi-label { color: #991b1b; }
+    .kpi-absent .kpi-val { color: #dc2626; }
+
+    /* Official Table */
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-bottom: 20px;
+    }
+
+    .print-table th, 
+    .print-table td {
+      border: 1px solid #94a3b8;
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+
+    .print-table th {
+      background-color: #1e3a8a !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      text-align: center;
+      font-size: 9.5pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .print-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .text-center { text-align: center !important; }
+    .text-left { text-align: left !important; }
+    .text-right { text-align: right !important; }
+
+    .badge-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 8.5pt;
+      white-space: nowrap;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .status-present { background: #d1fae5; color: #065f46; }
+    .status-late { background: #fef3c7; color: #92400e; }
+    .status-leave { background: #dbeafe; color: #1e40af; }
+    .status-mission { background: #ede9fe; color: #5b21b6; }
+    .status-absent { background: #fee2e2; color: #991b1b; }
+    .status-unrecorded { background: #f1f5f9; color: #64748b; }
+
+    /* Signatures Block */
+    .signatures-block {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 24px;
+      page-break-inside: avoid;
+    }
+
+    .sig-col {
+      text-align: center;
+      width: 40%;
+      line-height: 1.45;
+    }
+
+    .sig-date {
+      font-size: 9.5pt;
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+
+    .sig-role {
+      font-weight: 700;
+      font-size: 10pt;
+      color: #0f172a;
+    }
+
+    .sig-role-moul {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .sig-space {
+      height: 65px;
+    }
+
+    .sig-name {
+      font-family: var(--font-moul);
+      font-size: 10.5pt;
+      color: #0f172a;
+    }
+
+    /* Print Specific Media Rules */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm 12mm 10mm 12mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        color: #000000 !important;
+      }
+
+      .action-bar {
+        display: none !important;
+      }
+
+      .print-paper {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      .print-table th {
+        background-color: #1e3a8a !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .print-table td, .print-table th {
+        border-color: #475569 !important;
+      }
+
+      .kpi-card, .badge-status {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Action Bar -->
+  <div class="action-bar no-print">
+    <div class="action-bar-left">
+      <a href="{{ url_for('attendance_daily', date=target_date) }}" class="btn btn-outline">
+        <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ក្រោយ
+      </a>
+      <span style="font-weight: 700; color: var(--primary); font-size: 14px;">
+        <i class="fa-regular fa-file-lines text-gold"></i> ទម្រង់បោះពុម្ពរបាយការណ៍វត្តមានផ្លូវការ
+      </span>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('export_daily_attendance_excel_route', date=target_date) }}" class="btn btn-success">
+        <i class="fa-solid fa-file-excel"></i> ទាញយក Excel (.xlsx)
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <i class="fa-solid fa-print"></i> បោះពុម្ព / រក្សាទុកជា PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- A4 Landscape Printable Area -->
+  <div class="print-paper">
+    
+    <!-- Letterhead -->
+    <div class="official-header">
+      <div class="header-left">
+        <div class="org-province">រដ្ឋបាលខេត្តសៀមរាប</div>
+        <div class="org-district">រដ្ឋបាលស្រុកអង្គរជុំ</div>
+        <div class="org-commune">រដ្ឋបាលឃុំនគរភាស</div>
+        <div class="doc-no">លេខ៖ .................... របក/វត</div>
+      </div>
+      <div class="header-right">
+        <div class="kingdom">ព្រះរាជាណាចក្រកម្ពុជា</div>
+        <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        <div class="symbol">~ ~ ~ 🙛 🙙 ~ ~ ~</div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="report-title-box">
+      <h1 class="report-title">តារាងកត់ត្រាវត្តមានមន្ត្រី និងបុគ្គលិករដ្ឋបាលឃុំនគរភាស</h1>
+      <div class="report-date">ប្រចាំ{{ target_date_kh }}</div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="kpi-summary-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">មន្ត្រីសរុប</div>
+        <div class="kpi-val">{{ total_staff | kh_num }} នាក់</div>
+      </div>
+      <div class="kpi-card kpi-present">
+        <div class="kpi-label">វត្តមានទាន់ពេល</div>
+        <div class="kpi-val">{{ cnt_present | kh_num }} នាក់</div>
+      </div>
+      <div class="kpi-card kpi-late">
+        <div class="kpi-label">មកយឺត (Late)</div>
+        <div class="kpi-val">{{ cnt_late | kh_num }} នាក់</div>
+      </div>
+      <div class="kpi-card kpi-leave">
+        <div class="kpi-label">ច្បាប់ (Leave)</div>
+        <div class="kpi-val">{{ cnt_leave | kh_num }} នាក់</div>
+      </div>
+      <div class="kpi-card kpi-mission">
+        <div class="kpi-label">បេសកកម្ម</div>
+        <div class="kpi-val">{{ cnt_mission | kh_num }} នាក់</div>
+      </div>
+      <div class="kpi-card kpi-absent">
+        <div class="kpi-label">អវត្តមាន</div>
+        <div class="kpi-val">{{ (cnt_absent + cnt_unrecorded) | kh_num }} នាក់</div>
+      </div>
+    </div>
+
+    <!-- Main Attendance Table -->
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th style="width: 35px;">ល.រ</th>
+          <th style="width: 65px;">អត្តលេខ</th>
+          <th>គោត្តនាម និងនាម</th>
+          <th style="width: 110px;">ឈ្មោះឡាតាំង</th>
+          <th style="width: 45px;">ភេទ</th>
+          <th>មុខតំណែង / តួនាទី</th>
+          <th style="width: 95px;">ក្រុមការងារ</th>
+          <th style="width: 80px;">ភូមិ</th>
+          <th style="width: 65px;">ម៉ោងចូល</th>
+          <th style="width: 65px;">ម៉ោងចេញ</th>
+          <th style="width: 100px;">ស្ថានភាព</th>
+          <th style="width: 160px;">កំណត់សម្គាល់</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td class="text-center">{{ loop.index | kh_num }}</td>
+          <td class="text-center" style="font-weight: 600; color: #0f2b48;">{{ r.officer_code }}</td>
+          <td class="text-left" style="font-weight: 700;">{{ r.name_kh }}</td>
+          <td class="text-left" style="font-family: var(--font-latin); font-size: 9pt;">{{ r.name_en or '' }}</td>
+          <td class="text-center">{{ r.gender }}</td>
+          <td class="text-left">{{ r.position_title_kh }}</td>
+          <td class="text-left">{{ categories.get(r.category, r.category) }}</td>
+          <td class="text-left">{% if r.village %}ភូមិ{{ r.village }}{% endif %}</td>
+          <td class="text-center" style="font-family: var(--font-latin); font-size: 9pt;">
+            {% if r.check_in_time %}{{ r.check_in_time }}{% else %}--:--{% endif %}
+          </td>
+          <td class="text-center" style="font-family: var(--font-latin); font-size: 9pt;">
+            {% if r.check_out_time %}{{ r.check_out_time }}{% else %}--:--{% endif %}
+          </td>
+          <td class="text-center">
+            {% if r.status == 'present' %}
+              <span class="badge-status status-present">វត្តមាន</span>
+            {% elif r.status == 'late' %}
+              <span class="badge-status status-late">មកយឺត</span>
+            {% elif r.status == 'leave' %}
+              <span class="badge-status status-leave">ច្បាប់</span>
+            {% elif r.status == 'mission' %}
+              <span class="badge-status status-mission">បេសកកម្ម</span>
+            {% elif r.status == 'absent' %}
+              <span class="badge-status status-absent">អវត្តមាន</span>
+            {% else %}
+              <span class="badge-status status-unrecorded">មិនទាន់កត់</span>
+            {% endif %}
+          </td>
+          <td class="text-left" style="font-size: 8.5pt; color: #475569;">{{ r.remarks or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Signatures -->
+    <div class="signatures-block">
+      <div class="sig-col">
+        <div class="sig-role">បានឃើញ និងឯកភាព</div>
+        <div class="sig-role-moul">មេឃុំនគរភាស</div>
+        <div class="sig-space"></div>
+        <div class="sig-name">មី គន់</div>
+      </div>
+      
+      <div class="sig-col">
+        <div class="sig-date">នគរភាស, {{ target_date_kh }}</div>
+        <div class="sig-role">អ្នកស្រង់វត្តមាន / ស្មៀនឃុំ</div>
+        <div class="sig-space"></div>
+        <div class="sig-name">សួន វណ្ណា</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

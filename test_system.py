@@ -533,6 +533,28 @@ class TestNokorPheasStaffSystem(unittest.TestCase):
 
         conn.close()
 
+    def test_25_daily_attendance_export_and_print(self):
+        self.login('admin', 'admin123')
+
+        # 1. Test Daily Attendance Page Load
+        res_page = self.client.get('/attendance/daily?date=2026-09-01')
+        self.assertEqual(res_page.status_code, 200)
+        self.assertIn('កត់ត្រាវត្តមានប្រចាំថ្ងៃ'.encode('utf-8'), res_page.data)
+        self.assertIn(b'/reports/export/attendance-daily-excel', res_page.data)
+
+        # 2. Test Daily Attendance Excel Export Route
+        res_excel = self.client.get('/reports/export/attendance-daily-excel?date=2026-09-01')
+        self.assertEqual(res_excel.status_code, 200)
+        self.assertEqual(res_excel.mimetype, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertGreater(len(res_excel.data), 1000)
+
+        # 3. Test Daily Attendance Print View Route
+        res_print = self.client.get('/attendance/daily-print?date=2026-09-01')
+        self.assertEqual(res_print.status_code, 200)
+        self.assertIn('តារាងកត់ត្រាវត្តមានមន្ត្រី និងបុគ្គលិករដ្ឋបាលឃុំនគរភាស'.encode('utf-8'), res_print.data)
+        self.assertIn('print-paper'.encode('utf-8'), res_print.data)
+
+
 if __name__ == '__main__':
     unittest.main()
 
