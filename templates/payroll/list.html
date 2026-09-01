@@ -239,7 +239,7 @@
       </div>
       <button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button>
     </div>
-    <form id="deductionForm" method="POST" onsubmit="handleSaveDeductions(event)">
+    <form id="deductionForm" class="no-loading" data-no-loading="true" method="POST" onsubmit="handleSaveDeductions(event)">
       <div class="modal-body" style="padding: 20px;">
         <input type="hidden" id="ded_payroll_id" name="payroll_id" value="">
 

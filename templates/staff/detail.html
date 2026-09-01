@@ -469,7 +469,7 @@
       </div>
       <button type="button" class="modal-close" onclick="closePhotoModal()">&times;</button>
     </div>
-    <form id="changePhotoForm" method="POST" action="{{ url_for('staff_update_photo', staff_id=staff.id) }}" enctype="multipart/form-data">
+    <form id="changePhotoForm" class="no-loading" data-no-loading="true" method="POST" action="{{ url_for('staff_update_photo', staff_id=staff.id) }}" enctype="multipart/form-data">
       <div class="modal-body" style="text-align: center; padding: 24px 20px;">
         
         <!-- Photo Preview Area -->

@@ -638,18 +638,26 @@ function initThemeToggle() {
 // 11. GLOBAL LOADING CIRCLE SYSTEM (ប្រព័ន្ធ Loading Circle ពេលរង់ចាំ/ទាញយកទិន្នន័យ)
 // ==============================================================================
 
+let _globalLoadingTimer = null;
+
 /**
  * Show the global Loading Circle overlay
  * @param {string} title - Main loading title text in Khmer
  * @param {string} subtitle - Subtitle/description text in Khmer
+ * @param {number} autoDismissMs - Auto hide timeout in ms (default 8000ms)
  */
-function showLoading(title = "កំពុងដំណើរការ...", subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងទាញយកទិន្នន័យ") {
+function showLoading(title = "កំពុងដំណើរការ...", subtitle = "សូមរង់ចាំមួយភ្លែត ប្រព័ន្ធកំពុងទាញយកទិន្នន័យ", autoDismissMs = 8000) {
   const overlay = document.getElementById("global-loading-overlay");
   const titleEl = document.getElementById("global-loading-title");
   const subtitleEl = document.getElementById("global-loading-subtitle");
 
   if (titleEl) titleEl.textContent = title;
   if (subtitleEl) subtitleEl.textContent = subtitle;
+
+  if (_globalLoadingTimer) {
+    clearTimeout(_globalLoadingTimer);
+    _globalLoadingTimer = null;
+  }
 
   if (overlay) {
     overlay.style.display = "flex";
@@ -658,12 +666,26 @@ function showLoading(title = "កំពុងដំណើរការ...", subti
       overlay.setAttribute("aria-hidden", "false");
     });
   }
+
+  // Safety fallback: auto-hide after autoDismissMs (default 8s) if page didn't unload
+  if (autoDismissMs && autoDismissMs > 0) {
+    _globalLoadingTimer = setTimeout(function () {
+      hideLoading();
+      document.querySelectorAll(".is-loading").forEach(function (btn) {
+        resetButtonLoading(btn);
+      });
+    }, autoDismissMs);
+  }
 }
 
 /**
  * Hide the global Loading Circle overlay
  */
 function hideLoading() {
+  if (_globalLoadingTimer) {
+    clearTimeout(_globalLoadingTimer);
+    _globalLoadingTimer = null;
+  }
   const overlay = document.getElementById("global-loading-overlay");
   if (overlay) {
     overlay.classList.remove("active");
@@ -714,11 +736,20 @@ window.setButtonLoading = setButtonLoading;
 window.resetButtonLoading = resetButtonLoading;
 
 function initLoadingCircleSystem() {
-  // 1. Auto-intercept form submissions (except forms marked data-no-loading)
+  // 1. Auto-intercept form submissions (except forms marked data-no-loading or preventDefault)
   document.addEventListener("submit", function (e) {
+    if (e.defaultPrevented) return;
     const form = e.target;
     if (!form || form.tagName !== "FORM") return;
-    if (form.hasAttribute("data-no-loading") || form.classList.contains("no-loading")) return;
+    if (
+      form.hasAttribute("data-no-loading") ||
+      form.classList.contains("no-loading") ||
+      form.id === "manual-scan-form" ||
+      form.id === "deductionForm" ||
+      form.id === "changePhotoForm"
+    ) {
+      return;
+    }
 
     // Check HTML5 validity
     if (form.checkValidity && !form.checkValidity()) {
@@ -781,13 +812,30 @@ function initLoadingCircleSystem() {
       link.classList.contains("btn-export-excel") ||
       (link.classList.contains("btn-success") && href.includes("export"))
     ) {
-      showLoading("កំពុងទាញយកទិន្នន័យ...", "ប្រព័ន្ធកំពុងទាញយក និងរៀបចំឯកសារ Excel/PDF...");
-      // Automatically hide overlay after 2.8s since browser file download does not unload the webpage
-      setTimeout(hideLoading, 2800);
+      showLoading("កំពុងទាញយកទិន្នន័យ...", "ប្រព័ន្ធកំពុងទាញយក និងរៀបចំឯកសារ Excel/PDF...", 2800);
     }
   });
 
-  // 3. Auto hide on page restoration (back/forward bfcache)
+  // 3. User Escape / Click Dismiss
+  const overlay = document.getElementById("global-loading-overlay");
+  if (overlay) {
+    overlay.addEventListener("click", function () {
+      hideLoading();
+      document.querySelectorAll(".is-loading").forEach(function (btn) {
+        resetButtonLoading(btn);
+      });
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      hideLoading();
+      document.querySelectorAll(".is-loading").forEach(function (btn) {
+        resetButtonLoading(btn);
+      });
+    }
+  });
+
+  // 4. Auto hide on page restoration (back/forward bfcache)
   window.addEventListener("pageshow", function () {
     hideLoading();
     document.querySelectorAll(".is-loading").forEach(function (btn) {

@@ -401,9 +401,9 @@
     <!-- Manual Code Entry Box -->
     <div class="card" style="margin-top: 20px;">
       <div class="card-body" style="padding: 16px;">
-        <form id="manual-scan-form" style="display: flex; gap: 10px;">
+        <form id="manual-scan-form" class="no-loading" data-no-loading="true" style="display: flex; gap: 10px;">
           <input type="text" id="manual-officer-code" class="form-control" placeholder="បញ្ចូលអត្តលេខមន្ត្រី (ឧ. NP-001) ឬស្កេន Barcode..." autofocus autocomplete="off">
-          <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+          <button type="submit" id="btn-manual-scan" class="btn btn-primary" style="white-space: nowrap;">
             <i class="fa-solid fa-check"></i> កត់ត្រាវត្តមាន
           </button>
         </form>
@@ -804,15 +804,26 @@ function onScanSuccess(code) {
 document.getElementById('manual-scan-form').addEventListener('submit', function(e) {
   e.preventDefault();
   const input = document.getElementById('manual-officer-code');
+  const btn = document.getElementById('btn-manual-scan') || this.querySelector("button[type='submit']");
   const code = input.value.trim();
   if (!code) return;
   
-  processAttendanceScan(code);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> កំពុងកត់ត្រា...';
+  }
+
+  processAttendanceScan(code, function() {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> កត់ត្រាវត្តមាន';
+    }
+  });
   input.value = '';
 });
 
 // Backend API Call
-function processAttendanceScan(code) {
+function processAttendanceScan(code, onComplete) {
   fetch('/api/attendance/scan', {
     method: 'POST',
     headers: {
@@ -824,20 +835,35 @@ function processAttendanceScan(code) {
   .then(res => res.json().then(data => ({ status: res.status, body: data })))
   .then(({ status, body }) => {
     isProcessing = false;
+    if (typeof hideLoading === 'function') hideLoading();
+    if (typeof onComplete === 'function') onComplete();
 
     if (body.success) {
       playSuccessChime();
       displayScanResult(body);
       updateAttendanceFeed(body);
+      if (window.toast) {
+        toast.success(body.message || "បានកត់ត្រាវត្តមានជោគជ័យ!", "វត្តមានជោគជ័យ");
+      }
     } else {
       playErrorBeep();
-      showToast(body.message || "រកមិនឃើញមន្ត្រីទេ!", "danger", "បរាជ័យ");
+      if (window.toast) {
+        toast.warning(body.message || "រកមិនឃើញមន្ត្រីទេ!", "បរាជ័យ");
+      } else {
+        showToast(body.message || "រកមិនឃើញមន្ត្រីទេ!", "danger", "បរាជ័យ");
+      }
     }
   })
   .catch(err => {
     isProcessing = false;
+    if (typeof hideLoading === 'function') hideLoading();
+    if (typeof onComplete === 'function') onComplete();
     playErrorBeep();
-    showToast("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "danger", "កំហុសបច្ចេកទេស");
+    if (window.toast) {
+      toast.error("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "កំហុសបច្ចេកទេស");
+    } else {
+      showToast("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "danger", "កំហុសបច្ចេកទេស");
+    }
   });
 }
 
