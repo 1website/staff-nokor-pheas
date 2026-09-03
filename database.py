@@ -5,6 +5,7 @@ Optimized for high-concurrency serverless performance and connection reuse.
 """
 
 import os
+import re
 import shutil
 import sqlite3
 from datetime import datetime, date, timedelta
@@ -84,6 +85,11 @@ class PostgresCursorWrapper:
             pg_query = pg_query[:idx] + "INSERT INTO" + pg_query[idx + len("INSERT OR IGNORE INTO"):]
             if "ON CONFLICT" not in pg_query.upper():
                 pg_query = pg_query.rstrip("; \n\r\t") + " ON CONFLICT DO NOTHING"
+
+        # Translate SQLite last_insert_rowid() to the captured lastrowid
+        if "LAST_INSERT_ROWID()" in pg_query.upper():
+            last_id = self.lastrowid if self.lastrowid is not None else 0
+            pg_query = re.sub(r'(?i)\blast_insert_rowid\(\)', str(last_id), pg_query)
 
         return pg_query
 

@@ -16,6 +16,10 @@
 
 {% block page_actions %}
 <div class="page-actions-box">
+  <a href="{{ url_for('assets_scan') }}" class="btn btn-warning" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; font-weight: 600;">
+    <i class="fa-solid fa-qrcode"></i>
+    <span>ស្កេន QR Code ទ្រព្យ</span>
+  </a>
   <a href="{{ url_for('export_assets_excel_route', category=selected_category, condition=selected_condition, q=search_query) }}"
     class="btn btn-success" title="ទាញយកបញ្ជីសារពើភណ្ឌជា Excel">
     <i class="fa-solid fa-file-excel"></i>

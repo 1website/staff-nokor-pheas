@@ -1284,6 +1284,106 @@ def attendance_scan():
     )
 
 
+def get_asset_by_code_or_payload(raw_code):
+    if not raw_code:
+        return None
+    raw_code = str(raw_code).strip()
+    clean_code = raw_code
+
+    if raw_code.startswith("NOKOR_PHEAS_ASSET:"):
+        parts = raw_code.replace("NOKOR_PHEAS_ASSET:", "").split("|")
+        clean_code = parts[0].strip()
+    elif "asset_code=" in raw_code:
+        import urllib.parse
+        parsed = urllib.parse.urlparse(raw_code)
+        params = urllib.parse.parse_qs(parsed.query)
+        if "asset_code" in params:
+            clean_code = params["asset_code"][0].strip()
+    elif "/assets/" in raw_code:
+        parts = raw_code.rstrip("/").split("/")
+        if parts[-1].isdigit():
+            clean_code = parts[-1]
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT a.*, s.name_kh as custodian_name, s.officer_code as custodian_code,
+               s.position_title_kh as custodian_position, s.photo as custodian_photo,
+               s.phone as custodian_phone
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        WHERE UPPER(a.asset_code) = UPPER(?) 
+           OR a.id = ? 
+           OR UPPER(a.name_kh) = UPPER(?)
+           OR (a.name_en IS NOT NULL AND UPPER(a.name_en) = UPPER(?))
+           OR (a.serial_number IS NOT NULL AND UPPER(a.serial_number) = UPPER(?))
+    """, (clean_code, int(clean_code) if clean_code.isdigit() else -1, clean_code, clean_code, clean_code))
+    asset = cursor.fetchone()
+    conn.close()
+    return asset
+
+
+def format_asset_dict(asset):
+    if not asset:
+        return None
+    asset = dict(asset)
+    cat_key = asset.get("category") or "other"
+    cond_key = asset.get("condition_status") or "good"
+    acq_key = asset.get("acquisition_type") or "commune_fund"
+
+    cat_info = ASSET_CATEGORIES.get(cat_key, {})
+    cond_info = ASSET_CONDITIONS.get(cond_key, {})
+    acq_info = ASSET_ACQUISITIONS.get(acq_key, {})
+
+    val = asset["original_value"] if ("original_value" in asset and asset["original_value"] is not None) else 0
+    try:
+        val_float = float(val)
+        val_formatted = f"{to_khmer_num(f'{int(val_float):,}')} រៀល"
+    except Exception:
+        val_formatted = f"{val} រៀល"
+
+    return {
+        "id": asset["id"],
+        "asset_code": asset["asset_code"],
+        "name_kh": asset["name_kh"],
+        "name_en": asset.get("name_en") or "",
+        "category": cat_key,
+        "category_title_kh": cat_info.get("title_kh", cat_key),
+        "category_title_en": cat_info.get("title_en", cat_key),
+        "category_icon": cat_info.get("icon", "fa-solid fa-box-open"),
+        "category_color": cat_info.get("color", "#64748b"),
+        "category_badge_class": cat_info.get("badge_class", "badge-secondary"),
+        "brand_model": asset.get("brand_model") or "មិនមាន",
+        "serial_number": asset.get("serial_number") or "មិនមាន",
+        "condition_status": cond_key,
+        "condition_title_kh": cond_info.get("title_kh", cond_key),
+        "condition_badge_class": cond_info.get("badge_class", "badge-secondary"),
+        "condition_icon": cond_info.get("icon", "fa-solid fa-circle-check"),
+        "condition_color": cond_info.get("color", "#059669"),
+        "location": asset.get("location") or "សាលាឃុំនគរភាស",
+        "custodian": {
+            "id": asset.get("custodian_staff_id"),
+            "name_kh": asset.get("custodian_name") or "មិនទាន់ចាត់តាំង",
+            "officer_code": asset.get("custodian_code") or "",
+            "position": asset.get("custodian_position") or "មន្ត្រី",
+            "photo": asset.get("custodian_photo") or "",
+            "phone": asset.get("custodian_phone") or ""
+        } if asset.get("custodian_name") else None,
+        "acquisition_date": asset.get("acquisition_date") or "",
+        "acquisition_date_kh": to_khmer_num(asset.get("acquisition_date") or ""),
+        "acquisition_type": acq_key,
+        "acquisition_type_title_kh": acq_info.get("title_kh", acq_key),
+        "original_value": val,
+        "original_value_formatted": val_formatted,
+        "photo": asset.get("photo") or "",
+        "attachment": asset.get("attachment") or "",
+        "notes": asset.get("notes") or "",
+        "detail_url": url_for("assets_detail", asset_id=asset["id"]),
+        "qr_tag_url": url_for("assets_qr_tag", asset_id=asset["id"]),
+        "created_at": str(asset.get("created_at") or "")
+    }
+
+
 @app.route("/api/attendance/scan", methods=["POST"])
 @login_required
 def api_attendance_scan():
@@ -1307,6 +1407,28 @@ def api_attendance_scan():
 
     if not raw_code:
         return jsonify({"success": False, "message": "មិនមានទិន្នន័យ QR Code ឬឈ្មោះមន្ត្រីត្រូវបានបញ្ជូនមកទេ!"}), 400
+
+    # 1. Check if scanned QR code belongs to State Asset Tag
+    is_asset_code = (
+        raw_code.startswith("NOKOR_PHEAS_ASSET:") or 
+        raw_code.upper().startswith("NP-AST-") or 
+        raw_code.upper().startswith("AST-")
+    )
+    if is_asset_code:
+        asset = get_asset_by_code_or_payload(raw_code)
+        if asset:
+            return jsonify({
+                "success": True,
+                "type": "asset",
+                "message": f"បានស្កេនសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋ «{asset['name_kh']}» ({asset['asset_code']}) ជោគជ័យ!",
+                "asset": format_asset_dict(asset)
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "type": "asset_not_found",
+                "message": f"រកមិនឃើញទ្រព្យសម្បត្តិ '{raw_code}' ក្នុងបញ្ជីសារពើភណ្ឌទេ!"
+            }), 404
 
     # Parse QR payload (e.g. NP-STAFF:NP-001|... or "មី គន់ (NP-001)" or NP-001 or integer ID)
     officer_code = ""
@@ -1339,8 +1461,18 @@ def api_attendance_scan():
     staff = cursor.fetchone()
 
     if not staff:
+        # Fallback: check if the code matches an asset
+        asset = get_asset_by_code_or_payload(raw_code)
+        if asset:
+            conn.close()
+            return jsonify({
+                "success": True,
+                "type": "asset",
+                "message": f"បានស្កេនសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋ «{asset['name_kh']}» ({asset['asset_code']}) ជោគជ័យ!",
+                "asset": format_asset_dict(asset)
+            })
         conn.close()
-        return jsonify({"success": False, "message": f"រកមិនឃើញមន្ត្រី '{officer_code}' ក្នុងប្រព័ន្ធទេ!"}), 404
+        return jsonify({"success": False, "message": f"រកមិនឃើញមន្ត្រី ឬទ្រព្យសម្បត្តិ '{officer_code}' ក្នុងប្រព័ន្ធទេ!"}), 404
 
     staff_id = staff["id"]
     now_time = get_now_time_str()
@@ -3517,9 +3649,11 @@ def assets_new():
                 attachment_name, notes
             ))
 
-            cursor.execute("SELECT last_insert_rowid() AS id")
-            row = cursor.fetchone()
-            asset_id = row["id"] if isinstance(row, dict) or hasattr(row, '__getitem__') else row[0]
+            asset_id = cursor.lastrowid
+            if not asset_id:
+                cursor.execute("SELECT id FROM assets WHERE asset_code = ? ORDER BY id DESC LIMIT 1", (asset_code,))
+                row = cursor.fetchone()
+                asset_id = (row["id"] if isinstance(row, dict) or hasattr(row, '__getitem__') else row[0]) if row else None
 
             # Initial Creation Log
             performed_by = session.get("full_name") or session.get("username") or "Admin"
@@ -3875,6 +4009,62 @@ def export_assets_excel_route():
         as_attachment=True,
         download_name=filename
     )
+
+
+@app.route("/api/assets/scan", methods=["GET", "POST"])
+@login_required
+def api_assets_scan():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        code = data.get("code") or request.form.get("code") or ""
+    else:
+        code = request.args.get("code") or request.args.get("q") or ""
+        
+    code = code.strip()
+    if not code:
+        return jsonify({"success": False, "message": "សូមបញ្ជូនកូដ ឬស្កេន QR Code ទ្រព្យសម្បត្តិ!"}), 400
+        
+    asset = get_asset_by_code_or_payload(code)
+    if not asset:
+        return jsonify({"success": False, "message": f"រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិ '{code}' ក្នុងប្រព័ន្ធទេ!"}), 404
+        
+    return jsonify({
+        "success": True,
+        "type": "asset",
+        "message": f"បានស្កេនសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋ «{asset['name_kh']}» ({asset['asset_code']}) ជោគជ័យ!",
+        "asset": format_asset_dict(asset)
+    })
+
+
+@app.route("/assets/scan")
+@login_required
+def assets_scan():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT a.id, a.asset_code, a.name_kh, a.name_en, a.category, a.condition_status,
+               a.location, a.photo, s.name_kh as custodian_name
+        FROM assets a
+        LEFT JOIN staff s ON a.custodian_staff_id = s.id
+        ORDER BY a.id DESC
+    """)
+    recent_assets = cursor.fetchall()
+    conn.close()
+    return render_template(
+        "assets/scan.html",
+        recent_assets=recent_assets,
+        today_kh=format_khmer_date(date.today())
+    )
+
+
+@app.route("/assets/code/<path:code>")
+@login_required
+def assets_view_by_code(code):
+    asset = get_asset_by_code_or_payload(code)
+    if asset:
+        return redirect(url_for("assets_detail", asset_id=asset["id"]))
+    flash(f"រកមិនឃើញទ្រព្យសម្បត្តិដែលមានកូដ «{code}» ទេ!", "danger")
+    return redirect(url_for("assets_list"))
 
 
 @app.route('/settings/clear-demo-data', methods=["POST"])

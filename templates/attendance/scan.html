@@ -211,6 +211,47 @@
   font-weight: 700;
 }
 
+/* Asset Scan Result Card */
+.scan-asset-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid #fcd34d;
+  border-left: 6px solid #f59e0b;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15), 0 8px 10px -6px rgba(245, 158, 11, 0.1);
+  padding: 22px;
+  margin-top: 20px;
+  display: none;
+  animation: slideDown 0.35s ease-out;
+  background: linear-gradient(135deg, #ffffff 0%, #fffdfa 60%, #fef3c7 100%);
+}
+
+.scan-asset-photo-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.scan-asset-photo-img:hover {
+  transform: scale(1.04);
+}
+
+.scan-asset-photo-placeholder {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: #fef3c7;
+  border: 2px dashed #f59e0b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #b45309;
+}
+
 /* Guide Accordion */
 .cam-troubleshoot-box {
   background: #eff6ff;
@@ -856,6 +897,67 @@
       </div>
     </div>
 
+    <!-- Real-time Asset Scan Result Card -->
+    <div id="scan-asset-result-card" class="scan-asset-card" style="position: relative; z-index: 1;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge" style="background: #f59e0b; color: #ffffff; font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: 8px;">
+            <i class="fa-solid fa-boxes-stacked"></i> សារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ
+          </span>
+          <span id="scan-asset-condition-badge" class="badge"></span>
+        </div>
+        <div id="scan-asset-time" style="font-weight: 700; font-size: 13.5px; color: #b45309;">
+          ម៉ោង --:--
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 100px 1fr; gap: 16px; align-items: start; margin-bottom: 14px;">
+        <div id="scan-asset-photo-container">
+          <!-- Photo injected by JS -->
+        </div>
+        <div>
+          <div id="scan-asset-name-kh" style="font-family: var(--font-moul); font-size: 15px; color: #0b192c; line-height: 1.4;"></div>
+          <div id="scan-asset-name-en" style="font-size: 12px; color: #64748b; margin-top: 2px;"></div>
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span id="scan-asset-code" class="officer-code-pill" style="font-size: 12px; padding: 4px 10px; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-weight: 700;"></span>
+            <span id="scan-asset-category" class="badge badge-secondary" style="font-size: 11.5px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Specs Box -->
+      <div style="background: rgba(255, 255, 255, 0.85); border-radius: 10px; padding: 12px 14px; border: 1px solid #fde68a; font-size: 12.5px; margin-bottom: 14px; backdrop-filter: blur(4px);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <span style="color: #64748b;"><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> ទីតាំង៖</span>
+            <strong id="scan-asset-location" style="color: #0f172a; margin-left: 4px;"></strong>
+          </div>
+          <div>
+            <span style="color: #64748b;"><i class="fa-solid fa-user-shield" style="color: #3b82f6;"></i> អ្នកកាន់កាប់៖</span>
+            <strong id="scan-asset-custodian" style="color: #0f172a; margin-left: 4px;"></strong>
+          </div>
+          <div>
+            <span style="color: #64748b;"><i class="fa-solid fa-tag" style="color: #8b5cf6;"></i> ម៉ាក/ម៉ូដែល៖</span>
+            <strong id="scan-asset-model" style="color: #0f172a; margin-left: 4px;"></strong>
+          </div>
+          <div>
+            <span style="color: #64748b;"><i class="fa-solid fa-coins" style="color: #10b981;"></i> តម្លៃដើម៖</span>
+            <strong id="scan-asset-value" style="color: #059669; margin-left: 4px;"></strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+        <a id="scan-asset-qr-btn" href="#" target="_blank" class="btn btn-sm btn-outline-secondary" style="font-size: 12.5px;">
+          <i class="fa-solid fa-print"></i> បោះពុម្ពស្លាក QR
+        </a>
+        <a id="scan-asset-detail-btn" href="#" class="btn btn-sm btn-primary" style="font-size: 12.5px; background: #0b192c;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> មើលព័ត៌មានលម្អិត
+        </a>
+      </div>
+    </div>
+
     <!-- Troubleshooting Guide for Browser Camera Permission -->
     <div class="cam-troubleshoot-box" style="position: relative; z-index: 1;">
       <strong><i class="fa-solid fa-circle-info"></i> របៀបដោះស្រាយបើកកាមេរ៉ាមិនចេញលើ Browser៖</strong>
@@ -1449,17 +1551,28 @@ function processAttendanceScan(code, onComplete) {
 
     if (body.success) {
       playSuccessChime();
-      displayScanResult(body);
-      updateAttendanceFeed(body);
-      if (window.toast) {
-        toast.success(body.message || "បានកត់ត្រាវត្តមានជោគជ័យ!", "វត្តមានជោគជ័យ");
+      if (body.type === 'asset') {
+        displayAssetScanResult(body.asset);
+        if (window.toast) {
+          toast.success(body.message || "បានស្កេនសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋជោគជ័យ!", "ទ្រព្យសម្បត្តិរដ្ឋ");
+        } else {
+          showToast(body.message || "បានស្កេនសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋជោគជ័យ!", "success", "ទ្រព្យសម្បត្តិរដ្ឋ");
+        }
+      } else {
+        const assetCard = document.getElementById('scan-asset-result-card');
+        if (assetCard) assetCard.style.display = 'none';
+        displayScanResult(body);
+        updateAttendanceFeed(body);
+        if (window.toast) {
+          toast.success(body.message || "បានកត់ត្រាវត្តមានជោគជ័យ!", "វត្តមានជោគជ័យ");
+        }
       }
     } else {
       playErrorBeep();
       if (window.toast) {
-        toast.warning(body.message || "រកមិនឃើញមន្ត្រីទេ!", "បរាជ័យ");
+        toast.warning(body.message || "រកមិនឃើញមន្ត្រី ឬទ្រព្យសម្បត្តិទេ!", "បរាជ័យ");
       } else {
-        showToast(body.message || "រកមិនឃើញមន្ត្រីទេ!", "danger", "បរាជ័យ");
+        showToast(body.message || "រកមិនឃើញមន្ត្រី ឬទ្រព្យសម្បត្តិទេ!", "danger", "បរាជ័យ");
       }
     }
   })
@@ -1474,6 +1587,98 @@ function processAttendanceScan(code, onComplete) {
       showToast("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "danger", "កំហុសបច្ចេកទេស");
     }
   });
+}
+
+function displayAssetScanResult(asset) {
+  const staffCard = document.getElementById('scan-result-card');
+  if (staffCard) staffCard.style.display = 'none';
+
+  const card = document.getElementById('scan-asset-result-card');
+  if (!card) return;
+  card.style.display = 'block';
+
+  // Time
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit' });
+  const timeEl = document.getElementById('scan-asset-time');
+  if (timeEl) timeEl.innerText = `ម៉ោង ${timeStr}`;
+
+  // Names & Code
+  document.getElementById('scan-asset-name-kh').innerText = asset.name_kh;
+  document.getElementById('scan-asset-name-en').innerText = asset.name_en || '';
+  document.getElementById('scan-asset-code').innerText = asset.asset_code;
+
+  // Category & Condition
+  const catBadge = document.getElementById('scan-asset-category');
+  if (catBadge) {
+    catBadge.innerHTML = `<i class="${asset.category_icon}"></i> ${asset.category_title_kh}`;
+  }
+
+  const condBadge = document.getElementById('scan-asset-condition-badge');
+  if (condBadge) {
+    condBadge.className = `badge ${asset.condition_badge_class}`;
+    condBadge.innerHTML = `<i class="${asset.condition_icon}"></i> ${asset.condition_title_kh}`;
+  }
+
+  // Specs
+  document.getElementById('scan-asset-location').innerText = asset.location || 'សាលាឃុំនគរភាស';
+  document.getElementById('scan-asset-custodian').innerText = asset.custodian ? asset.custodian.name_kh : 'មិនទាន់ចាត់តាំង';
+  document.getElementById('scan-asset-model').innerText = asset.brand_model || 'មិនមាន';
+  document.getElementById('scan-asset-value').innerText = asset.original_value_formatted || '០ រៀល';
+
+  // Photo
+  const photoCont = document.getElementById('scan-asset-photo-container');
+  if (asset.photo) {
+    photoCont.innerHTML = `
+      <img src="${asset.photo}" alt="${asset.name_kh}" class="scan-asset-photo-img"
+        onclick="openAssetPhotoZoom('${asset.photo}', '${asset.name_kh.replace(/'/g, "\\'")}')"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="scan-asset-photo-placeholder" style="display: none;">
+        <i class="${asset.category_icon}" style="font-size: 32px; margin-bottom: 4px;"></i>
+        <span style="font-size: 11px;">គ្មានរូបថត</span>
+      </div>
+    `;
+  } else {
+    photoCont.innerHTML = `
+      <div class="scan-asset-photo-placeholder">
+        <i class="${asset.category_icon}" style="font-size: 32px; margin-bottom: 4px;"></i>
+        <span style="font-size: 11px;">គ្មានរូបថត</span>
+      </div>
+    `;
+  }
+
+  // Links
+  document.getElementById('scan-asset-detail-btn').href = asset.detail_url;
+  document.getElementById('scan-asset-qr-btn').href = asset.qr_tag_url;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function openAssetPhotoZoom(src, title) {
+  let modal = document.getElementById('asset-photo-zoom-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'asset-photo-zoom-modal';
+    modal.style.cssText = 'display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; padding: 20px;';
+    modal.innerHTML = `
+      <div style="background: #ffffff; border-radius: 16px; max-width: 520px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+        <div style="padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; background: #0b192c; color: #ffffff;">
+          <h4 id="zoom-modal-title" style="margin: 0; font-size: 15px; font-weight: 600;"></h4>
+          <button onclick="document.getElementById('asset-photo-zoom-modal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        <div style="padding: 18px; text-align: center; background: #f8fafc;">
+          <img id="zoom-modal-img" src="" style="max-height: 420px; max-width: 100%; border-radius: 10px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        </div>
+      </div>
+    `;
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+    document.body.appendChild(modal);
+  }
+  document.getElementById('zoom-modal-title').innerText = title;
+  document.getElementById('zoom-modal-img').src = src;
+  modal.style.display = 'flex';
 }
 
 // Render Result Card

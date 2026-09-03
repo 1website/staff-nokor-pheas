@@ -1,0 +1,931 @@
+{% extends "base.html" %}
+
+{% block title %}ស្កេនពិនិត្យទ្រព្យសម្បត្តិរដ្ឋ | រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+.asset-scanner-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .asset-scanner-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scanner-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.scanner-tab-bar {
+  display: flex;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+}
+
+.scanner-tab-btn {
+  flex: 1;
+  padding: 13px 16px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.scanner-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.scanner-tab-btn.active {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom-color: #f59e0b;
+}
+
+.scanner-viewport-wrapper {
+  position: relative;
+  background: #0b1329;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#reader {
+  width: 100% !important;
+  border: none !important;
+}
+
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+}
+
+.scanner-overlay-box {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border: 2px solid rgba(245, 158, 11, 0.85);
+  border-radius: 16px;
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  display: none;
+}
+
+.scanner-laser-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #f59e0b, #fbbf24, transparent);
+  box-shadow: 0 0 12px #f59e0b;
+  animation: scanLaser 2.2s infinite ease-in-out;
+}
+
+@keyframes scanLaser {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 96%; opacity: 1; }
+  100% { top: 0%; opacity: 0.8; }
+}
+
+.camera-permission-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.camera-permission-prompt i {
+  font-size: 48px;
+  color: #f59e0b;
+  margin-bottom: 14px;
+}
+
+.scanner-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Dossier Card */
+.asset-dossier-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.asset-dossier-header {
+  background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 100%);
+  color: #ffffff;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.asset-photo-box {
+  width: 140px;
+  height: 140px;
+  border-radius: 14px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  position: relative;
+}
+
+.asset-photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.asset-photo-box:hover img {
+  transform: scale(1.05);
+}
+
+.asset-photo-box .zoom-hint {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.asset-spec-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+.asset-spec-item:last-child {
+  border-bottom: none;
+}
+
+.asset-spec-label {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.asset-spec-value {
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+}
+</style>
+{% endblock %}
+
+{% block page_title %}
+<div class="page-title-box">
+  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+    <i class="fa-solid fa-qrcode"></i>
+  </div>
+  <div>
+    <h2>ស្កេនពិនិត្យទ្រព្យសម្បត្តិរដ្ឋតាម QR Code</h2>
+    <p class="subtitle">ពិនិត្យផ្ទៀងផ្ទាត់រូបភាព ឈ្មោះ ទីតាំង និងស្ថានភាពទ្រព្យសម្បត្តិរដ្ឋក្នុងឃុំនគរភាស</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="page-actions-box">
+  <a href="{{ url_for('assets_list') }}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-list-check"></i>
+    <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
+  </a>
+  {% if session.role in ['admin', 'clerk'] %}
+  <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus-circle"></i>
+    <span>ចុះបញ្ជីទ្រព្យថ្មី</span>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="asset-scanner-layout">
+  
+  <!-- LEFT COLUMN: Scanner & Search Controls -->
+  <div>
+    <div class="scanner-card">
+      <!-- Mode Tabs -->
+      <div class="scanner-tab-bar">
+        <button id="tab-btn-camera" class="scanner-tab-btn active" onclick="switchScannerTab('camera')">
+          <i class="fa-solid fa-camera"></i> ស្កេនតាមកាមេរ៉ា (Live Camera)
+        </button>
+        <button id="tab-btn-file" class="scanner-tab-btn" onclick="switchScannerTab('file')">
+          <i class="fa-solid fa-image"></i> ស្កេនតាមរូបភាព (Image File)
+        </button>
+      </div>
+
+      <!-- Header -->
+      <div style="padding: 12px 18px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b;">
+        <div style="font-weight: 600; font-size: 13.5px; color: #f59e0b;">
+          <i class="fa-solid fa-expand"></i> កន្លែងតម្រង់ QR Code ស្លាកសម្គាល់
+        </div>
+        <span id="camera-status-badge" class="badge" style="background: #334155; color: #cbd5e1; font-size: 11.5px;">
+          <i class="fa-solid fa-circle-pause"></i> រង់ចាំការបើកកាមេរ៉ា
+        </span>
+      </div>
+
+      <!-- Camera Mode -->
+      <div id="camera-mode-container">
+        <div class="scanner-viewport-wrapper">
+          <div id="reader"></div>
+
+          <div id="camera-prompt-box" class="camera-permission-prompt">
+            <i class="fa-solid fa-camera"></i>
+            <h4 style="margin-bottom: 6px; font-weight: 700;">បើកដំណើរការកាមេរ៉ា</h4>
+            <p style="font-size: 13px; color: #94a3b8; max-width: 320px; margin-bottom: 18px;">
+              សូមចុចប៊ូតុងខាងក្រោមដើម្បីអនុញ្ញាតឱ្យ Browser ដំណើរការកាមេរ៉ាស្កេន QR Code ស្លាកសម្គាល់ទ្រព្យ
+            </p>
+            <button id="btn-allow-camera" class="btn btn-warning btn-lg" style="font-weight: 700; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-play"></i> ចុចទីនេះដើម្បីបើកកាមេរ៉ា (Start Camera)
+            </button>
+          </div>
+
+          <div class="scanner-overlay-box" id="scanner-overlay">
+            <div class="scanner-laser-line"></div>
+          </div>
+        </div>
+
+        <div class="scanner-controls-bar">
+          <div style="display: flex; gap: 8px; align-items: center; flex: 1; flex-wrap: wrap;">
+            <select id="camera-select" class="form-select form-select-sm" style="max-width: 220px;">
+              <option value="">ជ្រើសរើសកាមេរ៉ា...</option>
+            </select>
+            <button id="btn-toggle-cam" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-play"></i> បើកកាមេរ៉ា
+            </button>
+          </div>
+          <div>
+            <button id="btn-sound-toggle" class="btn btn-sm btn-outline-secondary">
+              <i class="fa-solid fa-volume-high"></i> សំឡេង: បើក
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Mode -->
+      <div id="file-mode-container" style="display: none; padding: 30px 20px; text-align: center; background: #f8fafc;">
+        <div style="border: 2px dashed #cbd5e1; border-radius: 14px; padding: 36px 20px; background: #ffffff;">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; color: #f59e0b; margin-bottom: 12px;"></i>
+          <h4 style="font-weight: 700; color: #0b192c; margin-bottom: 6px;">ជ្រើសរើសរូបថត QR Code</h4>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">អាចជារូបថតស្លាកសម្គាល់ទ្រព្យដែលថតពីទូរស័ព្ទដៃ ឬរូបភាពរក្សាទុកក្នុងកុំព្យូទ័រ</p>
+          <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+          <button onclick="document.getElementById('qr-file-input').click()" class="btn btn-warning" style="font-weight: 600;">
+            <i class="fa-solid fa-folder-open"></i> ជ្រើសរើសរូបភាពពីឧបករណ៍ (Choose Image)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Code Search Box -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-body" style="padding: 16px 20px;">
+        <div style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-keyboard text-primary"></i> ស្វែងរកទ្រព្យដោយបញ្ចូលកូដ ឬឈ្មោះផ្ទាល់
+        </div>
+        <form id="manual-asset-form" style="display: flex; gap: 10px;">
+          <input type="text" id="manual-asset-input" class="form-control"
+            placeholder="ឧ. NP-AST-2026-001 ឬឈ្មោះទ្រព្យសម្បត្តិ..."
+            list="assets-quick-list" autocomplete="off" style="font-size: 14px; height: 44px;">
+          <datalist id="assets-quick-list">
+            {% for a in recent_assets %}
+            <option value="{{ a.asset_code }}">{{ a.name_kh }} ({{ a.location }})</option>
+            {% endfor %}
+          </datalist>
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap; height: 44px; padding: 0 18px;">
+            <i class="fa-solid fa-magnifying-glass"></i> <span>ស្វែងរក</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Session Scanned History -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px;">
+        <div style="font-weight: 600; font-size: 13.5px; color: #0b192c;">
+          <i class="fa-solid fa-clock-rotate-left text-warning"></i> ប្រវត្តិស្កេនក្នុងវេននេះ (Session History)
+        </div>
+        <span id="session-history-count" class="badge badge-secondary">០ មុខ</span>
+      </div>
+      <div class="card-body" style="padding: 0; max-height: 220px; overflow-y: auto;">
+        <table class="table" style="margin: 0; font-size: 12.5px;">
+          <tbody id="session-history-tbody">
+            <tr id="empty-history-row">
+              <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                មិនទាន់មានការស្កេនក្នុងវេននេះនៅឡើយទេ
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN: Active Asset Details Dossier (បង្ហាញទិន្នន័យជារូបភាព ឈ្មោះ និងព័ត៌មានលម្អិត) -->
+  <div>
+    <!-- Default Empty State Placeholder -->
+    <div id="asset-empty-state" class="asset-dossier-card" style="padding: 40px 24px; text-align: center;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px;">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <h3 style="font-size: 17px; font-weight: 700; color: #0b192c; margin-bottom: 8px;">
+        រង់ចាំការស្កេន QR Code ស្លាកសម្គាល់ទ្រព្យ
+      </h3>
+      <p style="font-size: 13.5px; color: #64748b; max-width: 320px; margin: 0 auto 20px; line-height: 1.5;">
+        សូមតម្រង់កាមេរ៉ាទៅលើ QR Code នៃស្លាកសម្គាល់សារពើភណ្ឌ ឬបញ្ចូលកូដទ្រព្យសម្បត្តិ ដើម្បីមើលរូបភាព និងព័ត៌មានលម្អិត។
+      </p>
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: #475569; text-align: left; max-width: 340px; margin: 0 auto;">
+        <div style="font-weight: 700; color: #0b192c; margin-bottom: 6px;"><i class="fa-solid fa-lightbulb text-warning"></i> គន្លឹះស្កេន៖</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.5;">
+          <li>អាចស្កេនស្លាកសម្គាល់ទ្រព្យសម្បត្តិរដ្ឋ (State Asset Tag) ផ្ទាល់</li>
+          <li>អាចស្កេនរូបថត QR Code ដែលថតទុកក្នុងទូរស័ព្ទ</li>
+          <li>ឬវាយបញ្ចូលកូដ (ឧ. NP-AST-2026-001) រួចចុចស្វែងរក</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Live Scanned Asset Dossier Card -->
+    <div id="asset-dossier-card" class="asset-dossier-card" style="display: none; border: 2px solid #fcd34d; animation: slideDown 0.35s ease-out;">
+      <!-- Header -->
+      <div class="asset-dossier-header">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #fbbf24; font-weight: 700;">
+            <i class="fa-solid fa-boxes-stacked"></i> សារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ
+          </span>
+          <div id="dossier-code" style="font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 700; color: #ffffff; margin-top: 2px;">
+            NP-AST-2026-001
+          </div>
+        </div>
+        <span id="dossier-condition-badge" class="badge" style="font-size: 12.5px; padding: 6px 12px;">
+          <!-- Injected by JS -->
+        </span>
+      </div>
+
+      <!-- Body Content -->
+      <div style="padding: 20px;">
+        <!-- Top Row: Photo & Main Names -->
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 18px; align-items: start; margin-bottom: 18px;">
+          <div id="dossier-photo-container">
+            <!-- Photo Injected by JS -->
+          </div>
+          <div>
+            <h3 id="dossier-name-kh" style="font-family: var(--font-moul); font-size: 16px; color: #0b192c; line-height: 1.4; margin-bottom: 4px;">
+              <!-- Injected by JS -->
+            </h3>
+            <div id="dossier-name-en" style="font-size: 13px; color: #64748b; margin-bottom: 10px;">
+              <!-- Injected by JS -->
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <span id="dossier-category-badge" class="badge" style="font-size: 11.5px; padding: 4px 8px;"></span>
+              <span id="dossier-acq-badge" class="badge badge-outline-secondary" style="font-size: 11.5px; padding: 4px 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Specifications Breakdown Table -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px;">
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-location-dot text-danger"></i> ទីតាំងបច្ចុប្បន្ន</span>
+            <span id="dossier-location" class="asset-spec-value">សាលាឃុំនគរភាស</span>
+          </div>
+
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-user-shield text-primary"></i> មន្ត្រីកាន់កាប់</span>
+            <span id="dossier-custodian" class="asset-spec-value">
+              <!-- Injected by JS -->
+            </span>
+          </div>
+
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-tag" style="color: #8b5cf6;"></i> ម៉ាក / ម៉ូដែល</span>
+            <span id="dossier-model" class="asset-spec-value">--</span>
+          </div>
+
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-fingerprint" style="color: #0284c7;"></i> លេខស៊េរី (S/N)</span>
+            <span id="dossier-serial" class="asset-spec-value font-latin">--</span>
+          </div>
+
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-calendar-day" style="color: #d97706;"></i> កាលបរិច្ឆេទទទួល</span>
+            <span id="dossier-acq-date" class="asset-spec-value">--</span>
+          </div>
+
+          <div class="asset-spec-item">
+            <span class="asset-spec-label"><i class="fa-solid fa-coins" style="color: #10b981;"></i> តម្លៃដើម</span>
+            <span id="dossier-value" class="asset-spec-value" style="color: #059669; font-size: 14px;">--</span>
+          </div>
+        </div>
+
+        <!-- Notes if any -->
+        <div id="dossier-notes-container" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 12.5px; color: #92400e;">
+          <strong><i class="fa-solid fa-note-sticky"></i> កំណត់សម្គាល់៖</strong> <span id="dossier-notes-text"></span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <a id="dossier-detail-btn" href="#" class="btn btn-primary" style="justify-content: center; font-weight: 600;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> មើលព័ត៌មានលម្អិត
+          </a>
+          <a id="dossier-qr-btn" href="#" target="_blank" class="btn btn-outline-secondary" style="justify-content: center; font-weight: 600;">
+            <i class="fa-solid fa-print"></i> បោះពុម្ពស្លាក QR
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Photo Zoom Modal -->
+<div id="asset-photo-zoom-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: #ffffff; border-radius: 16px; max-width: 540px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+    <div style="padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; background: #0b192c; color: #ffffff;">
+      <h4 id="zoom-modal-title" style="margin: 0; font-size: 15px; font-weight: 600;"></h4>
+      <button onclick="document.getElementById('asset-photo-zoom-modal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+    <div style="padding: 18px; text-align: center; background: #f8fafc;">
+      <img id="zoom-modal-img" src="" style="max-height: 440px; max-width: 100%; border-radius: 10px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Audio effects
+let audioEnabled = true;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playSuccessChime() {
+  if (!audioEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(880, now);
+    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.15); // D6
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.35);
+    osc2.stop(now + 0.35);
+  } catch (e) {
+    console.warn(e);
+  }
+}
+
+function playErrorBeep() {
+  if (!audioEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.setValueAtTime(180, now + 0.15);
+
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } catch (e) {
+    console.warn(e);
+  }
+}
+
+// Sound toggle
+document.getElementById('btn-sound-toggle').addEventListener('click', function() {
+  audioEnabled = !audioEnabled;
+  this.innerHTML = audioEnabled 
+    ? '<i class="fa-solid fa-volume-high"></i> សំឡេង: បើក' 
+    : '<i class="fa-solid fa-volume-xmark"></i> សំឡេង: បិទ';
+  this.classList.toggle('btn-outline-secondary', audioEnabled);
+  this.classList.toggle('btn-secondary', !audioEnabled);
+});
+
+// Tab switcher
+function switchScannerTab(mode) {
+  const isCam = mode === 'camera';
+  document.getElementById('tab-btn-camera').classList.toggle('active', isCam);
+  document.getElementById('tab-btn-file').classList.toggle('active', !isCam);
+  document.getElementById('camera-mode-container').style.display = isCam ? 'block' : 'none';
+  document.getElementById('file-mode-container').style.display = !isCam ? 'block' : 'none';
+
+  if (!isCam && isScanning) {
+    stopScanner();
+  }
+}
+
+// Scanner Core
+let html5QrCode = null;
+let isScanning = false;
+let isProcessing = false;
+let lastScannedCode = '';
+let lastScannedTime = 0;
+const sessionHistory = [];
+
+function getScannerInstance() {
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("reader");
+  }
+  return html5QrCode;
+}
+
+async function requestAndStartCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach(track => track.stop());
+
+    document.getElementById('camera-prompt-box').style.display = 'none';
+
+    const devices = await Html5Qrcode.getCameras();
+    const cameraSelect = document.getElementById('camera-select');
+    cameraSelect.innerHTML = '';
+
+    if (devices && devices.length) {
+      devices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.id;
+        option.text = device.label || `កាមេរ៉ាទី ${index + 1}`;
+        cameraSelect.appendChild(option);
+      });
+
+      const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear'));
+      const selectedId = backCam ? backCam.id : devices[0].id;
+      cameraSelect.value = selectedId;
+
+      startScanner(selectedId);
+    } else {
+      startScannerWithFacingMode();
+    }
+  } catch (err) {
+    console.error("Camera access error:", err);
+    document.getElementById('camera-prompt-box').style.display = 'flex';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> គ្មានសិទ្ធិបើកកាមេរ៉ា';
+    document.getElementById('camera-status-badge').style.background = '#fee2e2';
+    document.getElementById('camera-status-badge').style.color = '#dc2626';
+    if (window.toast) toast.warning("សូមអនុញ្ញាតសិទ្ធិបើកកាមេរ៉ានៅលើ Browser ដើម្បីស្កេន!", "ត្រូវការសិទ្ធិកាមេរ៉ា");
+  }
+}
+
+function startScanner(cameraId) {
+  const qr = getScannerInstance();
+  const config = {
+    fps: 15,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0
+  };
+
+  qr.start(
+    cameraId,
+    config,
+    (decodedText) => onScanSuccess(decodedText),
+    (errorMessage) => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('camera-prompt-box').style.display = 'none';
+    document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-power-off"></i> បិទកាមេរ៉ា';
+    document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-danger';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-circle-dot"></i> កំពុងស្កេន...';
+    document.getElementById('camera-status-badge').style.background = 'rgba(16, 185, 129, 0.2)';
+    document.getElementById('camera-status-badge').style.color = '#34d399';
+    document.getElementById('scanner-overlay').style.display = 'block';
+  }).catch(err => {
+    console.error(err);
+    isScanning = false;
+  });
+}
+
+function startScannerWithFacingMode() {
+  const qr = getScannerInstance();
+  const config = { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
+  qr.start(
+    { facingMode: "environment" },
+    config,
+    (decodedText) => onScanSuccess(decodedText),
+    (errorMessage) => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('camera-prompt-box').style.display = 'none';
+    document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-power-off"></i> បិទកាមេរ៉ា';
+    document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-danger';
+    document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-circle-dot"></i> កំពុងស្កេន...';
+    document.getElementById('camera-status-badge').style.background = 'rgba(16, 185, 129, 0.2)';
+    document.getElementById('camera-status-badge').style.color = '#34d399';
+    document.getElementById('scanner-overlay').style.display = 'block';
+  }).catch(err => console.error(err));
+}
+
+function stopScanner() {
+  if (html5QrCode && isScanning) {
+    html5QrCode.stop().then(() => {
+      isScanning = false;
+      document.getElementById('camera-prompt-box').style.display = 'flex';
+      document.getElementById('btn-toggle-cam').innerHTML = '<i class="fa-solid fa-play"></i> បើកកាមេរ៉ា';
+      document.getElementById('btn-toggle-cam').className = 'btn btn-sm btn-primary';
+      document.getElementById('camera-status-badge').innerHTML = '<i class="fa-solid fa-pause"></i> កាមេរ៉ាបានបិទ';
+      document.getElementById('camera-status-badge').style.background = '#334155';
+      document.getElementById('camera-status-badge').style.color = '#cbd5e1';
+      document.getElementById('scanner-overlay').style.display = 'none';
+    }).catch(err => console.error(err));
+  }
+}
+
+// Button Events
+document.getElementById('btn-allow-camera').addEventListener('click', requestAndStartCamera);
+document.getElementById('btn-toggle-cam').addEventListener('click', function() {
+  if (isScanning) stopScanner(); else requestAndStartCamera();
+});
+
+document.getElementById('camera-select').addEventListener('change', function() {
+  if (this.value) {
+    if (isScanning && html5QrCode) {
+      html5QrCode.stop().then(() => startScanner(this.value));
+    } else {
+      startScanner(this.value);
+    }
+  }
+});
+
+// File input scan
+document.getElementById('qr-file-input').addEventListener('change', function(e) {
+  if (e.target.files.length === 0) return;
+  const imageFile = e.target.files[0];
+  const qr = getScannerInstance();
+
+  qr.scanFile(imageFile, true)
+    .then(decodedText => {
+      onScanSuccess(decodedText);
+      if (window.toast) toast.success("បានស្កេន QR Code ពីរូបភាពជោគជ័យ!", "ជោគជ័យ");
+    })
+    .catch(err => {
+      playErrorBeep();
+      if (window.toast) toast.error("មិនអាចស្វែងរក QR Code ក្នុងរូបភាពនេះទេ!", "បរាជ័យ");
+    });
+});
+
+// Scan success debounce
+function onScanSuccess(code) {
+  const now = Date.now();
+  if (code === lastScannedCode && (now - lastScannedTime) < 3000) return;
+  if (isProcessing) return;
+
+  isProcessing = true;
+  lastScannedCode = code;
+  lastScannedTime = now;
+
+  lookupAsset(code);
+}
+
+// Manual form submit
+document.getElementById('manual-asset-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const input = document.getElementById('manual-asset-input');
+  const code = input.value.trim();
+  if (!code) return;
+  lookupAsset(code);
+});
+
+// API lookup
+function lookupAsset(code) {
+  fetch('/api/assets/scan', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ code: code })
+  })
+  .then(res => res.json())
+  .then(data => {
+    isProcessing = false;
+    if (data.success && data.asset) {
+      playSuccessChime();
+      renderAssetDossier(data.asset);
+      addToHistory(data.asset);
+      if (window.toast) {
+        toast.success(data.message || `បានរកឃើញ «${data.asset.name_kh}»`, "ទ្រព្យសម្បត្តិរដ្ឋ");
+      }
+    } else {
+      playErrorBeep();
+      if (window.toast) {
+        toast.warning(data.message || "រកមិនឃើញទ្រព្យសម្បត្តិទេ!", "រកមិនឃើញ");
+      }
+    }
+  })
+  .catch(err => {
+    isProcessing = false;
+    playErrorBeep();
+    if (window.toast) toast.error("មានបញ្ហាក្នុងការតភ្ជាប់ប្រព័ន្ធ!", "កំហុសបច្ចេកទេស");
+  });
+}
+
+// Render Dossier Card
+function renderAssetDossier(asset) {
+  document.getElementById('asset-empty-state').style.display = 'none';
+  const card = document.getElementById('asset-dossier-card');
+  card.style.display = 'block';
+
+  document.getElementById('dossier-code').innerText = asset.asset_code;
+  document.getElementById('dossier-name-kh').innerText = asset.name_kh;
+  document.getElementById('dossier-name-en').innerText = asset.name_en ? `(${asset.name_en})` : '';
+
+  // Condition Badge
+  const condBadge = document.getElementById('dossier-condition-badge');
+  condBadge.className = `badge ${asset.condition_badge_class}`;
+  condBadge.innerHTML = `<i class="${asset.condition_icon}"></i> ${asset.condition_title_kh}`;
+
+  // Category & Acquisition
+  const catBadge = document.getElementById('dossier-category-badge');
+  catBadge.className = `badge ${asset.category_badge_class}`;
+  catBadge.innerHTML = `<i class="${asset.category_icon}"></i> ${asset.category_title_kh}`;
+
+  const acqBadge = document.getElementById('dossier-acq-badge');
+  acqBadge.innerText = asset.acquisition_type_title_kh;
+
+  // Specs
+  document.getElementById('dossier-location').innerText = asset.location;
+  document.getElementById('dossier-model').innerText = asset.brand_model;
+  document.getElementById('dossier-serial').innerText = asset.serial_number;
+  document.getElementById('dossier-acq-date').innerText = asset.acquisition_date_kh || asset.acquisition_date || '--';
+  document.getElementById('dossier-value').innerText = asset.original_value_formatted;
+
+  // Custodian
+  const custEl = document.getElementById('dossier-custodian');
+  if (asset.custodian) {
+    custEl.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        ${asset.custodian.photo ? `<img src="${asset.custodian.photo}" style="width: 26px; height: 26px; border-radius: 6px; object-fit: cover;">` : ''}
+        <span>${asset.custodian.name_kh} <span style="font-weight: normal; color: #64748b;">(${asset.custodian.position})</span></span>
+      </div>
+    `;
+  } else {
+    custEl.innerHTML = `<span style="color: #94a3b8; font-weight: normal;">មិនទាន់ចាត់តាំង</span>`;
+  }
+
+  // Photo
+  const photoCont = document.getElementById('dossier-photo-container');
+  if (asset.photo) {
+    photoCont.innerHTML = `
+      <div class="asset-photo-box" onclick="openPhotoZoom('${asset.photo}', '${asset.name_kh.replace(/'/g, "\\'")}')">
+        <img src="${asset.photo}" alt="${asset.name_kh}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: #f1f5f9; color: #94a3b8; font-size: 40px;">
+          <i class="${asset.category_icon}"></i>
+        </div>
+        <div class="zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i> ពង្រីក</div>
+      </div>
+    `;
+  } else {
+    photoCont.innerHTML = `
+      <div class="asset-photo-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; cursor: default;">
+        <i class="${asset.category_icon}" style="font-size: 40px; color: #94a3b8; margin-bottom: 6px;"></i>
+        <span style="font-size: 11px; color: #94a3b8;">គ្មានរូបភាព</span>
+      </div>
+    `;
+  }
+
+  // Notes
+  const notesCont = document.getElementById('dossier-notes-container');
+  if (asset.notes && asset.notes.trim()) {
+    notesCont.style.display = 'block';
+    document.getElementById('dossier-notes-text').innerText = asset.notes;
+  } else {
+    notesCont.style.display = 'none';
+  }
+
+  // Action Buttons
+  document.getElementById('dossier-detail-btn').href = asset.detail_url;
+  document.getElementById('dossier-qr-btn').href = asset.qr_tag_url;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Add to Session History
+function addToHistory(asset) {
+  const emptyRow = document.getElementById('empty-history-row');
+  if (emptyRow) emptyRow.remove();
+
+  const tbody = document.getElementById('session-history-tbody');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit' });
+
+  const existingRow = document.getElementById(`hist-row-${asset.id}`);
+  if (existingRow) {
+    existingRow.style.backgroundColor = '#fef3c7';
+    setTimeout(() => existingRow.style.backgroundColor = '', 1500);
+    return;
+  }
+
+  const tr = document.createElement('tr');
+  tr.id = `hist-row-${asset.id}`;
+  tr.style.backgroundColor = '#fef3c7';
+  tr.innerHTML = `
+    <td style="padding: 10px 14px;">
+      <div style="font-weight: 700; color: #1e3a8a;">${asset.asset_code}</div>
+      <div style="font-size: 11px; color: #64748b;">${asset.name_kh}</div>
+    </td>
+    <td style="padding: 10px; vertical-align: middle;">
+      <span class="badge ${asset.condition_badge_class}" style="font-size: 10.5px;">${asset.condition_title_kh}</span>
+    </td>
+    <td style="padding: 10px; vertical-align: middle; color: #64748b; font-size: 11px;">
+      ${timeStr}
+    </td>
+    <td style="padding: 10px 14px; text-align: right; vertical-align: middle;">
+      <a href="${asset.detail_url}" class="btn btn-xs btn-outline-primary" style="font-size: 11px; padding: 3px 8px;">
+        <i class="fa-solid fa-eye"></i> មើល
+      </a>
+    </td>
+  `;
+  tbody.insertBefore(tr, tbody.firstChild);
+  setTimeout(() => tr.style.backgroundColor = '', 1500);
+
+  sessionHistory.push(asset);
+  document.getElementById('session-history-count').innerText = `${sessionHistory.length} មុខ`;
+}
+
+function openPhotoZoom(src, title) {
+  const modal = document.getElementById('asset-photo-zoom-modal');
+  document.getElementById('zoom-modal-title').innerText = title;
+  document.getElementById('zoom-modal-img').src = src;
+  modal.style.display = 'flex';
+}
+
+document.getElementById('asset-photo-zoom-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+{% endblock %}

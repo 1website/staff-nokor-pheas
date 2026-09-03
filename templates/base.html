@@ -173,9 +173,14 @@
 
         <div class="menu-category">៦. ទ្រព្យសម្បត្តិរដ្ឋ</div>
         <a href="{{ url_for('assets_list') }}"
-          class="nav-link {% if request.path.startswith('/assets') %}active{% endif %}">
+          class="nav-link {% if request.path == '/assets' or (request.path.startswith('/assets/') and request.path != '/assets/scan') %}active{% endif %}">
           <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
           <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
+        </a>
+        <a href="{{ url_for('assets_scan') }}"
+          class="nav-link {% if request.path == '/assets/scan' %}active{% endif %}">
+          <i class="fa-solid fa-qrcode" style="color: #f59e0b;"></i>
+          <span>ស្កេន QR Code ទ្រព្យ</span>
         </a>
 
         <div class="menu-category">៧. វគ្គបណ្តុះបណ្តាល</div>
