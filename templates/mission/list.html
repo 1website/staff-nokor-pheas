@@ -145,12 +145,14 @@
               <span class="badge badge-info">{{ m.participant_count | kh_num }} នាក់</span>
             </td>
             <td style="white-space: nowrap;">
-              {% if m.status == 'completed' %}
+              {% if m.status == 'completed' or (m.end_date and m.end_date < today_iso) %}
               <span class="badge badge-success"><i class="fa-solid fa-check"></i> បានបញ្ចប់</span>
-              {% elif m.status == 'in_progress' %}
+              {% elif m.status == 'in_progress' or (m.start_date and m.end_date and m.start_date <= today_iso <= m.end_date) %}
               <span class="badge badge-warning"><i class="fa-solid fa-spinner fa-spin"></i> កំពុងចុះ</span>
+              {% elif m.status == 'cancelled' %}
+              <span class="badge badge-danger"><i class="fa-solid fa-ban"></i> បានបោះបង់</span>
               {% else %}
-              <span class="badge badge-info">បានគ្រោង</span>
+              <span class="badge badge-info"><i class="fa-regular fa-clock"></i> បានគ្រោង</span>
               {% endif %}
             </td>
             <td style="text-align: center;">

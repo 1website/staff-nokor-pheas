@@ -223,12 +223,14 @@
                 <td><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> {{ m.destination }}</td>
                 <td class="text-nowrap">{{ m.start_date }} ដល់ {{ m.end_date }} ({{ m.total_days | kh_num }} ថ្ងៃ)</td>
                 <td>
-                  {% if m.status == 'completed' %}
-                  <span class="badge badge-success text-nowrap">បានបញ្ចប់</span>
-                  {% elif m.status == 'in_progress' %}
-                  <span class="badge badge-warning text-nowrap">កំពុងអនុវត្ត</span>
+                  {% if m.status == 'completed' or (m.end_date and m.end_date < today_iso) %}
+                  <span class="badge badge-success text-nowrap"><i class="fa-solid fa-check"></i> បានបញ្ចប់</span>
+                  {% elif m.status == 'in_progress' or (m.start_date and m.end_date and m.start_date <= today_iso <= m.end_date) %}
+                  <span class="badge badge-warning text-nowrap"><i class="fa-solid fa-spinner fa-spin"></i> កំពុងចុះ</span>
+                  {% elif m.status == 'cancelled' %}
+                  <span class="badge badge-danger text-nowrap"><i class="fa-solid fa-ban"></i> បានបោះបង់</span>
                   {% else %}
-                  <span class="badge badge-info text-nowrap">បានគ្រោង</span>
+                  <span class="badge badge-info text-nowrap"><i class="fa-regular fa-clock"></i> បានគ្រោង</span>
                   {% endif %}
                 </td>
               </tr>

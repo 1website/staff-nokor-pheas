@@ -296,6 +296,7 @@ def dashboard():
     pending_leaves = cursor.fetchall()
 
     # 4. Recent Active Missions
+    sync_mission_statuses(conn)
     cursor.execute("""
         SELECT * FROM missions
         ORDER BY start_date DESC
@@ -1597,6 +1598,43 @@ def leave_print_slip(leave_id):
 # MISSIONS & FIELDWORK TRACKING
 # ==============================================================================
 
+def sync_mission_statuses(conn=None):
+    """
+    Synchronizes mission statuses dynamically based on the current date:
+    - If end_date < today (and not cancelled) -> 'completed' (បានបញ្ចប់)
+    - If start_date <= today <= end_date (and currently planned) -> 'in_progress' (កំពុងចុះ)
+    - If start_date > today (and not cancelled) -> 'planned' (បានគ្រោង)
+    """
+    close_when_done = False
+    if conn is None:
+        conn = get_db()
+        close_when_done = True
+    try:
+        today_str = date.today().strftime("%Y-%m-%d")
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE missions
+            SET status = 'completed'
+            WHERE end_date < ? AND status != 'completed' AND status != 'cancelled'
+        """, (today_str,))
+        cursor.execute("""
+            UPDATE missions
+            SET status = 'in_progress'
+            WHERE start_date <= ? AND end_date >= ? AND status = 'planned'
+        """, (today_str, today_str))
+        cursor.execute("""
+            UPDATE missions
+            SET status = 'planned'
+            WHERE start_date > ? AND status != 'planned' AND status != 'cancelled'
+        """, (today_str,))
+        conn.commit()
+    except Exception as e:
+        print(f"[Mission Sync Warning] {e}")
+    finally:
+        if close_when_done:
+            conn.close()
+
+
 @app.route("/missions")
 @login_required
 def mission_list():
@@ -1615,6 +1653,9 @@ def mission_list():
 
     conn = get_db()
     cursor = conn.cursor()
+
+    # Automatically synchronize status based on mission dates before querying
+    sync_mission_statuses(conn)
 
     query = """
         SELECT m.*, COUNT(mp.id) as participant_count
@@ -1726,6 +1767,15 @@ def mission_create():
         last_id = cursor.fetchone()[0] or 0
         mission_code = f"MS-2026-{str(last_id + 1).zfill(3)}"
 
+        # Determine initial status based on dates
+        today_str = date.today().strftime("%Y-%m-%d")
+        if end_date < today_str:
+            initial_status = "completed"
+        elif start_date > today_str:
+            initial_status = "planned"
+        else:
+            initial_status = "in_progress"
+
         # Handle reference document upload (File រូបភាព ឬ PDF)
         attachment_filename = None
         if "attachment" in request.files:
@@ -1744,10 +1794,10 @@ def mission_create():
             INSERT INTO missions (
                 mission_code, title, destination, start_date, end_date, total_days,
                 mission_order_no, purpose, allowance_per_day, total_allowance, attachment, status, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'in_progress', ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             mission_code, title, destination, start_date, end_date, total_days,
-            mission_order_no, purpose, allowance_per_day, total_allowance, attachment_filename, session.get("user_id")
+            mission_order_no, purpose, allowance_per_day, total_allowance, attachment_filename, initial_status, session.get("user_id")
         ))
         new_mission_id = cursor.lastrowid
 
