@@ -1284,6 +1284,24 @@ def attendance_scan():
     )
 
 
+def get_public_base_url():
+    env_url = os.environ.get("APP_URL") or os.environ.get("BASE_URL") or os.environ.get("NEXT_PUBLIC_APP_URL")
+    if env_url:
+        return env_url.rstrip("/")
+    vercel_url = os.environ.get("VERCEL_URL")
+    if vercel_url:
+        return f"https://{vercel_url.rstrip('/')}"
+    try:
+        from flask import request, has_request_context
+        if has_request_context():
+            proto = request.headers.get("X-Forwarded-Proto", request.scheme)
+            host = request.headers.get("X-Forwarded-Host", request.host)
+            return f"{proto}://{host}".rstrip("/")
+    except Exception:
+        pass
+    return "http://localhost:5000"
+
+
 def get_asset_by_code_or_payload(raw_code):
     if not raw_code:
         return None
@@ -1293,16 +1311,22 @@ def get_asset_by_code_or_payload(raw_code):
     if raw_code.startswith("NOKOR_PHEAS_ASSET:"):
         parts = raw_code.replace("NOKOR_PHEAS_ASSET:", "").split("|")
         clean_code = parts[0].strip()
+    elif "/a/" in raw_code:
+        clean_code = raw_code.rstrip("/").split("/a/")[-1].strip()
+    elif "/assets/view/" in raw_code:
+        clean_code = raw_code.rstrip("/").split("/assets/view/")[-1].strip()
+    elif "/assets/code/" in raw_code:
+        clean_code = raw_code.rstrip("/").split("/assets/code/")[-1].strip()
+    elif "/assets/" in raw_code:
+        last_seg = raw_code.rstrip("/").split("/")[-1].strip()
+        if last_seg.isdigit() or last_seg.upper().startswith("NP-AST-"):
+            clean_code = last_seg
     elif "asset_code=" in raw_code:
         import urllib.parse
         parsed = urllib.parse.urlparse(raw_code)
         params = urllib.parse.parse_qs(parsed.query)
         if "asset_code" in params:
             clean_code = params["asset_code"][0].strip()
-    elif "/assets/" in raw_code:
-        parts = raw_code.rstrip("/").split("/")
-        if parts[-1].isdigit():
-            clean_code = parts[-1]
 
     conn = get_db()
     cursor = conn.cursor()
@@ -3734,8 +3758,9 @@ def assets_detail(asset_id):
     cursor.execute("SELECT id, officer_code, name_kh, position_title_kh FROM staff WHERE status = 'active' ORDER BY officer_code ASC")
     staff_list = cursor.fetchall()
 
-    # Generate QR Code Data (pointing to asset info/code)
-    qr_content = f"NOKOR_PHEAS_ASSET:{asset['asset_code']}|{asset['name_kh']}|{asset['condition_status']}"
+    # Generate QR Code Data (pointing to direct mobile view URL)
+    base_url = get_public_base_url()
+    qr_content = f"{base_url}/a/{asset['asset_code']}"
     qr_code_base64 = generate_qr_base64(qr_content)
 
     conn.close()
@@ -3983,7 +4008,8 @@ def assets_qr_tag(asset_id):
         flash("រកមិនឃើញព័ត៌មានទ្រព្យសម្បត្តិនេះទេ!", "danger")
         return redirect(url_for("assets_list"))
 
-    qr_content = f"NOKOR_PHEAS_ASSET:{asset['asset_code']}|{asset['name_kh']}|{asset['condition_status']}"
+    base_url = get_public_base_url()
+    qr_content = f"{base_url}/a/{asset['asset_code']}"
     qr_code_base64 = generate_qr_base64(qr_content)
 
     return render_template(
@@ -4065,6 +4091,45 @@ def assets_view_by_code(code):
         return redirect(url_for("assets_detail", asset_id=asset["id"]))
     flash(f"រកមិនឃើញទ្រព្យសម្បត្តិដែលមានកូដ «{code}» ទេ!", "danger")
     return redirect(url_for("assets_list"))
+
+
+@app.route("/a/<path:code>")
+@app.route("/assets/view/<path:code>")
+def assets_public_view(code):
+    asset = get_asset_by_code_or_payload(code)
+    if not asset:
+        flash(f"រកមិនឃើញទិន្នន័យទ្រព្យសម្បត្តិរដ្ឋ «{code}» ក្នុងប្រព័ន្ធឡើយ!", "danger")
+        return redirect(url_for("login"))
+    
+    asset_id = asset["id"]
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.*,
+               sf.name_kh as from_staff_name, sf.position_title_kh as from_staff_pos,
+               st.name_kh as to_staff_name, st.position_title_kh as to_staff_pos
+        FROM asset_logs l
+        LEFT JOIN staff sf ON l.from_staff_id = sf.id
+        LEFT JOIN staff st ON l.to_staff_id = st.id
+        WHERE l.asset_id = ?
+        ORDER BY l.id DESC
+    """, (asset_id,))
+    logs = cursor.fetchall()
+    conn.close()
+
+    cat_info = ASSET_CATEGORIES.get(asset["category"], {})
+    cond_info = ASSET_CONDITIONS.get(asset["condition_status"], {})
+    acq_info = ASSET_ACQUISITIONS.get(asset["acquisition_type"], {})
+
+    return render_template(
+        "assets/public_view.html",
+        asset=asset,
+        logs=logs,
+        cat_info=cat_info,
+        cond_info=cond_info,
+        acq_info=acq_info,
+        today_kh=format_khmer_date(date.today())
+    )
 
 
 @app.route('/settings/clear-demo-data', methods=["POST"])

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{{ asset.name_kh }} ({{ asset.asset_code }}) | សារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋបាលឃុំនគរភាស</title>
+  
+  <!-- Google Fonts for crisp Khmer rendering -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;600;700&family=Kantumruy+Pro:wght@400;500;600;700&family=Moul&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #0f172a;
+      --primary-accent: #1e3a8a;
+      --gold: #f59e0b;
+      --gold-dark: #d97706;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --font-main: 'Kantumruy Pro', 'Battambang', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-moul: 'Moul', serif;
+      --font-code: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 0 0 40px 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* Top National Header */
+    .top-header {
+      width: 100%;
+      background: linear-gradient(180deg, #0b192c 0%, #1e293b 100%);
+      color: #ffffff;
+      padding: 24px 16px 20px 16px;
+      text-align: center;
+      border-bottom: 3px solid var(--gold);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      position: relative;
+    }
+
+    .national-emblem {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1.5px solid var(--gold);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .kingdom-title {
+      font-family: var(--font-moul);
+      font-size: 13.5px;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+
+    .motto-title {
+      font-family: var(--font-moul);
+      font-size: 11px;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+
+    .commune-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--gold);
+      color: #fef08a;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Main Asset Card */
+    .asset-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      margin-top: -10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Photo Container */
+    .photo-wrapper {
+      width: 100%;
+      background: #0f172a;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      max-height: 320px;
+    }
+
+    .photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      max-height: 320px;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+    }
+
+    .photo-placeholder {
+      padding: 50px 20px;
+      text-align: center;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-placeholder i {
+      font-size: 64px;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    .verified-banner {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(16, 185, 129, 0.95);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Asset Info Body */
+    .asset-body {
+      padding: 20px;
+    }
+
+    .tag-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .asset-code-pill {
+      font-family: var(--font-code);
+      font-size: 14px;
+      font-weight: 800;
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .asset-title-kh {
+      font-family: var(--font-moul);
+      font-size: 18px;
+      color: #0b192c;
+      line-height: 1.45;
+      margin-bottom: 4px;
+    }
+
+    .asset-title-en {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* Badges Bar */
+    .badges-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-info { background: #e0f2fe; color: #0369a1; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-secondary { background: #f1f5f9; color: #475569; }
+
+    /* Specification Grid */
+    .spec-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 9px 0;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 13px;
+    }
+
+    .spec-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .spec-item:first-child {
+      padding-top: 0;
+    }
+
+    .spec-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 125px;
+    }
+
+    .spec-label i {
+      width: 16px;
+      text-align: center;
+    }
+
+    .spec-value {
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: right;
+      word-break: break-word;
+    }
+
+    /* Custodian Highlight Box */
+    .custodian-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .custodian-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+    }
+
+    .custodian-avatar-placeholder {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      background: var(--primary-accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .custodian-info {
+      flex: 1;
+      font-size: 12.5px;
+    }
+
+    .custodian-title-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #1e40af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .custodian-name {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Notes Box */
+    .notes-box {
+      background: #fffbeb;
+      border-left: 4px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: #92400e;
+      margin-bottom: 18px;
+    }
+
+    /* History Timeline */
+    .history-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .history-header {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: #e2e8f0;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+
+    .timeline-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f59e0b;
+      border: 2px solid white;
+      box-shadow: 0 0 0 2px #fde68a;
+    }
+
+    .timeline-date {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .timeline-desc {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    /* Action Buttons */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #0b192c;
+      color: white;
+    }
+    .btn-primary:hover { background: #1e293b; }
+
+    .btn-outline {
+      background: white;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-outline:hover { background: #f8fafc; }
+
+    /* Footer */
+    .page-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .lightbox-modal img {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 12px;
+      object-fit: contain;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Official National Header -->
+  <header class="top-header">
+    <div class="national-emblem">
+      <i class="fa-solid fa-landmark"></i>
+    </div>
+    <div class="kingdom-title">ព្រះរាជាណាចក្រកម្ពុជា</div>
+    <div class="motto-title">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+    <div class="commune-title">រដ្ឋបាលឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប</div>
+    <div class="header-badge">
+      <i class="fa-solid fa-shield-check"></i> សារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ (STATE ASSET)
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="asset-card">
+      
+      <!-- Photo Showcase -->
+      <div class="photo-wrapper">
+        <div class="verified-banner">
+          <i class="fa-solid fa-circle-check"></i> បានផ្ទៀងផ្ទាត់ផ្លូវការ
+        </div>
+
+        {% if asset.photo %}
+        <img src="{{ asset.photo }}" alt="{{ asset.name_kh }}" onclick="openLightbox(this.src)" onerror="this.style.display='none'; document.getElementById('photo-fallback').style.display='flex';">
+        <div id="photo-fallback" class="photo-placeholder" style="display: none;">
+          <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+          <span>{{ asset.name_kh }}</span>
+        </div>
+        {% else %}
+        <div class="photo-placeholder">
+          <i class="{{ cat_info.icon or 'fa-solid fa-box' }}"></i>
+          <span style="font-size: 13px; font-weight: 500;">សម្ភារៈមិនទាន់បានបញ្ចូលរូបថត</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Asset Body -->
+      <div class="asset-body">
+        
+        <!-- Tag & Code -->
+        <div class="tag-row">
+          <span class="asset-code-pill" id="assetCodeTag">
+            <i class="fa-solid fa-qrcode"></i> {{ asset.asset_code }}
+          </span>
+          <span class="badge {{ cond_info.badge_class or 'badge-success' }}">
+            <i class="{{ cond_info.icon or 'fa-solid fa-circle-check' }}"></i> {{ cond_info.title_kh or asset.condition_status }}
+          </span>
+        </div>
+
+        <!-- Name -->
+        <h1 class="asset-title-kh">{{ asset.name_kh }}</h1>
+        {% if asset.name_en %}
+        <div class="asset-title-en font-latin">{{ asset.name_en }}</div>
+        {% endif %}
+
+        <!-- Badges Bar -->
+        <div class="badges-bar">
+          <span class="badge {{ cat_info.badge_class or 'badge-secondary' }}">
+            <i class="{{ cat_info.icon or 'fa-solid fa-tag' }}"></i> {{ cat_info.title_kh or asset.category }}
+          </span>
+          {% if acq_info.title_kh %}
+          <span class="badge badge-secondary">
+            <i class="fa-solid fa-hand-holding-dollar"></i> {{ acq_info.title_kh }}
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- Custodian Highlight Card -->
+        {% if asset.custodian_name %}
+        <div class="custodian-card">
+          {% if asset.custodian_photo %}
+          <img src="{{ asset.custodian_photo }}" alt="{{ asset.custodian_name }}" class="custodian-avatar">
+          {% else %}
+          <div class="custodian-avatar-placeholder">
+            {{ asset.custodian_name[:1] }}
+          </div>
+          {% endif %}
+          <div class="custodian-info">
+            <div class="custodian-title-tag"><i class="fa-solid fa-user-shield"></i> មន្ត្រីកាន់កាប់ និងប្រើប្រាស់</div>
+            <div class="custodian-name">{{ asset.custodian_name }}</div>
+            <div style="color: #64748b;">{{ asset.custodian_position or 'មន្ត្រីរដ្ឋបាលឃុំ' }}</div>
+            {% if asset.custodian_phone %}
+            <div style="color: #0284c7; font-size: 11.5px; margin-top: 2px;">
+              <i class="fa-solid fa-phone"></i> {{ asset.custodian_phone }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Specifications Breakdown Table -->
+        <div class="spec-card">
+          <div class="spec-item">
+            <span class="spec-label"><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> ទីតាំងបច្ចុប្បន្ន</span>
+            <span class="spec-value">{{ asset.location or 'សាលាឃុំនគរភាស' }}</span>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-label"><i class="fa-solid fa-tag" style="color: #8b5cf6;"></i> ម៉ាក / ម៉ូដែល</span>
+            <span class="spec-value">{{ asset.brand_model or 'មិនមាន' }}</span>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-label"><i class="fa-solid fa-barcode" style="color: #0284c7;"></i> លេខស៊េរី (S/N)</span>
+            <span class="spec-value font-latin">{{ asset.serial_number or 'មិនមាន' }}</span>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-label"><i class="fa-solid fa-calendar-day" style="color: #d97706;"></i> កាលបរិច្ឆេទ</span>
+            <span class="spec-value">{{ asset.acquisition_date or 'មិនមាន' }}</span>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-label"><i class="fa-solid fa-coins" style="color: #10b981;"></i> តម្លៃដើម</span>
+            <span class="spec-value" style="color: #059669; font-size: 14px;">
+              {{ asset.original_value | currency if asset.original_value else '០ រៀល' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Notes if any -->
+        {% if asset.notes %}
+        <div class="notes-box">
+          <strong><i class="fa-solid fa-note-sticky"></i> កំណត់សម្គាល់៖</strong>
+          <div>{{ asset.notes }}</div>
+        </div>
+        {% endif %}
+
+        <!-- History Log if any -->
+        {% if logs and logs|length > 0 %}
+        <div class="history-card">
+          <div class="history-header">
+            <i class="fa-solid fa-clock-rotate-left text-warning"></i> ប្រវត្តិនៃការចាត់ចែងសម្ភារៈ
+          </div>
+          <div class="timeline">
+            {% for log in logs %}
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">{{ log.action_date }} • ដោយ {{ log.performed_by or 'រដ្ឋបាលឃុំ' }}</div>
+              <div class="timeline-desc">{{ log.description }}</div>
+              {% if log.to_staff_name %}
+              <div style="font-size: 11px; color: #64748b;">ប្រគល់ជូន៖ {{ log.to_staff_name }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons for user / staff -->
+        <div class="actions-grid">
+          {% if session.user_id %}
+          <a href="{{ url_for('assets_detail', asset_id=asset.id) }}" class="btn btn-primary">
+            <i class="fa-solid fa-sliders"></i> <span>គ្រប់គ្រងទ្រព្យនេះ</span>
+          </a>
+          <a href="{{ url_for('assets_qr_tag', asset_id=asset.id) }}" target="_blank" class="btn btn-outline">
+            <i class="fa-solid fa-print"></i> <span>បោះពុម្ពស្លាក QR</span>
+          </a>
+          {% else %}
+          <button onclick="copyCurrentLink()" class="btn btn-outline">
+            <i class="fa-solid fa-share-nodes"></i> <span>ចែករំលែកតំណ</span>
+          </button>
+          <a href="{{ url_for('login') }}" class="btn btn-primary">
+            <i class="fa-solid fa-right-to-bracket"></i> <span>ចូលប្រព័ន្ធរដ្ឋបាល</span>
+          </a>
+          {% endif %}
+        </div>
+
+      </div>
+    </article>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+      <div>ប្រព័ន្ធគ្រប់គ្រងរដ្ឋបាល និងបុគ្គលិកឃុំនគរភាស ស្រុកអង្គរជុំ ខេត្តសៀមរាប</div>
+      <div>ទិន្នន័យបានផ្ទៀងផ្ទាត់ផ្លូវការតាមរយៈ QR Code សារពើភណ្ឌរដ្ឋ • {{ today_kh }}</div>
+    </footer>
+  </main>
+
+  <!-- Lightbox Modal -->
+  <div id="lightboxModal" class="lightbox-modal" onclick="this.style.display='none'">
+    <img id="lightboxImg" src="" alt="Enlarged photo">
+  </div>
+
+  <script>
+    function openLightbox(src) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightboxModal').style.display = 'flex';
+    }
+
+    function copyCurrentLink() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert("បានចម្លងតំណភ្ជាប់ជោគជ័យ!");
+        });
+      } else {
+        alert(window.location.href);
+      }
+    }
+  </script>
+</body>
+</html>
