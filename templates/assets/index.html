@@ -2,39 +2,33 @@
 
 {% block title %}គ្រប់គ្រងទ្រព្យសម្បត្តិរដ្ឋ | រដ្ឋបាលឃុំនគរភាស{% endblock %}
 
-{% block page_title %}
-<div class="page-title-box">
-  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
-    <i class="fa-solid fa-boxes-stacked"></i>
-  </div>
-  <div>
-    <h2>បញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋ</h2>
-    <p class="subtitle">គ្រប់គ្រងអចលនទ្រព្យ ចលនទ្រព្យ បរិក្ខារការិយាល័យ យានយន្ត និងប្រវត្តិកាន់កាប់</p>
-  </div>
-</div>
-{% endblock %}
-
-{% block page_actions %}
-<div class="page-actions-box">
-  <a href="{{ url_for('assets_scan') }}" class="btn btn-warning" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; font-weight: 600;">
-    <i class="fa-solid fa-qrcode"></i>
-    <span>ស្កេន QR Code ទ្រព្យ</span>
-  </a>
-  <a href="{{ url_for('export_assets_excel_route', category=selected_category, condition=selected_condition, q=search_query) }}"
-    class="btn btn-success" title="ទាញយកបញ្ជីសារពើភណ្ឌជា Excel">
-    <i class="fa-solid fa-file-excel"></i>
-    <span>ទាញយក Excel</span>
-  </a>
-  {% if session.role in ['admin', 'clerk'] %}
-  <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
-    <i class="fa-solid fa-plus-circle"></i>
-    <span>ចុះបញ្ជីទ្រព្យថ្មី</span>
-  </a>
-  {% endif %}
-</div>
-{% endblock %}
-
 {% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-boxes-stacked text-gold"></i>
+      <span>គ្រប់គ្រងទ្រព្យសម្បត្តិរដ្ឋ (បញ្ជីសារពើភណ្ឌ)</span>
+    </h1>
+    <p>គ្រប់គ្រងអចលនទ្រព្យ ចលនទ្រព្យ បរិក្ខារការិយាល័យ យានយន្ត និងប្រវត្តិកាន់កាប់ រដ្ឋបាលឃុំនគរភាស</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('assets_scan') }}" class="btn btn-outline-warning" style="font-weight: 600;">
+      <i class="fa-solid fa-qrcode"></i>
+      <span>ស្កេន QR Code ទ្រព្យ</span>
+    </a>
+    <a href="{{ url_for('export_assets_excel_route', category=selected_category, condition=selected_condition, q=search_query) }}"
+      class="btn btn-success" title="ទាញយកបញ្ជីសារពើភណ្ឌជា Excel">
+      <i class="fa-solid fa-file-excel"></i>
+      <span>ទាញយក Excel</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus-circle"></i>
+      <span>+ បញ្ចូលទិន្នន័យទ្រព្យថ្មី</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
 <!-- 1. Key Statistics Cards -->
 <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
   <!-- Total Assets Count -->
@@ -159,9 +153,17 @@
       <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
       <span>បញ្ជីសារពើភណ្ឌជាក់ស្តែង</span>
     </h3>
-    <span style="font-size: 13px; color: var(--text-muted);">
-      រកឃើញសរុប <strong>{{ assets | length | kh_num }}</strong> មុខ
-    </span>
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span style="font-size: 13px; color: var(--text-muted);">
+        រកឃើញសរុប <strong>{{ assets | length | kh_num }}</strong> មុខ
+      </span>
+      {% if session.role in ['admin', 'clerk'] %}
+      <a href="{{ url_for('assets_new') }}" class="btn btn-primary btn-sm" style="font-weight: 600;">
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>+ បញ្ចូលទិន្នន័យទ្រព្យ</span>
+      </a>
+      {% endif %}
+    </div>
   </div>
 
   <div class="card-body" style="padding: 0;">

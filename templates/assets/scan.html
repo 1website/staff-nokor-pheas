@@ -217,34 +217,28 @@
 </style>
 {% endblock %}
 
-{% block page_title %}
-<div class="page-title-box">
-  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
-    <i class="fa-solid fa-qrcode"></i>
-  </div>
-  <div>
-    <h2>ស្កេនពិនិត្យទ្រព្យសម្បត្តិរដ្ឋតាម QR Code</h2>
-    <p class="subtitle">ពិនិត្យផ្ទៀងផ្ទាត់រូបភាព ឈ្មោះ ទីតាំង និងស្ថានភាពទ្រព្យសម្បត្តិរដ្ឋក្នុងឃុំនគរភាស</p>
-  </div>
-</div>
-{% endblock %}
-
-{% block page_actions %}
-<div class="page-actions-box">
-  <a href="{{ url_for('assets_list') }}" class="btn btn-outline-secondary">
-    <i class="fa-solid fa-list-check"></i>
-    <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
-  </a>
-  {% if session.role in ['admin', 'clerk'] %}
-  <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
-    <i class="fa-solid fa-plus-circle"></i>
-    <span>ចុះបញ្ជីទ្រព្យថ្មី</span>
-  </a>
-  {% endif %}
-</div>
-{% endblock %}
-
 {% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-qrcode text-gold"></i>
+      <span>ស្កេនពិនិត្យទ្រព្យសម្បត្តិរដ្ឋតាម QR Code</span>
+    </h1>
+    <p>ពិនិត្យផ្ទៀងផ្ទាត់រូបភាព ឈ្មោះ ទីតាំង និងស្ថានភាពទ្រព្យសម្បត្តិរដ្ឋក្នុងឃុំនគរភាស</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('assets_list') }}" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-list-check"></i>
+      <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('assets_new') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus-circle"></i>
+      <span>+ ចុះបញ្ជីទ្រព្យថ្មី</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
 <div class="asset-scanner-layout">
   
   <!-- LEFT COLUMN: Scanner & Search Controls -->

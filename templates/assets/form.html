@@ -2,28 +2,22 @@
 
 {% block title %}{% if is_edit %}កែប្រែព័ត៌មានទ្រព្យសម្បត្តិ{% else %}ចុះបញ្ជីសារពើភណ្ឌទ្រព្យថ្មី{% endif %} | រដ្ឋបាលឃុំនគរភាស{% endblock %}
 
-{% block page_title %}
-<div class="page-title-box">
-  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
-    <i class="fa-solid fa-boxes-stacked"></i>
-  </div>
-  <div>
-    <h2>{% if is_edit %}កែប្រែព័ត៌មានទ្រព្យសម្បត្តិ «{{ asset.name_kh }}»{% else %}ចុះបញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋថ្មី{% endif %}</h2>
-    <p class="subtitle">កត់ត្រាព័ត៌មានលម្អិត តម្លៃ ប្រភព ទីតាំង និងមន្ត្រីទទួលបន្ទុកកាន់កាប់</p>
-  </div>
-</div>
-{% endblock %}
-
-{% block page_actions %}
-<div class="page-actions-box">
-  <a href="{% if is_edit %}{{ url_for('assets_detail', asset_id=asset.id) }}{% else %}{{ url_for('assets_list') }}{% endif %}" class="btn btn-outline">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>ត្រឡប់ក្រោយ</span>
-  </a>
-</div>
-{% endblock %}
-
 {% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-boxes-stacked text-gold"></i>
+      <span>{% if is_edit %}កែប្រែព័ត៌មានទ្រព្យសម្បត្តិ «{{ asset.name_kh }}»{% else %}ចុះបញ្ជីសារពើភណ្ឌទ្រព្យសម្បត្តិរដ្ឋថ្មី (បញ្ចូលទិន្នន័យ){% endif %}</span>
+    </h1>
+    <p>កត់ត្រាព័ត៌មានលម្អិត តម្លៃ ប្រភព ទីតាំង និងមន្ត្រីទទួលបន្ទុកកាន់កាប់ រដ្ឋបាលឃុំនគរភាស</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% if is_edit %}{{ url_for('assets_detail', asset_id=asset.id) }}{% else %}{{ url_for('assets_list') }}{% endif %}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>ត្រឡប់ក្រោយ</span>
+    </a>
+  </div>
+</div>
 <div style="max-width: 950px; margin: 0 auto;">
   <div class="card">
     <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 18px 24px;">

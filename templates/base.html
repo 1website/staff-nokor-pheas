@@ -173,7 +173,7 @@
 
         <div class="menu-category">៦. ទ្រព្យសម្បត្តិរដ្ឋ</div>
         <a href="{{ url_for('assets_list') }}"
-          class="nav-link {% if request.path == '/assets' or (request.path.startswith('/assets/') and request.path != '/assets/scan') %}active{% endif %}">
+          class="nav-link {% if request.path == '/assets' or (request.path.startswith('/assets/') and request.path not in ['/assets/scan', '/assets/new']) %}active{% endif %}">
           <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
           <span>បញ្ជីសារពើភណ្ឌទ្រព្យ</span>
         </a>
@@ -182,6 +182,13 @@
           <i class="fa-solid fa-qrcode" style="color: #f59e0b;"></i>
           <span>ស្កេន QR Code ទ្រព្យ</span>
         </a>
+        {% if session.role in ['admin', 'clerk'] %}
+        <a href="{{ url_for('assets_new') }}"
+          class="nav-link {% if request.path == '/assets/new' %}active{% endif %}">
+          <i class="fa-solid fa-plus-circle" style="color: #10b981;"></i>
+          <span>ចុះបញ្ជីទ្រព្យថ្មី (បញ្ចូលទិន្នន័យ)</span>
+        </a>
+        {% endif %}
 
         <div class="menu-category">៧. វគ្គបណ្តុះបណ្តាល</div>
         <a href="{{ url_for('evaluation_trainings') }}"

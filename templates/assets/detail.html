@@ -6,52 +6,44 @@
 {% set cond_info = ASSET_CONDITIONS.get(asset.condition_status, {}) %}
 {% set acq_info = ASSET_ACQUISITIONS.get(asset.acquisition_type, {}) %}
 
-{% block page_title %}
-<div class="page-title-box">
-  <div class="title-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
-    <i class="{{ cat_info.icon or 'fa-solid fa-boxes-stacked' }}"></i>
-  </div>
-  <div>
-    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-      <h2 style="margin: 0;">{{ asset.name_kh }}</h2>
-      <span class="officer-code-pill" style="font-size: 13px;">{{ asset.asset_code }}</span>
-      <span class="badge {{ cond_info.badge_class or 'badge-secondary' }}" style="font-size: 12px;">
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="{{ cat_info.icon or 'fa-solid fa-boxes-stacked' }} text-gold"></i>
+      <span>{{ asset.name_kh }}</span>
+      <span class="officer-code-pill" style="font-size: 13px; margin-left: 6px;">{{ asset.asset_code }}</span>
+      <span class="badge {{ cond_info.badge_class or 'badge-secondary' }}" style="font-size: 12px; margin-left: 6px;">
         <i class="{{ cond_info.icon or 'fa-solid fa-circle' }}"></i> {{ cond_info.title_kh or asset.condition_status }}
       </span>
-    </div>
-    <p class="subtitle">{% if asset.name_en %}<span class="font-latin">{{ asset.name_en }}</span> • {% endif %}ទីតាំង ៖ {{ asset.location or 'សាលាឃុំនគរភាស' }}</p>
+    </h1>
+    <p>{% if asset.name_en %}<span class="font-latin">{{ asset.name_en }}</span> • {% endif %}ទីតាំង ៖ {{ asset.location or 'សាលាឃុំនគរភាស' }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('assets_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>បញ្ជីសារពើភណ្ឌ</span>
+    </a>
+    <a href="{{ url_for('assets_qr_tag', asset_id=asset.id) }}" target="_blank" class="btn btn-outline-primary" title="បោះពុម្ពស្លាក QR Code">
+      <i class="fa-solid fa-qrcode"></i>
+      <span>បោះពុម្ពស្លាក QR</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <button type="button" class="btn btn-outline-warning" onclick="openHandoverModal()">
+      <i class="fa-solid fa-arrow-right-arrow-left"></i>
+      <span>ផ្ទេរការកាន់កាប់</span>
+    </button>
+    <button type="button" class="btn btn-outline-info" onclick="openMaintenanceModal()">
+      <i class="fa-solid fa-wrench"></i>
+      <span>កត់ត្រាជួសជុល</span>
+    </button>
+    <a href="{{ url_for('assets_edit', asset_id=asset.id) }}" class="btn btn-primary">
+      <i class="fa-solid fa-pen-to-square"></i>
+      <span>កែប្រែ</span>
+    </a>
+    {% endif %}
   </div>
 </div>
-{% endblock %}
-
-{% block page_actions %}
-<div class="page-actions-box">
-  <a href="{{ url_for('assets_list') }}" class="btn btn-outline">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>បញ្ជីសារពើភណ្ឌ</span>
-  </a>
-  <a href="{{ url_for('assets_qr_tag', asset_id=asset.id) }}" target="_blank" class="btn btn-outline-primary" title="បោះពុម្ពស្លាក QR Code">
-    <i class="fa-solid fa-qrcode"></i>
-    <span>បោះពុម្ពស្លាក QR</span>
-  </a>
-  {% if session.role in ['admin', 'clerk'] %}
-  <button type="button" class="btn btn-outline-warning" onclick="openHandoverModal()">
-    <i class="fa-solid fa-arrow-right-arrow-left"></i>
-    <span>ផ្ទេរការកាន់កាប់</span>
-  </button>
-  <button type="button" class="btn btn-outline-info" onclick="openMaintenanceModal()">
-    <i class="fa-solid fa-wrench"></i>
-    <span>កត់ត្រាជួសជុល</span>
-  </button>
-  <a href="{{ url_for('assets_edit', asset_id=asset.id) }}" class="btn btn-primary">
-    <i class="fa-solid fa-pen-to-square"></i>
-    <span>កែប្រែ</span>
-  </a>
-  {% endif %}
-</div>
-{% endblock %}
-
-{% block content %}
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
   
   <!-- LEFT COLUMN: Main Asset Information -->
