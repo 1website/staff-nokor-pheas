@@ -239,16 +239,24 @@
           <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
             <!-- Progress Slider -->
             <div class="form-group">
-              <label class="form-label" style="font-weight: 600; display: flex; justify-content: space-between;">
-                <span>វឌ្ឍនភាពសម្រេច (% Progress)</span>
+              <label class="form-label" style="font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span>វឌ្ឍនភាពសម្រេច (% Progress)</span>
+                  <span class="badge" style="font-size: 10.5px; background: rgba(5, 150, 105, 0.12); color: #059669; font-weight: 600; padding: 2px 7px; border-radius: 6px;">
+                    <i class="fa-solid fa-calculator" style="font-size: 10px;"></i> គណនាស្វ័យប្រវត្តិ
+                  </span>
+                </span>
                 <span id="label_progress_percent" style="font-weight: 700; color: var(--primary);">
                   {% if is_edit %}{{ project.progress_percent or 0 }}{% else %}0{% endif %}%
                 </span>
               </label>
-              <input type="range" name="progress_percent" id="input_progress_percent" class="form-range" min="0" max="100" step="5"
+              <input type="range" name="progress_percent" id="input_progress_percent" class="form-range" min="0" max="100" step="1"
                 value="{% if is_edit %}{{ project.progress_percent or 0 }}{% else %}0{% endif %}"
                 style="width: 100%; accent-color: var(--primary);"
                 oninput="document.getElementById('label_progress_percent').textContent = this.value + '%'">
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+                គណនាស្វ័យប្រវត្តិតាមរូបមន្ត៖ (ចំណាយជាក់ស្តែង &divide; ថវិកាគ្រោង) &times; ១០០%
+              </div>
             </div>
 
             <!-- Status -->
@@ -409,16 +417,36 @@
     });
   }
 
-  function calcRemaining() {
+  function calcRemaining(updateProgress = true) {
     var planned = parseFloat(document.getElementById('input_planned_budget').value) || 0;
     var actual = parseFloat(document.getElementById('input_actual_expense').value) || 0;
     var rem = planned - actual;
     var disp = document.getElementById('display_remaining');
-    disp.textContent = rem.toLocaleString() + ' រៀល';
-    if (rem >= 0) {
-      disp.style.color = '#059669';
-    } else {
-      disp.style.color = '#dc2626';
+    if (disp) {
+      disp.textContent = rem.toLocaleString() + ' រៀល';
+      if (rem >= 0) {
+        disp.style.color = '#059669';
+      } else {
+        disp.style.color = '#dc2626';
+      }
+    }
+
+    // Auto-calculate Progress %: (actual_expense / planned_budget) * 100
+    if (updateProgress) {
+      var progressInput = document.getElementById('input_progress_percent');
+      var progressLabel = document.getElementById('label_progress_percent');
+      if (progressInput && progressLabel) {
+        if (planned > 0) {
+          var pct = Math.round((actual / planned) * 100);
+          if (pct < 0) pct = 0;
+          if (pct > 100) pct = 100;
+          progressInput.value = pct;
+          progressLabel.textContent = pct + '%';
+        } else if (actual === 0 && !isEdit) {
+          progressInput.value = 0;
+          progressLabel.textContent = '0%';
+        }
+      }
     }
   }
 
@@ -526,7 +554,7 @@
     if (checkedRadio) {
       updateSectorUI(checkedRadio.value);
     }
-    calcRemaining();
+    calcRemaining(!isEdit);
 
     const codeInput = document.getElementById('project_code');
     if (codeInput) {
