@@ -36,7 +36,8 @@ from utils.export_excel import (
     export_payroll_excel,
     export_finance_excel,
     export_assets_excel,
-    export_development_excel
+    export_development_excel,
+    export_social_services_excel
 )
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -3990,6 +3991,173 @@ def export_development_excel_route():
     yr_tag = year if year and year.lower() != "all" else "AllYears"
     sec_tag = f"_{sector}" if sector and sector.lower() != "all" else ""
     filename = f"Nokor_Pheas_CIP_{yr_tag}{sec_tag}.xlsx"
+
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# ==============================================================================
+# SOCIAL SERVICES & ENVIRONMENTAL SANITATION ROUTES (សេវាសង្គម និងអនាម័យបរិស្ថាន)
+# ==============================================================================
+
+@app.route('/social-services')
+@login_required
+def social_services_list():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    current_year = date.today().year
+
+    # Get available years for social & natural_resources sectors
+    cursor.execute("""
+        SELECT DISTINCT project_year 
+        FROM development_projects 
+        WHERE sector IN ('social', 'natural_resources')
+        ORDER BY project_year DESC
+    """)
+    years_rows = cursor.fetchall()
+    available_years = [r["project_year"] for r in years_rows]
+    if current_year not in available_years:
+        available_years.insert(0, current_year)
+    available_years.sort(reverse=True)
+
+    # Query params
+    selected_year = request.args.get("year", str(current_year)).strip()
+    selected_subsector = request.args.get("sub_sector", "all").strip()
+    selected_status = request.args.get("status", "all").strip()
+    selected_village_id = request.args.get("village_id", "all").strip()
+    search_query = request.args.get("search", "").strip()
+
+    # Build SQL
+    where_clauses = ["p.sector IN ('social', 'natural_resources')"]
+    params = []
+
+    if selected_year and selected_year.lower() != "all":
+        try:
+            yr_int = int(selected_year)
+            where_clauses.append("p.project_year = ?")
+            params.append(yr_int)
+        except ValueError:
+            pass
+
+    if selected_subsector in ['social', 'natural_resources']:
+        where_clauses.append("p.sector = ?")
+        params.append(selected_subsector)
+
+    if selected_status and selected_status.lower() != "all":
+        where_clauses.append("p.status = ?")
+        params.append(selected_status)
+
+    if selected_village_id and selected_village_id.lower() != "all":
+        try:
+            v_int = int(selected_village_id)
+            where_clauses.append("p.village_id = ?")
+            params.append(v_int)
+        except ValueError:
+            pass
+
+    if search_query:
+        where_clauses.append("(p.project_name LIKE ? OR p.project_code LIKE ? OR p.target_location LIKE ? OR p.contractor_agency LIKE ?)")
+        s_term = f"%{search_query}%"
+        params.extend([s_term, s_term, s_term, s_term])
+
+    where_sql = " AND ".join(where_clauses)
+
+    # Fetch projects
+    cursor.execute(f"""
+        SELECT p.*, v.village_name_kh
+        FROM development_projects p
+        LEFT JOIN villages v ON p.village_id = v.id
+        WHERE {where_sql}
+        ORDER BY p.project_year DESC, p.sector ASC, p.id DESC
+    """, tuple(params))
+    projects = cursor.fetchall()
+
+    # Summary metrics for current filtered year (or all)
+    year_clause = "AND p.project_year = ?" if (selected_year and selected_year.lower() != "all") else ""
+    year_params = (int(selected_year),) if (selected_year and selected_year.lower() != "all") else ()
+
+    cursor.execute(f"""
+        SELECT 
+            COUNT(*) as total_count,
+            COALESCE(SUM(p.planned_budget), 0) as total_planned,
+            COALESCE(SUM(p.actual_expense), 0) as total_actual,
+            COALESCE(SUM(p.beneficiaries_count), 0) as total_beneficiaries,
+            SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_count,
+            SUM(CASE WHEN p.sector = 'social' THEN 1 ELSE 0 END) as social_count,
+            SUM(CASE WHEN p.sector = 'natural_resources' THEN 1 ELSE 0 END) as env_count
+        FROM development_projects p
+        WHERE p.sector IN ('social', 'natural_resources') {year_clause}
+    """, year_params)
+    stats = cursor.fetchone()
+
+    total_planned = stats["total_planned"] or 0
+    total_actual = stats["total_actual"] or 0
+    total_remaining = total_planned - total_actual
+    total_beneficiaries = stats["total_beneficiaries"] or 0
+    total_count = stats["total_count"] or 0
+    completed_count = stats["completed_count"] or 0
+    completion_rate = round((completed_count / total_count * 100), 1) if total_count > 0 else 0
+
+    subsector_counts = {
+        "all": total_count,
+        "social": stats["social_count"] or 0,
+        "natural_resources": stats["env_count"] or 0
+    }
+
+    # Fetch all villages
+    cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+    villages = cursor.fetchall()
+
+    return render_template(
+        "social_services/index.html",
+        projects=projects,
+        available_years=available_years,
+        selected_year=selected_year,
+        selected_subsector=selected_subsector,
+        selected_status=selected_status,
+        selected_village_id=selected_village_id,
+        search_query=search_query,
+        total_count=total_count,
+        total_planned=total_planned,
+        total_actual=total_actual,
+        total_remaining=total_remaining,
+        total_beneficiaries=total_beneficiaries,
+        completed_count=completed_count,
+        completion_rate=completion_rate,
+        subsector_counts=subsector_counts,
+        villages=villages,
+        DEVELOPMENT_SECTORS=DEVELOPMENT_SECTORS,
+        DEVELOPMENT_STATUSES=DEVELOPMENT_STATUSES,
+        DEVELOPMENT_FUNDING_SOURCES=DEVELOPMENT_FUNDING_SOURCES
+    )
+
+
+@app.route('/social-services/new')
+@clerk_or_admin_required
+def social_services_create():
+    sector = request.args.get("sector", "social").strip()
+    year = request.args.get("year", "").strip()
+    return redirect(url_for("development_create", sector=sector, year=year))
+
+
+@app.route('/social-services/export')
+@login_required
+def export_social_services_excel_route():
+    year = request.args.get("year", "").strip()
+    sub_sector = request.args.get("sub_sector", "").strip()
+    status = request.args.get("status", "").strip()
+    village_id = request.args.get("village_id", "").strip()
+
+    stream = export_social_services_excel(year=year, sub_sector=sub_sector, status=status, village_id=village_id)
+
+    yr_tag = year if year and year.lower() != "all" else "AllYears"
+    sec_tag = f"_{sub_sector}" if sub_sector and sub_sector.lower() != "all" else ""
+    filename = f"Nokor_Pheas_Social_Sanitation_{yr_tag}{sec_tag}.xlsx"
 
     return send_file(
         stream,

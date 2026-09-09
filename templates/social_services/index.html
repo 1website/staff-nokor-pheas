@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}សេវាសង្គម និងអនាម័យបរិស្ថាន - រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block content %}
+<!-- Top Level Expense Switcher (ផ្នែកចំណាយទាំង ២) -->
+<div class="expense-section-nav" style="margin-bottom: 22px; display: flex; align-items: center; gap: 10px; padding: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; width: fit-content; box-shadow: var(--shadow-sm);">
+  <a href="{{ url_for('social_services_list', year=selected_year) }}"
+    style="padding: 9px 20px; border-radius: 10px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; background: #059669; color: #ffffff; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);">
+    <i class="fa-solid fa-hand-holding-heart"></i>
+    <span>១. សេវាសង្គម និងអនាម័យបរិស្ថាន</span>
+    <span style="background: rgba(255,255,255,0.25); padding: 1px 7px; border-radius: 12px; font-size: 11px;">{{ total_count | kh_num }}</span>
+  </a>
+  <a href="{{ url_for('development_list', year=selected_year) }}"
+    style="padding: 9px 20px; border-radius: 10px; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-color); transition: all 0.2s ease;">
+    <i class="fa-solid fa-person-digging" style="color: #0284c7;"></i>
+    <span>២. ចំណាយអភិវឌ្ឍន៍ (CIP)</span>
+  </a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-hand-holding-heart" style="color: #059669;"></i>
+      <span>គ្រប់គ្រងសេវាសង្គម និងអនាម័យបរិស្ថាន</span>
+    </h1>
+    <p>តាមដានសកម្មភាព និងការចំណាយលើវិស័យសង្គមកិច្ច សុខាភិបាល អប់រំ ស្ត្រី-កុមារ ទឹកស្អាត អនាម័យ និងបរិស្ថាន រដ្ឋបាលឃុំនគរភាស</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('export_social_services_excel_route', year=selected_year, sub_sector=selected_subsector, status=selected_status, village_id=selected_village_id) }}"
+      class="btn btn-success" title="ទាញយករបាយការណ៍ជា Excel">
+      <i class="fa-solid fa-file-excel"></i>
+      <span>នាំចេញជា Excel</span>
+    </a>
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector=selected_subsector if selected_subsector in ['social', 'natural_resources'] else 'social') }}"
+      class="btn btn-primary" style="background: #059669; border-color: #059669;">
+      <i class="fa-solid fa-plus-circle"></i>
+      <span>+ បន្ថែមសកម្មភាពថ្មី</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 1. Year Selector Toolbar -->
+<div class="card" style="margin-bottom: 20px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; box-shadow: var(--shadow-sm);">
+  <div class="card-body" style="padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: 700; color: var(--text-muted); font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-calendar-check" style="color: #059669;"></i>
+        <span>ជ្រើសរើសឆ្នាំអនុវត្ត៖</span>
+      </span>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <a href="{{ url_for('social_services_list', year='all', sub_sector=selected_subsector, status=selected_status, village_id=selected_village_id, search=search_query) }}"
+          class="year-pill-btn {% if selected_year == 'all' %}active-emerald{% endif %}">
+          គ្រប់ឆ្នាំទាំងអស់
+        </a>
+        {% for yr in available_years %}
+        <a href="{{ url_for('social_services_list', year=yr, sub_sector=selected_subsector, status=selected_status, village_id=selected_village_id, search=search_query) }}"
+          class="year-pill-btn {% if selected_year|string == yr|string %}active-emerald{% endif %}">
+          <i class="fa-solid fa-calendar-days" style="font-size: 11px;"></i>
+          <span>ឆ្នាំ {{ yr | kh_num }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="font-size: 13px; color: var(--text-muted);">
+      {% if selected_year == 'all' %}
+      កំពុងបង្ហាញ៖ <strong>សកម្មភាពគ្រប់ឆ្នាំ</strong>
+      {% else %}
+      កំពុងបង្ហាញ៖ <strong>ផែនការឆ្នាំ {{ selected_year | kh_num }}</strong>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- 2. Sub-Sector Filter Tabs (សេវាសង្គមកិច្ច & អនាម័យបរិស្ថាន) -->
+<div class="dev-sector-tabs-container">
+  <div class="dev-sector-tabs" style="grid-template-columns: repeat(3, 1fr);">
+    <!-- All Subsectors -->
+    <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='all', status=selected_status, village_id=selected_village_id, search=search_query) }}"
+      class="dev-sector-tab {% if selected_subsector == 'all' %}active{% endif %}" style="--tab-color: #059669;">
+      <i class="fa-solid fa-layer-group"></i>
+      <div class="tab-text-group">
+        <span class="tab-title">សរុបទាំង ២ ផ្នែក</span>
+        <span class="tab-counter">{{ subsector_counts['all'] | kh_num }} សកម្មភាព</span>
+      </div>
+    </a>
+
+    <!-- Subsector 1: Social Services -->
+    {% set sec_soc = DEVELOPMENT_SECTORS.get('social', {}) %}
+    <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='social', status=selected_status, village_id=selected_village_id, search=search_query) }}"
+      class="dev-sector-tab {% if selected_subsector == 'social' %}active{% endif %}" style="--tab-color: {{ sec_soc.color or '#059669' }};">
+      <i class="fa-solid fa-hand-holding-heart"></i>
+      <div class="tab-text-group">
+        <span class="tab-title">១. ផ្នែកសេវាសង្គមកិច្ច</span>
+        <span class="tab-counter">{{ subsector_counts['social'] | kh_num }} សកម្មភាព</span>
+      </div>
+    </a>
+
+    <!-- Subsector 2: Environmental Sanitation -->
+    {% set sec_nat = DEVELOPMENT_SECTORS.get('natural_resources', {}) %}
+    <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='natural_resources', status=selected_status, village_id=selected_village_id, search=search_query) }}"
+      class="dev-sector-tab {% if selected_subsector == 'natural_resources' %}active{% endif %}" style="--tab-color: {{ sec_nat.color or '#0d9488' }};">
+      <i class="fa-solid fa-tree"></i>
+      <div class="tab-text-group">
+        <span class="tab-title">២. ផ្នែកអនាម័យបរិស្ថាន & អាកាសធាតុ</span>
+        <span class="tab-counter">{{ subsector_counts['natural_resources'] | kh_num }} សកម្មភាព</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- 3. Summary Metric Cards -->
+<div class="stats-grid-4" style="margin-top: 20px;">
+  <!-- Card 1: Total Planned Budget -->
+  <div class="stat-card" style="--stat-color: #059669; --stat-bg: #ecfdf5;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-file-invoice-dollar"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ថវិកាគ្រោងសរុប (Planned)</div>
+      <div class="stat-number" style="color: #059669;">
+        {{ "{:,.0f}".format(total_planned) }} <span class="currency-label">រៀល</span>
+      </div>
+      <div class="stat-hint">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>សរុប {{ total_count | kh_num }} សកម្មភាព/គម្រោង</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Actual Expense -->
+  <div class="stat-card" style="--stat-color: #d97706; --stat-bg: #fffbeb;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-receipt"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">ចំណាយជាក់ស្តែង (Actual)</div>
+      <div class="stat-number" style="color: #d97706;">
+        {{ "{:,.0f}".format(total_actual) }} <span class="currency-label">រៀល</span>
+      </div>
+      <div class="stat-hint">
+        <span>អនុវត្តបាន៖ {{ "{:.1f}".format((total_actual / total_planned * 100) if total_planned > 0 else 0) | kh_num }}% នៃផែនការ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Remaining Budget -->
+  <div class="stat-card" style="--stat-color: {% if total_remaining >= 0 %}#0284c7{% else %}#dc2626{% endif %}; --stat-bg: {% if total_remaining >= 0 %}#f0f9ff{% else %}#fef2f2{% endif %};">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-scale-balanced"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">តុល្យភាពថវិកានៅសល់</div>
+      <div class="stat-number" style="color: {% if total_remaining >= 0 %}#0284c7{% else %}#dc2626{% endif %};">
+        {{ "{:,.0f}".format(total_remaining) }} <span class="currency-label">រៀល</span>
+      </div>
+      <div class="stat-hint">
+        {% if total_remaining >= 0 %}
+        <span style="color: #059669;"><i class="fa-solid fa-circle-check"></i> នៅសល់ក្នុងកញ្ចប់ថវិកា</span>
+        {% else %}
+        <span style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> ចំណាយលើសថវិកាគ្រោង</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Beneficiaries -->
+  <div class="stat-card" style="--stat-color: #7c3aed; --stat-bg: #f5f3ff;">
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-label">អ្នកទទួលផលសរុប (Beneficiaries)</div>
+      <div class="stat-number" style="color: #7c3aed;">
+        {{ total_beneficiaries | kh_num }} <span class="currency-label">នាក់</span>
+      </div>
+      <div class="stat-hint">
+        <span>បានបញ្ចប់៖ {{ completed_count | kh_num }} គម្រោង ({{ completion_rate | kh_num }}%)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Filter & Search Bar -->
+<div class="card" style="margin-top: 24px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+  <div class="card-body" style="padding: 16px 20px;">
+    <form method="GET" action="{{ url_for('social_services_list') }}" style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto auto; gap: 12px; align-items: center;">
+      <input type="hidden" name="year" value="{{ selected_year }}">
+      <input type="hidden" name="sub_sector" value="{{ selected_subsector }}">
+
+      <!-- Keyword Search -->
+      <div style="position: relative;">
+        <input type="text" name="search" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះសកម្មភាព, កូដ, ទីតាំង..."
+          value="{{ search_query }}" style="padding-left: 36px;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px;"></i>
+      </div>
+
+      <!-- Village Filter -->
+      <div>
+        <select name="village_id" class="form-control" onchange="this.form.submit()">
+          <option value="all">-- ភូមិទាំងអស់ (១០ ភូមិ) --</option>
+          {% for v in villages %}
+          <option value="{{ v.id }}" {% if selected_village_id|string == v.id|string %}selected{% endif %}>
+            ភូមិ {{ v.village_name_kh }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div>
+        <select name="status" class="form-control" onchange="this.form.submit()">
+          <option value="all">-- ស្ថានភាពទាំងអស់ --</option>
+          {% for st_key, st_info in DEVELOPMENT_STATUSES.items() %}
+          <option value="{{ st_key }}" {% if selected_status == st_key %}selected{% endif %}>
+            {{ st_info.title_kh }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Submit Filter -->
+      <div>
+        <button type="submit" class="btn btn-primary" style="background: #059669; border-color: #059669;">
+          <i class="fa-solid fa-filter"></i>
+          <span>ចម្រាញ់</span>
+        </button>
+      </div>
+
+      <!-- Reset Filter -->
+      <div>
+        <a href="{{ url_for('social_services_list', year=selected_year, sub_sector=selected_subsector) }}" class="btn btn-outline" title="សម្អាតតម្រង">
+          <i class="fa-solid fa-rotate-left"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 5. Table of Activities / Projects -->
+<div class="card" style="border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); overflow: hidden;">
+  <div class="card-header" style="background: var(--bg-card); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+    <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-list-check" style="color: #059669;"></i>
+      <span>បញ្ជីសកម្មភាព និងចំណាយសេវាសង្គម & អនាម័យបរិស្ថាន</span>
+      <span class="badge badge-secondary" style="font-size: 12px; margin-left: 6px;">{{ projects|length | kh_num }} សកម្មភាព</span>
+    </h3>
+    <div style="font-size: 12.5px; color: var(--text-muted);">
+      ឃុំនគរភាស ស្រុកពួក ខេត្តសៀមរាប
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table custom-table" style="margin-bottom: 0;">
+      <thead>
+        <tr style="background: var(--bg-main);">
+          <th style="width: 50px; text-align: center;">ល.រ</th>
+          <th style="width: 130px;">កូដសម្គាល់</th>
+          <th style="min-width: 280px;">ឈ្មោះសកម្មភាព / គម្រោង</th>
+          <th style="width: 170px;">ផ្នែក/វិស័យ</th>
+          <th style="width: 150px;">ទីតាំងគោលដៅ</th>
+          <th style="width: 150px; text-align: right;">ថវិកាគ្រោង</th>
+          <th style="width: 150px; text-align: right;">ចំណាយជាក់ស្តែង</th>
+          <th style="width: 130px; text-align: center;">វឌ្ឍនភាព</th>
+          <th style="width: 120px; text-align: center;">ស្ថានភាព</th>
+          <th style="width: 120px; text-align: center;">សកម្មភាព</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if projects %}
+        {% for p in projects %}
+          {% set sec = DEVELOPMENT_SECTORS.get(p.sector, {}) %}
+          {% set st = DEVELOPMENT_STATUSES.get(p.status, {}) %}
+          <tr>
+            <td style="text-align: center; color: var(--text-muted); font-weight: 600;">
+              {{ loop.index | kh_num }}
+            </td>
+            <td>
+              <span class="code-pill">{{ p.project_code }}</span>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">ឆ្នាំ {{ p.project_year | kh_num }}</div>
+            </td>
+            <td>
+              <a href="{{ url_for('development_detail', project_id=p.id) }}" class="project-title-link" style="color: #059669;">
+                {{ p.project_name }}
+              </a>
+              {% if p.beneficiaries_count %}
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-users" style="color: #7c3aed; font-size: 11px;"></i>
+                <span>អ្នកទទួលផល៖ <strong>{{ p.beneficiaries_count | kh_num }}</strong> នាក់</span>
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge" style="background: {{ sec.bg_color or '#ecfdf5' }}; color: {{ sec.color or '#059669' }}; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 8px; border-radius: 6px;">
+                <i class="{{ sec.icon }}"></i>
+                <span>{{ sec.short_kh or p.sector }}</span>
+              </span>
+            </td>
+            <td>
+              <div style="font-size: 12.5px; font-weight: 600; color: var(--text-color);">
+                {% if p.village_name_kh %}ភូមិ {{ p.village_name_kh }}{% else %}-{% endif %}
+              </div>
+              {% if p.target_location %}
+              <div style="font-size: 11px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 140px;" title="{{ p.target_location }}">
+                {{ p.target_location }}
+              </div>
+              {% endif %}
+            </td>
+            <td style="text-align: right; font-weight: 600; color: var(--text-color);">
+              {{ "{:,.0f}".format(p.planned_budget or 0) }}
+            </td>
+            <td style="text-align: right; font-weight: 700; color: #d97706;">
+              {{ "{:,.0f}".format(p.actual_expense or 0) }}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <span style="font-size: 11.5px; font-weight: 700; color: {% if p.progress_percent >= 100 %}#059669{% else %}#2563eb{% endif %};">
+                  {{ p.progress_percent or 0 }}%
+                </span>
+                <div style="width: 80px; height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                  <div style="width: {{ p.progress_percent or 0 }}%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                </div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge {{ st.badge_class or 'badge-secondary' }}" style="font-size: 11.5px; padding: 4px 8px;">
+                {{ st.title_kh }}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <div class="action-buttons-group">
+                <a href="{{ url_for('development_detail', project_id=p.id) }}" class="btn-action-icon view" title="មើលព័ត៌មានលម្អិត">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                {% if session.role in ['admin', 'clerk'] %}
+                <button type="button" class="btn-action-icon progress-btn" title="កែប្រែវឌ្ឍនភាពរហ័ស"
+                  onclick="openQuickProgressModal('{{ p.id }}', '{{ p.project_name | escape }}', {{ p.progress_percent or 0 }}, '{{ p.status }}', {{ p.actual_expense or 0 }})">
+                  <i class="fa-solid fa-bars-progress"></i>
+                </button>
+                <a href="{{ url_for('development_edit', project_id=p.id) }}" class="btn-action-icon edit" title="កែប្រែគម្រោង">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <form method="POST" action="{{ url_for('development_delete', project_id=p.id) }}" style="display: inline;"
+                  onsubmit="return confirm('តើលោកអ្នកពិតជាចង់លុបសកម្មភាព «{{ p.project_name }}» នេះមែនទេ?');">
+                  <button type="submit" class="btn-action-icon delete" title="លុបសកម្មភាព">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 45px 20px;">
+            <div style="font-size: 42px; color: #cbd5e1; margin-bottom: 12px;">
+              <i class="fa-solid fa-hand-holding-heart"></i>
+            </div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--text-color); margin-bottom: 6px;">មិនមានទិន្នន័យសកម្មភាពសេវាសង្គម ឬអនាម័យបរិស្ថានទេ</h4>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">សូមជ្រើសរើសឆ្នាំផ្សេង ឬចុចបន្ថែមសកម្មភាពថ្មីដើម្បីកត់ត្រា</p>
+            {% if session.role in ['admin', 'clerk'] %}
+            <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector='social') }}" class="btn btn-primary" style="background: #059669; border-color: #059669;">
+              <i class="fa-solid fa-plus-circle"></i>
+              <span>+ បន្ថែមសកម្មភាពថ្មី</span>
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Quick Progress Modal -->
+<div class="modal-backdrop-custom" id="quickProgressModal">
+  <div class="modal-card-custom" style="max-width: 460px;">
+    <div class="modal-header-custom">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-bars-progress" style="color: #059669;"></i>
+        <span>ធ្វើបច្ចុប្បន្នភាពវឌ្ឍនភាពសកម្មភាព</span>
+      </h3>
+      <button type="button" class="modal-close-btn" onclick="closeQuickProgressModal()">&times;</button>
+    </div>
+    <form id="quickProgressForm" method="POST" action="">
+      <div class="modal-body-custom" style="padding: 20px;">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 3px;">ឈ្មោះសកម្មភាព៖</label>
+          <div id="modal_project_name" style="font-weight: 700; font-size: 13.5px; color: var(--text-color);"></div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600;">វឌ្ឍនភាពការងារ (%) <span class="text-danger">*</span></label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="modal_progress_range" min="0" max="100" step="5" style="flex: 1; accent-color: #059669;"
+              oninput="document.getElementById('modal_progress_number').value = this.value">
+            <input type="number" id="modal_progress_number" name="progress_percent" class="form-control" style="width: 75px; text-align: center; font-weight: 700;"
+              min="0" max="100" oninput="document.getElementById('modal_progress_range').value = this.value">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 600;">ស្ថានភាពសកម្មភាព</label>
+          <select name="status" id="modal_status" class="form-control">
+            {% for st_key, st_info in DEVELOPMENT_STATUSES.items() %}
+            <option value="{{ st_key }}">{{ st_info.title_kh }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600;">ចំណាយជាក់ស្តែង (រៀល)</label>
+          <input type="number" id="modal_actual_expense" name="actual_expense" class="form-control" placeholder="ចំនួនទឹកប្រាក់ជាក់ស្តែង...">
+        </div>
+      </div>
+      <div class="modal-footer-custom" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="closeQuickProgressModal()">បោះបង់</button>
+        <button type="submit" class="btn btn-primary" style="background: #059669; border-color: #059669;">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>រក្សាទុកវឌ្ឍនភាព</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .year-pill-btn {
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .year-pill-btn:hover {
+    border-color: #059669;
+    color: #059669;
+  }
+  .year-pill-btn.active-emerald {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+  }
+
+  .dev-sector-tabs-container {
+    margin-bottom: 16px;
+  }
+  .dev-sector-tabs {
+    display: grid;
+    gap: 12px;
+  }
+  .dev-sector-tab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .dev-sector-tab i {
+    font-size: 22px;
+    color: var(--tab-color);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(5, 150, 105, 0.08);
+  }
+  .dev-sector-tab .tab-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    display: block;
+  }
+  .dev-sector-tab .tab-counter {
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .dev-sector-tab:hover {
+    transform: translateY(-2px);
+    border-color: var(--tab-color);
+  }
+  .dev-sector-tab.active {
+    border-color: var(--tab-color);
+    background: var(--bg-card);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15);
+    border-width: 2px;
+  }
+  .dev-sector-tab.active .tab-title {
+    color: var(--tab-color);
+  }
+
+  .stats-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--stat-bg);
+    color: var(--stat-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .stat-number {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+  .stat-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .currency-label {
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--text-muted);
+  }
+
+  .code-pill {
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 12px;
+    background: #f1f5f9;
+    padding: 2px 7px;
+    border-radius: 6px;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+  }
+  .project-title-link {
+    font-weight: 700;
+    font-size: 13.5px;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .project-title-link:hover {
+    text-decoration: underline;
+  }
+
+  .action-buttons-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .btn-action-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-color);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.15s ease;
+  }
+  .btn-action-icon:hover {
+    background: var(--bg-main);
+  }
+  .btn-action-icon.view:hover { color: #0284c7; border-color: #0284c7; }
+  .btn-action-icon.progress-btn:hover { color: #059669; border-color: #059669; }
+  .btn-action-icon.edit:hover { color: #f59e0b; border-color: #f59e0b; }
+  .btn-action-icon.delete:hover { color: #dc2626; border-color: #dc2626; }
+
+  .modal-backdrop-custom {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop-custom.active { display: flex; }
+  .modal-card-custom {
+    background: var(--bg-card);
+    border-radius: 14px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+    animation: modalSlide 0.2s ease-out;
+  }
+  .modal-header-custom {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-close-btn {
+    background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);
+  }
+
+  @keyframes modalSlide {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 1024px) {
+    .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .dev-sector-tabs { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .stats-grid-4 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  function openQuickProgressModal(id, name, prog, status, exp) {
+    document.getElementById('modal_project_name').textContent = name;
+    document.getElementById('modal_progress_range').value = prog;
+    document.getElementById('modal_progress_number').value = prog;
+    document.getElementById('modal_status').value = status;
+    document.getElementById('modal_actual_expense').value = exp;
+    document.getElementById('quickProgressForm').action = "/development/" + id + "/progress";
+    document.getElementById('quickProgressModal').classList.add('active');
+  }
+
+  function closeQuickProgressModal() {
+    document.getElementById('quickProgressModal').classList.remove('active');
+  }
+
+  window.addEventListener('click', function(e) {
+    var modal = document.getElementById('quickProgressModal');
+    if (e.target === modal) {
+      closeQuickProgressModal();
+    }
+  });
+</script>
+{% endblock %}

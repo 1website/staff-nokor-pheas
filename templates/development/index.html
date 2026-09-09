@@ -3,6 +3,21 @@
 {% block title %}ចំណាយអភិវឌ្ឍន៍ (គម្រោង CIP) - រដ្ឋបាលឃុំនគរភាស{% endblock %}
 
 {% block content %}
+<!-- Top Level Expense Switcher (ផ្នែកចំណាយទាំង ២) -->
+<div class="expense-section-nav" style="margin-bottom: 22px; display: flex; align-items: center; gap: 10px; padding: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; width: fit-content; box-shadow: var(--shadow-sm);">
+  <a href="{{ url_for('social_services_list', year=selected_year) }}"
+    style="padding: 9px 20px; border-radius: 10px; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-color); transition: all 0.2s ease;">
+    <i class="fa-solid fa-hand-holding-heart" style="color: #059669;"></i>
+    <span>១. សេវាសង្គម និងអនាម័យបរិស្ថាន</span>
+  </a>
+  <a href="{{ url_for('development_list', year=selected_year) }}"
+    style="padding: 9px 20px; border-radius: 10px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; background: #0284c7; color: #ffffff; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);">
+    <i class="fa-solid fa-person-digging"></i>
+    <span>២. ចំណាយអភិវឌ្ឍន៍ (CIP)</span>
+    <span style="background: rgba(255,255,255,0.25); padding: 1px 7px; border-radius: 12px; font-size: 11px;">{{ total_count | kh_num }}</span>
+  </a>
+</div>
+
 <div class="page-header">
   <div class="page-header-title">
     <h1>

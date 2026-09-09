@@ -1732,3 +1732,295 @@ def export_development_excel(year=None, sector=None, status=None, village_id=Non
     return stream
 
 
+def export_social_services_excel(year=None, sub_sector=None, status=None, village_id=None):
+    """
+    Generate Social Services & Environmental Sanitation Expenditure Report in Excel
+    (តារាងតាមដានការអនុវត្តសកម្មភាព និងចំណាយសេវាសង្គម និងអនាម័យបរិស្ថាន)
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"Social-Env-{year if year and str(year).lower() != 'all' else 'All'}"
+    ws.views.sheetView[0].showGridLines = True
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Query projects in social and environmental sanitation sectors
+    query = """
+        SELECT p.*, v.village_name_kh
+        FROM development_projects p
+        LEFT JOIN villages v ON p.village_id = v.id
+        WHERE p.sector IN ('social', 'natural_resources')
+    """
+    params = []
+
+    if year and str(year).lower() != "all":
+        try:
+            query += " AND p.project_year = ?"
+            params.append(int(year))
+        except ValueError:
+            pass
+
+    if sub_sector and str(sub_sector).lower() != "all":
+        query += " AND p.sector = ?"
+        params.append(sub_sector)
+
+    if status and str(status).lower() != "all":
+        query += " AND p.status = ?"
+        params.append(status)
+
+    if village_id and str(village_id).lower() != "all":
+        try:
+            query += " AND p.village_id = ?"
+            params.append(int(village_id))
+        except ValueError:
+            pass
+
+    query += " ORDER BY p.project_year DESC, p.sector ASC, p.id ASC"
+    cursor.execute(query, tuple(params))
+    projects = cursor.fetchall()
+
+    today = date.today()
+    kh_date_full = format_khmer_date(today)
+
+    # 1. Page Header (Kingdom of Cambodia)
+    ws.merge_cells("I1:M1")
+    ws["I1"] = "ព្រះរាជាណាចក្រកម្ពុជា"
+    ws["I1"].font = TITLE_FONT
+    ws["I1"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("I2:M2")
+    ws["I2"] = "ជាតិ សាសនា ព្រះមហាក្សត្រ"
+    ws["I2"].font = Font(name="Khmer OS Muol Light", size=10, color="0F2B48")
+    ws["I2"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A1:E1")
+    ws["A1"] = "រដ្ឋបាលខេត្តសៀមរាប"
+    ws["A1"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
+    ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
+
+    ws.merge_cells("A2:E2")
+    ws["A2"] = "រដ្ឋបាលស្រុកពួក"
+    ws["A2"].font = Font(name="Khmer OS Siemreap", size=9.5, bold=True)
+    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+
+    ws.merge_cells("A3:E3")
+    ws["A3"] = "រដ្ឋបាលឃុំនគរភាស"
+    ws["A3"].font = Font(name="Khmer OS Muol Light", size=10, bold=True, color="0F2B48")
+    ws["A3"].alignment = Alignment(horizontal="left", vertical="center")
+
+    # 2. Main Title
+    ws.merge_cells("A5:M5")
+    title_text = "តារាងតាមដានការអនុវត្តសកម្មភាព និងចំណាយសេវាសង្គម និងអនាម័យបរិស្ថាន"
+    if year and str(year).lower() != "all":
+        title_text += f" ប្រចាំឆ្នាំ {to_khmer_num(year)}"
+    ws["A5"] = title_text
+    ws["A5"].font = Font(name="Khmer OS Muol Light", size=12, bold=True, color="047857")
+    ws["A5"].alignment = Alignment(horizontal="center", vertical="center")
+
+    # Subtitle with filters
+    sub_parts = []
+    if sub_sector and str(sub_sector).lower() != "all":
+        s_info = DEVELOPMENT_SECTORS.get(sub_sector, {})
+        sub_parts.append(f"ផ្នែក៖ {s_info.get('title_kh', sub_sector)}")
+    if status and str(status).lower() != "all":
+        st_info = DEVELOPMENT_STATUSES.get(status, {})
+        sub_parts.append(f"ស្ថានភាព៖ {st_info.get('title_kh', status)}")
+    sub_parts.append(f"កាលបរិច្ឆេទស្រង់៖ {kh_date_full}")
+
+    ws.merge_cells("A6:M6")
+    ws["A6"] = " | ".join(sub_parts)
+    ws["A6"].font = SUBTITLE_FONT
+    ws["A6"].alignment = Alignment(horizontal="center", vertical="center")
+
+    # 3. Table Column Headers
+    headers = [
+        ("A", "ល.រ", 6),
+        ("B", "កូដសម្គាល់", 14),
+        ("C", "ឆ្នាំ", 8),
+        ("D", "ផ្នែក/វិស័យ", 24),
+        ("E", "ឈ្មោះសកម្មភាព / គម្រោងចំណាយ", 38),
+        ("F", "ទីតាំងភូមិ", 14),
+        ("G", "ថវិកាគ្រោង (រៀល)", 18),
+        ("H", "ចំណាយជាក់ស្តែង (រៀល)", 18),
+        ("I", "តុល្យភាពនៅសល់ (រៀល)", 18),
+        ("J", "ប្រភពថវិកា", 20),
+        ("K", "វឌ្ឍនភាព", 12),
+        ("L", "ស្ថានភាព", 14),
+        ("M", "អ្នកទទួលផល", 14)
+    ]
+
+    header_row = 8
+    ws.row_dimensions[header_row].height = 28
+
+    social_header_fill = PatternFill(start_color="047857", end_color="047857", fill_type="solid")
+    social_header_font = Font(name="Khmer OS Siemreap", size=9.5, bold=True, color="FFFFFF")
+
+    for col_letter, header_title, width in headers:
+        cell = ws[f"{col_letter}{header_row}"]
+        cell.value = header_title
+        cell.font = social_header_font
+        cell.fill = social_header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = THIN_BORDER
+        ws.column_dimensions[col_letter].width = width
+
+    # 4. Data Rows
+    current_row = header_row + 1
+    total_planned = 0.0
+    total_actual = 0.0
+
+    for idx, p in enumerate(projects, 1):
+        row_fill = ALT_ROW_FILL if idx % 2 == 0 else PatternFill(fill_type=None)
+        
+        sector_info = DEVELOPMENT_SECTORS.get(p["sector"], {})
+        sector_kh = sector_info.get("title_kh", p["sector"])
+        
+        status_info = DEVELOPMENT_STATUSES.get(p["status"], {})
+        status_kh = status_info.get("title_kh", p["status"])
+        
+        funding_info = DEVELOPMENT_FUNDING_SOURCES.get(p["funding_source"], {})
+        funding_kh = funding_info.get("title_kh", p["funding_source"] or "-")
+        
+        planned = float(p["planned_budget"] or 0)
+        actual = float(p["actual_expense"] or 0)
+        remaining = planned - actual
+        total_planned += planned
+        total_actual += actual
+
+        v_name = p["village_name_kh"] or "-"
+        prog_str = f"{p['progress_percent'] or 0}%"
+        beneficiaries_str = f"{to_khmer_num(p['beneficiaries_count'])} នាក់" if p["beneficiaries_count"] else "-"
+
+        # Set cell values
+        ws[f"A{current_row}"] = to_khmer_num(idx)
+        ws[f"B{current_row}"] = p["project_code"]
+        ws[f"C{current_row}"] = to_khmer_num(p["project_year"])
+        ws[f"D{current_row}"] = sector_kh
+        ws[f"E{current_row}"] = p["project_name"]
+        ws[f"F{current_row}"] = v_name
+        ws[f"G{current_row}"] = planned
+        ws[f"H{current_row}"] = actual
+        ws[f"I{current_row}"] = remaining
+        ws[f"J{current_row}"] = funding_kh
+        ws[f"K{current_row}"] = prog_str
+        ws[f"L{current_row}"] = status_kh
+        ws[f"M{current_row}"] = beneficiaries_str
+
+        # Alignments & Styles
+        for col in ["A", "B", "C", "F", "K", "L", "M"]:
+            c = ws[f"{col}{current_row}"]
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.font = BODY_FONT
+            c.fill = row_fill
+            c.border = THIN_BORDER
+
+        for col in ["D", "E", "J"]:
+            c = ws[f"{col}{current_row}"]
+            c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=(col == "E"))
+            c.font = BOLD_BODY_FONT if col == "E" else BODY_FONT
+            c.fill = row_fill
+            c.border = THIN_BORDER
+
+        for col in ["G", "H", "I"]:
+            c = ws[f"{col}{current_row}"]
+            c.alignment = Alignment(horizontal="right", vertical="center")
+            c.number_format = "#,##0"
+            c.font = BOLD_BODY_FONT
+            c.fill = row_fill
+            c.border = THIN_BORDER
+
+        ws.row_dimensions[current_row].height = 24
+        current_row += 1
+
+    # Empty rows handling
+    if not projects:
+        ws.merge_cells(f"A{current_row}:M{current_row}")
+        ws[f"A{current_row}"] = "មិនមានទិន្នន័យសកម្មភាពសេវាសង្គម និងអនាម័យបរិស្ថានសម្រាប់តម្រងដែលបានជ្រើសឡើយ"
+        ws[f"A{current_row}"].alignment = Alignment(horizontal="center", vertical="center")
+        ws[f"A{current_row}"].font = Font(name="Khmer OS Siemreap", size=10, italic=True, color="64748B")
+        for col_idx in range(1, 14):
+            col_l = openpyxl.utils.get_column_letter(col_idx)
+            ws[f"{col_l}{current_row}"].border = THIN_BORDER
+        current_row += 1
+
+    # 5. Grand Total Row
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws[f"A{current_row}"] = f"សរុបរួម ({to_khmer_num(len(projects))} សកម្មភាព/គម្រោង)"
+    ws[f"A{current_row}"].font = SUMMARY_FONT
+    ws[f"A{current_row}"].alignment = Alignment(horizontal="center", vertical="center")
+    ws[f"A{current_row}"].fill = HIGHLIGHT_FILL
+
+    for c_idx in range(1, 7):
+        col_l = openpyxl.utils.get_column_letter(c_idx)
+        ws[f"{col_l}{current_row}"].border = THIN_BORDER
+        ws[f"{col_l}{current_row}"].fill = HIGHLIGHT_FILL
+
+    total_rem = total_planned - total_actual
+
+    for col, val in [("G", total_planned), ("H", total_actual), ("I", total_rem)]:
+        c = ws[f"{col}{current_row}"]
+        c.value = val
+        c.number_format = "#,##0"
+        c.font = SUMMARY_FONT
+        c.alignment = Alignment(horizontal="right", vertical="center")
+        c.fill = HIGHLIGHT_FILL
+        c.border = THIN_BORDER
+
+    for col in ["J", "K", "L", "M"]:
+        c = ws[f"{col}{current_row}"]
+        c.value = ""
+        c.fill = HIGHLIGHT_FILL
+        c.border = THIN_BORDER
+
+    ws.row_dimensions[current_row].height = 24
+
+    # 6. Signatures
+    sig_row = current_row + 2
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = f"នគរភាស, {kh_date_full}"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5, italic=True)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 1
+    ws.merge_cells(f"A{sig_row}:E{sig_row}")
+    ws[f"A{sig_row}"] = "បានឃើញ និងឯកភាព"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = "អ្នករៀបចំរបាយការណ៍"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 1
+    ws.merge_cells(f"A{sig_row}:E{sig_row}")
+    ws[f"A{sig_row}"] = "មេឃុំនគរភាស"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = "ស្មៀនឃុំនគរភាស"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Siemreap", size=9.5)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    sig_row += 4
+    ws.merge_cells(f"A{sig_row}:E{sig_row}")
+    ws[f"A{sig_row}"] = "មី គន់"
+    ws[f"A{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"A{sig_row}"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells(f"J{sig_row}:M{sig_row}")
+    ws[f"J{sig_row}"] = "ហេង ចាន់រិទ្ធ"
+    ws[f"J{sig_row}"].font = Font(name="Khmer OS Muol Light", size=10, bold=True)
+    ws[f"J{sig_row}"].alignment = Alignment(horizontal="center")
+
+    conn.close()
+
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return stream
+
+
+

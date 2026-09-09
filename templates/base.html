@@ -164,17 +164,22 @@
           <span>ប្រាក់បៀវត្សរ៍ & Payslip</span>
         </a>
 
-        <div class="menu-category">៥. ហិរញ្ញវត្ថុ & ចំណូល-ចំណាយ</div>
+        <div class="menu-category">៥. ហិរញ្ញវត្ថុ & សៀវភៅសាច់ប្រាក់</div>
         <a href="{{ url_for('finance_list') }}"
           class="nav-link {% if request.path.startswith('/finance') %}active{% endif %}">
           <i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i>
-          <span>គ្រប់គ្រងចំណាយ</span>
+          <span>សៀវភៅចំណូល-ចំណាយ (Cash Book)</span>
         </a>
 
-        <div class="menu-category">៦. ចំណាយអភិវឌ្ឍន៍</div>
+        <div class="menu-category">៦. ផ្នែកចំណាយ</div>
+        <a href="{{ url_for('social_services_list') }}"
+          class="nav-link {% if request.path.startswith('/social-services') %}active{% endif %}">
+          <i class="fa-solid fa-hand-holding-heart" style="color: #059669;"></i>
+          <span>សេវាសង្គម និងអនាម័យបរិស្ថាន</span>
+        </a>
         <a href="{{ url_for('development_list') }}"
           class="nav-link {% if request.path.startswith('/development') and request.path != '/development/new' %}active{% endif %}">
-          <i class="fa-solid fa-chart-line" style="color: #0284c7;"></i>
+          <i class="fa-solid fa-person-digging" style="color: #0284c7;"></i>
           <span>ចំណាយអភិវឌ្ឍន៍ (CIP)</span>
         </a>
         {% if session.role in ['admin', 'clerk'] %}
