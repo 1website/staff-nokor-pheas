@@ -193,7 +193,7 @@
 
       <!-- Keyword Search -->
       <div style="position: relative;">
-        <input type="text" name="search" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះសកម្មភាព, កូដ, ទីតាំង..."
+        <input type="text" name="search" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះសកម្មភាព, ទីតាំង..."
           value="{{ search_query }}" style="padding-left: 36px;">
         <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px;"></i>
       </div>
@@ -258,7 +258,6 @@
       <thead>
         <tr style="background: var(--bg-main);">
           <th style="width: 50px; text-align: center;">ល.រ</th>
-          <th style="width: 130px;">កូដសម្គាល់</th>
           <th style="min-width: 280px;">ឈ្មោះសកម្មភាព / គម្រោង</th>
           <th style="width: 170px;">ផ្នែក/វិស័យ</th>
           <th style="width: 150px;">ទីតាំងគោលដៅ</th>
@@ -279,17 +278,23 @@
               {{ loop.index | kh_num }}
             </td>
             <td>
-              <span class="code-pill">{{ p.project_code }}</span>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">ឆ្នាំ {{ p.project_year | kh_num }}</div>
-            </td>
-            <td>
               <a href="{{ url_for('development_detail', project_id=p.id) }}" class="project-title-link" style="color: #059669;">
                 {{ p.project_name }}
               </a>
-              {% if p.beneficiaries_count %}
-              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 5px;">
-                <i class="fa-solid fa-users" style="color: #7c3aed; font-size: 11px;"></i>
-                <span>អ្នកទទួលផល៖ <strong>{{ p.beneficiaries_count | kh_num }}</strong> នាក់</span>
+              {% if p.beneficiaries_count or selected_year == 'all' %}
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                {% if selected_year == 'all' %}
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="fa-regular fa-calendar" style="color: #059669; font-size: 11px;"></i>
+                  <span>ឆ្នាំ {{ p.project_year | kh_num }}</span>
+                </span>
+                {% endif %}
+                {% if p.beneficiaries_count %}
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-users" style="color: #7c3aed; font-size: 11px;"></i>
+                  <span>អ្នកទទួលផល៖ <strong>{{ p.beneficiaries_count | kh_num }}</strong> នាក់</span>
+                </span>
+                {% endif %}
               </div>
               {% endif %}
             </td>
@@ -356,7 +361,7 @@
         {% endfor %}
         {% else %}
         <tr>
-          <td colspan="10" style="text-align: center; padding: 45px 20px;">
+          <td colspan="9" style="text-align: center; padding: 45px 20px;">
             <div style="font-size: 42px; color: #cbd5e1; margin-bottom: 12px;">
               <i class="fa-solid fa-hand-holding-heart"></i>
             </div>
