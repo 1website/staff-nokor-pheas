@@ -658,6 +658,35 @@ def init_db(conn=None):
     )
     """)
 
+    # 15. Development Projects & Expenses Table (កម្មវិធីវិនិយោគ និងចំណាយអភិវឌ្ឍន៍ឃុំ - CIP)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS development_projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_code TEXT UNIQUE NOT NULL,
+        project_year INTEGER NOT NULL,
+        sector TEXT NOT NULL, -- 'economic', 'social', 'natural_resources', 'admin_security'
+        project_name TEXT NOT NULL,
+        village_id INTEGER,
+        target_location TEXT,
+        planned_budget REAL DEFAULT 0,
+        actual_expense REAL DEFAULT 0,
+        funding_source TEXT DEFAULT 'commune_fund', -- 'commune_fund', 'community', 'partner_ngo', 'national_budget', 'other'
+        contractor_agency TEXT,
+        progress_percent INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'in_progress', -- 'planning', 'bidding', 'in_progress', 'completed', 'delayed'
+        start_date TEXT,
+        end_date TEXT,
+        beneficiaries_count INTEGER DEFAULT 0,
+        attachment TEXT,
+        notes TEXT,
+        created_by INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (village_id) REFERENCES villages (id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+    )
+    """)
+
     # Safe migration for existing DB
     try:
         cursor.execute("ALTER TABLE missions ADD COLUMN IF NOT EXISTS attachment TEXT")
@@ -693,7 +722,11 @@ def init_db(conn=None):
         "CREATE INDEX IF NOT EXISTS idx_payroll_month ON payroll(month_year)",
         "CREATE INDEX IF NOT EXISTS idx_payroll_staff_month ON payroll(staff_id, month_year)",
         "CREATE INDEX IF NOT EXISTS idx_documents_staff ON documents(staff_id)",
-        "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)"
+        "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)",
+        "CREATE INDEX IF NOT EXISTS idx_dev_projects_year ON development_projects(project_year)",
+        "CREATE INDEX IF NOT EXISTS idx_dev_projects_sector ON development_projects(sector)",
+        "CREATE INDEX IF NOT EXISTS idx_dev_projects_status ON development_projects(status)",
+        "CREATE INDEX IF NOT EXISTS idx_dev_projects_village ON development_projects(village_id)"
     ]
     for idx_sql in indexes:
         try:
@@ -778,7 +811,121 @@ def ensure_baseline_data(conn=None):
     # Ensure attendance records are in Cambodia Timezone (UTC+7)
     fix_utc_attendance_records(conn)
 
+    # Ensure baseline development projects (CIP) seed data exists
+    ensure_development_seed_data(conn)
+
     conn.commit()
+
+
+def ensure_development_seed_data(conn=None):
+    """
+    Seeds initial realistic commune investment projects (CIP) across 4 sectors for 2025 and 2026.
+    Non-destructive: only seeds if development_projects table is currently empty.
+    """
+    if conn is None:
+        conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT COUNT(*) FROM development_projects")
+        row = cursor.fetchone()
+        count = row[0] if row else 0
+        if count > 0:
+            return
+
+        # Fetch village IDs mapping
+        cursor.execute("SELECT id, village_name_kh FROM villages")
+        v_rows = cursor.fetchall()
+        village_map = {r["village_name_kh"]: r["id"] for r in v_rows}
+
+        projects = [
+            # 2026 Projects
+            (
+                "CIP-2026-001", 2026, "economic",
+                "សាងសង់ផ្លូវបេតុងជនបទ ប្រវែង ៨៥០ ម៉ែត្រ",
+                village_map.get("រមៀត"), "ផ្លូវតភ្ជាប់ពីសាលាឃុំទៅភូមិរមៀត",
+                52000000.0, 41500000.0, "commune_fund", "ក្រុមហ៊ុន សាងសង់ ពិសិដ្ឋ",
+                80, "in_progress", "2026-01-15", "2026-05-30", 450,
+                None, "គម្រោងមូលនិធិឃុំឆ្នាំ២០២៦ ផ្នែកសេដ្ឋកិច្ចអាទិភាពទី១"
+            ),
+            (
+                "CIP-2026-002", 2026, "social",
+                "ជួសជុលអគារមណ្ឌលសុខភាព និងសាងសង់បន្ទប់អនាម័យសហគមន៍",
+                village_map.get("នគរភាស១"), "មណ្ឌលសុខភាពឃុំនគរភាស ភូមិ១",
+                24000000.0, 24000000.0, "commune_fund", "គណៈកម្មការលទ្ធកម្មឃុំ",
+                100, "completed", "2026-02-01", "2026-04-10", 1250,
+                None, "គម្រោងលើកកម្ពស់សុខុមាលភាពមាតានិងទារក"
+            ),
+            (
+                "CIP-2026-003", 2026, "natural_resources",
+                "ស្តារប្រឡាយមេ និងដាំកូនឈើប្រណិតការពារការហូរច្រោះច្រាំង",
+                village_map.get("ទន្លេស"), "ប្រឡាយមេខាងជើងភូមិទន្លេស",
+                19500000.0, 13000000.0, "partner_ngo", "សហគមន៍កសិកម្មទន្លេស",
+                65, "in_progress", "2026-03-01", "2026-06-20", 380,
+                None, "កិច្ចសហការរវាងរដ្ឋបាលឃុំ និងអង្គការដៃគូអភិវឌ្ឍន៍បៃតង"
+            ),
+            (
+                "CIP-2026-004", 2026, "admin_security",
+                "ដំឡើងប្រព័ន្ធអំពូលសូឡាបំភ្លឺផ្លូវសាធារណៈ ៣០ បង្គោល",
+                village_map.get("ជំពូង"), "ផ្លូវកណ្តាលភូមិ និងចំណុចប្រសព្វជំពូង",
+                10500000.0, 10500000.0, "community", "ក្រុមជាងអគ្គិសនីសហគមន៍",
+                100, "completed", "2026-01-20", "2026-02-28", 320,
+                None, "គម្រោងពង្រឹងសន្តិសុខភូមិ-ឃុំមានសុវត្ថិភាព ដោយមានការចូលរួមពីប្រជាពលរដ្ឋ"
+            ),
+            (
+                "CIP-2026-005", 2026, "economic",
+                "សាងសង់ស្ពានបេតុងឆ្លងកាត់អូរធម្មជាតិ",
+                village_map.get("គោកថ្មី"), "ផ្លូវលំភូមិគោកថ្មី ឆ្ពោះទៅវាលស្រែ",
+                32000000.0, 9600000.0, "commune_fund", "ក្រុមហ៊ុន សំណង់អង្គរ",
+                30, "in_progress", "2026-04-01", "2026-08-15", 560,
+                None, "សម្រួលដល់ការដឹកជញ្ជូនកសិផលរបស់ប្រជាកសិករ"
+            ),
+            # 2025 Projects
+            (
+                "CIP-2025-001", 2025, "economic",
+                "ជួសជុលកែលម្អផ្លូវគ្រួសក្រហម ប្រវែង ១,២០០ ម៉ែត្រ",
+                village_map.get("សំបួរ"), "ផ្លូវតភ្ជាប់ភូមិសំបួរ និងភូមិល្បើក",
+                35000000.0, 35000000.0, "commune_fund", "ក្រុមហ៊ុន វិស្វកម្មភ្នំដី",
+                100, "completed", "2025-02-10", "2025-05-15", 680,
+                None, "បានបញ្ចប់គម្រោង និងប្រគល់ទទួលជាផ្លូវការ"
+            ),
+            (
+                "CIP-2025-002", 2025, "social",
+                "ខួងអណ្តូងស្នប់ និងបំពាក់អាងចម្រោះទឹកស្អាតចំនួន ៣ កន្លែង",
+                village_map.get("កុក"), "សាលាបឋមសិក្សា និងវត្តអារាមភូមិកុក",
+                15000000.0, 14800000.0, "partner_ngo", "អង្គការទឹកស្អាតកម្ពុជា",
+                100, "completed", "2025-03-05", "2025-04-25", 420,
+                None, "ផ្តល់ទឹកស្អាតដល់សិស្សានុសិស្ស និងប្រជាជនក្នុងភូមិ"
+            ),
+            (
+                "CIP-2025-003", 2025, "natural_resources",
+                "ស្តារស្រះទឹកសហគមន៍សម្រាប់ស្តុកទឹកទុកពេលរាំងស្ងួត",
+                village_map.get("ពង្រ"), "ស្រះទឹកកណ្តាលភូមិពង្រ",
+                18000000.0, 18000000.0, "commune_fund", "គណៈកម្មការអភិវឌ្ឍន៍ភូមិ",
+                100, "completed", "2025-05-01", "2025-07-30", 510,
+                None, "ជួយផ្គត់ផ្គង់ទឹកប្រើប្រាស់ក្នុងរដូវប្រាំង"
+            ),
+            (
+                "CIP-2025-004", 2025, "admin_security",
+                "បំពាក់ស្លាកសញ្ញាចរាចរណ៍ និងយុទ្ធនាការភូមិ-ឃុំមានសុវត្ថិភាព",
+                village_map.get("នគរភាស២"), "គ្រប់ផ្លូវប្រសព្វក្នុងភូមិ និងមុខសាលារៀន",
+                6000000.0, 5900000.0, "commune_fund", "ប៉ុស្តិ៍នគរបាលរដ្ឋបាលឃុំ",
+                100, "completed", "2025-06-01", "2025-07-15", 850,
+                None, "កាត់បន្ថយគ្រោះថ្នាក់ចរាចរណ៍ និងបង្កើនសណ្តាប់ធ្នាប់"
+            )
+        ]
+
+        sql = """
+        INSERT INTO development_projects (
+            project_code, project_year, sector, project_name,
+            village_id, target_location, planned_budget, actual_expense,
+            funding_source, contractor_agency, progress_percent, status,
+            start_date, end_date, beneficiaries_count, attachment, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        cursor.executemany(sql, projects)
+        conn.commit()
+    except Exception as e:
+        print(f"[Development Seed Data Notice] {e}")
 
 
 def fix_utc_attendance_records(conn=None):
@@ -902,6 +1049,7 @@ def clear_all_demo_data(conn=None):
     cursor = conn.cursor()
 
     demo_tables = [
+        "development_projects",
         "asset_logs",
         "assets",
         "finance_transactions",

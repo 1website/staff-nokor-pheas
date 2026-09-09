@@ -271,6 +271,66 @@ FINANCE_STATUSES = {
     'cancelled': {'title_kh': 'បានលុបចោល', 'badge': 'badge-danger'}
 }
 
+# Development Expenses & Commune Investment Programme (CIP) Constants (ចំណាយអភិវឌ្ឍន៍ ៤ វិស័យ)
+DEVELOPMENT_SECTORS = {
+    'economic': {
+        'title_kh': 'ផ្នែកសេដ្ឋកិច្ច',
+        'title_en': 'Economic Sector',
+        'short_kh': 'សេដ្ឋកិច្ច',
+        'icon': 'fa-solid fa-road',
+        'badge_class': 'badge-info',
+        'color': '#0284c7',
+        'bg_color': '#f0f9ff',
+        'desc': 'ផ្លូវលំ ស្ពាន លូ ប្រឡាយ ទំនប់ទឹក ផ្សារ កសិកម្ម'
+    },
+    'social': {
+        'title_kh': 'ផ្នែកសង្គមកិច្ច',
+        'title_en': 'Social Sector',
+        'short_kh': 'សង្គមកិច្ច',
+        'icon': 'fa-solid fa-hand-holding-heart',
+        'badge_class': 'badge-success',
+        'color': '#059669',
+        'bg_color': '#ecfdf5',
+        'desc': 'អប់រំ សុខាភិបាល ទឹកស្អាត អនាម័យ គាំទ្រស្ត្រី និងកុមារ'
+    },
+    'natural_resources': {
+        'title_kh': 'ផ្នែកធនធានធម្មជាតិ និងការបន្សាំទៅនឹងការប្រែប្រួលអាកាសធាតុ',
+        'title_en': 'Natural Resources & Climate Change Adaptation',
+        'short_kh': 'ធនធានធម្មជាតិ & បរិស្ថាន',
+        'icon': 'fa-solid fa-tree',
+        'badge_class': 'badge-emerald',
+        'color': '#0d9488',
+        'bg_color': '#f0fdfa',
+        'desc': 'ដាំដើមឈើ អភិរក្សព្រៃ/បឹង ការពាររាំងស្ងួត/ទឹកជំនន់ សំរាម'
+    },
+    'admin_security': {
+        'title_kh': 'ផ្នែករដ្ឋបាល និងសន្តិសុខសណ្តាប់ធ្នាប់',
+        'title_en': 'Administration & Security / Public Order',
+        'short_kh': 'រដ្ឋបាល & សន្តិសុខ',
+        'icon': 'fa-solid fa-shield-halved',
+        'badge_class': 'badge-purple',
+        'color': '#7c3aed',
+        'bg_color': '#f5f3ff',
+        'desc': 'សន្តិសុខភូមិ-ឃុំ សណ្តាប់ធ្នាប់ ភ្លើងបំភ្លឺផ្លូវ អប់រំច្បាប់'
+    }
+}
+
+DEVELOPMENT_STATUSES = {
+    'planning': {'title_kh': 'គ្រោងទុក', 'title_en': 'Planning', 'badge_class': 'badge-secondary', 'color': '#64748b'},
+    'bidding': {'title_kh': 'កំពុងដេញថ្លៃ', 'title_en': 'Bidding', 'badge_class': 'badge-warning', 'color': '#d97706'},
+    'in_progress': {'title_kh': 'កំពុងអនុវត្ត', 'title_en': 'In Progress', 'badge_class': 'badge-info', 'color': '#0284c7'},
+    'completed': {'title_kh': 'បានបញ្ចប់', 'title_en': 'Completed', 'badge_class': 'badge-success', 'color': '#059669'},
+    'delayed': {'title_kh': 'ពន្យារពេល', 'title_en': 'Delayed', 'badge_class': 'badge-danger', 'color': '#dc2626'}
+}
+
+DEVELOPMENT_FUNDING_SOURCES = {
+    'commune_fund': {'title_kh': 'មូលនិធិឃុំ (Commune Fund)', 'title_en': 'Commune Fund', 'badge': 'badge-primary'},
+    'community': {'title_kh': 'ការចូលរួមពីសហគមន៍/ពលរដ្ឋ', 'title_en': 'Community Contribution', 'badge': 'badge-success'},
+    'partner_ngo': {'title_kh': 'អង្គការដៃគូអភិវឌ្ឍន៍ (NGOs)', 'title_en': 'Development Partner / NGO', 'badge': 'badge-info'},
+    'national_budget': {'title_kh': 'ថវិកាជាតិ/ក្រសួងស្ថាប័ន', 'title_en': 'National Budget', 'badge': 'badge-purple'},
+    'other': {'title_kh': 'ប្រភពផ្សេងៗ', 'title_en': 'Other Sources', 'badge': 'badge-secondary'}
+}
+
 # State Asset Management Constants
 ASSET_CATEGORIES = {
     'building': {

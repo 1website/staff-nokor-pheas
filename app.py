@@ -25,6 +25,7 @@ from utils.helpers import (
     FINANCE_INCOME_CATEGORIES, FINANCE_EXPENSE_CATEGORIES,
     PAYMENT_METHODS, FINANCE_STATUSES,
     ASSET_CATEGORIES, ASSET_CONDITIONS, ASSET_ACQUISITIONS,
+    DEVELOPMENT_SECTORS, DEVELOPMENT_STATUSES, DEVELOPMENT_FUNDING_SOURCES,
     staff_photo_url, process_and_save_photo,
     CAMBODIA_TZ, get_now, get_today, get_today_str, get_now_time_str, get_current_month_str
 )
@@ -34,7 +35,8 @@ from utils.export_excel import (
     export_staff_list_excel,
     export_payroll_excel,
     export_finance_excel,
-    export_assets_excel
+    export_assets_excel,
+    export_development_excel
 )
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -151,6 +153,9 @@ def inject_global_vars():
         "ASSET_CATEGORIES": ASSET_CATEGORIES,
         "ASSET_CONDITIONS": ASSET_CONDITIONS,
         "ASSET_ACQUISITIONS": ASSET_ACQUISITIONS,
+        "DEVELOPMENT_SECTORS": DEVELOPMENT_SECTORS,
+        "DEVELOPMENT_STATUSES": DEVELOPMENT_STATUSES,
+        "DEVELOPMENT_FUNDING_SOURCES": DEVELOPMENT_FUNDING_SOURCES,
         "to_khmer_num": to_khmer_num,
         "format_khmer_date": format_khmer_date,
         "format_currency": format_currency,
@@ -3478,6 +3483,504 @@ def export_finance_excel_route():
         period_tag = "All"
         
     filename = f"Nokor_Pheas_CashBook_{period_tag}.xlsx"
+
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# ==============================================================================
+# 15. DEVELOPMENT EXPENSES & COMMUNE INVESTMENT PROGRAMME (CIP) ROUTES
+# (ចំណាយអភិវឌ្ឍន៍ និងគម្រោងវិនិយោគឃុំ ៤ វិស័យ តាមឆ្នាំអភិវឌ្ឍន៍)
+# ==============================================================================
+
+@app.route('/development')
+@login_required
+def development_list():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Query distinct years from projects
+    cursor.execute("SELECT DISTINCT project_year FROM development_projects ORDER BY project_year DESC")
+    available_years = [r["project_year"] for r in cursor.fetchall()]
+    current_year = date.today().year
+    if current_year not in available_years:
+        available_years.insert(0, current_year)
+
+    selected_year = request.args.get("year", "").strip()
+    if not selected_year:
+        selected_year = str(current_year) if current_year in available_years else (str(available_years[0]) if available_years else "all")
+
+    selected_sector = request.args.get("sector", "all").strip()
+    selected_status = request.args.get("status", "all").strip()
+    selected_village_id = request.args.get("village_id", "all").strip()
+    search_query = request.args.get("search", "").strip()
+
+    # Base query
+    query = """
+        SELECT p.*, v.village_name_kh, u.full_name as creator_name
+        FROM development_projects p
+        LEFT JOIN villages v ON p.village_id = v.id
+        LEFT JOIN users u ON p.created_by = u.id
+        WHERE 1=1
+    """
+    params = []
+
+    if selected_year and selected_year.lower() != "all":
+        try:
+            query += " AND p.project_year = ?"
+            params.append(int(selected_year))
+        except ValueError:
+            pass
+
+    if selected_sector and selected_sector.lower() != "all":
+        query += " AND p.sector = ?"
+        params.append(selected_sector)
+
+    if selected_status and selected_status.lower() != "all":
+        query += " AND p.status = ?"
+        params.append(selected_status)
+
+    if selected_village_id and selected_village_id.lower() != "all":
+        try:
+            query += " AND p.village_id = ?"
+            params.append(int(selected_village_id))
+        except ValueError:
+            pass
+
+    if search_query:
+        query += " AND (p.project_name LIKE ? OR p.project_code LIKE ? OR p.target_location LIKE ? OR p.contractor_agency LIKE ?)"
+        q_like = f"%{search_query}%"
+        params.extend([q_like, q_like, q_like, q_like])
+
+    query += " ORDER BY p.project_year DESC, p.id DESC"
+    cursor.execute(query, tuple(params))
+    projects = cursor.fetchall()
+
+    # Calculate Summary Stats for the selected year (or all years)
+    stats_query = "SELECT planned_budget, actual_expense, progress_percent, status, sector FROM development_projects WHERE 1=1"
+    stats_params = []
+    if selected_year and selected_year.lower() != "all":
+        try:
+            stats_query += " AND project_year = ?"
+            stats_params.append(int(selected_year))
+        except ValueError:
+            pass
+
+    cursor.execute(stats_query, tuple(stats_params))
+    all_year_projects = cursor.fetchall()
+
+    total_planned = sum(float(p["planned_budget"] or 0) for p in all_year_projects)
+    total_actual = sum(float(p["actual_expense"] or 0) for p in all_year_projects)
+    remaining_balance = total_planned - total_actual
+    total_count = len(all_year_projects)
+    completed_count = sum(1 for p in all_year_projects if p["status"] == "completed" or (p["progress_percent"] or 0) >= 100)
+    avg_progress = round(sum(int(p["progress_percent"] or 0) for p in all_year_projects) / total_count) if total_count > 0 else 0
+
+    # Sector summary counters for tabs
+    sector_counts = {
+        "all": total_count,
+        "economic": 0,
+        "social": 0,
+        "natural_resources": 0,
+        "admin_security": 0
+    }
+    sector_expenses = {
+        "economic": 0.0,
+        "social": 0.0,
+        "natural_resources": 0.0,
+        "admin_security": 0.0
+    }
+    for p in all_year_projects:
+        sec = p["sector"]
+        if sec in sector_counts:
+            sector_counts[sec] += 1
+            sector_expenses[sec] += float(p["actual_expense"] or 0)
+
+    # Fetch 10 villages for filter & form
+    cursor.execute("SELECT id, village_name_kh, village_name_en FROM villages ORDER BY id ASC")
+    villages = cursor.fetchall()
+
+    return render_template(
+        "development/index.html",
+        projects=projects,
+        available_years=available_years,
+        selected_year=selected_year,
+        selected_sector=selected_sector,
+        selected_status=selected_status,
+        selected_village_id=selected_village_id,
+        search_query=search_query,
+        total_planned=total_planned,
+        total_actual=total_actual,
+        remaining_balance=remaining_balance,
+        total_count=total_count,
+        completed_count=completed_count,
+        avg_progress=avg_progress,
+        sector_counts=sector_counts,
+        sector_expenses=sector_expenses,
+        villages=villages
+    )
+
+
+@app.route('/development/new', methods=['GET', 'POST'])
+@clerk_or_admin_required
+def development_create():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    current_year = date.today().year
+
+    if request.method == "POST":
+        project_year_raw = request.form.get("project_year", str(current_year)).strip()
+        try:
+            project_year = int(project_year_raw)
+        except ValueError:
+            project_year = current_year
+
+        sector = request.form.get("sector", "economic").strip()
+        project_name = request.form.get("project_name", "").strip()
+        village_id_raw = request.form.get("village_id", "").strip()
+        village_id = int(village_id_raw) if village_id_raw.isdigit() else None
+        target_location = request.form.get("target_location", "").strip()
+
+        planned_budget_raw = request.form.get("planned_budget", "0").strip().replace(",", "")
+        try:
+            planned_budget = float(planned_budget_raw)
+        except ValueError:
+            planned_budget = 0.0
+
+        actual_expense_raw = request.form.get("actual_expense", "0").strip().replace(",", "")
+        try:
+            actual_expense = float(actual_expense_raw)
+        except ValueError:
+            actual_expense = 0.0
+
+        funding_source = request.form.get("funding_source", "commune_fund").strip()
+        contractor_agency = request.form.get("contractor_agency", "").strip()
+
+        progress_raw = request.form.get("progress_percent", "0").strip()
+        try:
+            progress_percent = max(0, min(100, int(progress_raw)))
+        except ValueError:
+            progress_percent = 0
+
+        status = request.form.get("status", "in_progress").strip()
+        start_date = request.form.get("start_date", "").strip() or None
+        end_date = request.form.get("end_date", "").strip() or None
+
+        beneficiaries_raw = request.form.get("beneficiaries_count", "0").strip().replace(",", "")
+        try:
+            beneficiaries_count = int(beneficiaries_raw)
+        except ValueError:
+            beneficiaries_count = 0
+
+        notes = request.form.get("notes", "").strip()
+
+        # Custom or auto project code
+        project_code = request.form.get("project_code", "").strip()
+        if not project_code:
+            cursor.execute("SELECT COUNT(*) FROM development_projects WHERE project_year = ?", (project_year,))
+            seq = (cursor.fetchone()[0] or 0) + 1
+            project_code = f"CIP-{project_year}-{seq:03d}"
+
+        # Validation
+        if not project_name:
+            flash("សូមបញ្ចូលឈ្មោះគម្រោង ឬសកម្មភាពអភិវឌ្ឍន៍!", "danger")
+            cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+            villages = cursor.fetchall()
+            return render_template("development/form.html", is_edit=False, villages=villages, preset_year=project_year)
+
+        # Check unique code
+        cursor.execute("SELECT id FROM development_projects WHERE project_code = ?", (project_code,))
+        if cursor.fetchone():
+            flash(f"កូដគម្រោង {project_code} មានរួចហើយ សូមប្តូរកូដថ្មី!", "danger")
+            cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+            villages = cursor.fetchall()
+            return render_template("development/form.html", is_edit=False, villages=villages, preset_year=project_year)
+
+        # File upload
+        attachment_filename = None
+        if "attachment" in request.files:
+            file = request.files["attachment"]
+            if file and file.filename != "":
+                orig_filename = secure_filename(file.filename)
+                ext = os.path.splitext(orig_filename)[1].lower()
+                if ext in [".pdf", ".png", ".jpg", ".jpeg", ".webp"]:
+                    timestamp = int(datetime.now().timestamp())
+                    safe_code = project_code.replace("-", "_")
+                    attachment_filename = f"cip_{safe_code}_{timestamp}{ext}"
+                    save_path = os.path.join(app.config["UPLOAD_FOLDER"], attachment_filename)
+                    file.save(save_path)
+
+        user_id = session.get("user_id")
+
+        cursor.execute("""
+            INSERT INTO development_projects (
+                project_code, project_year, sector, project_name,
+                village_id, target_location, planned_budget, actual_expense,
+                funding_source, contractor_agency, progress_percent, status,
+                start_date, end_date, beneficiaries_count, attachment, notes, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            project_code, project_year, sector, project_name,
+            village_id, target_location, planned_budget, actual_expense,
+            funding_source, contractor_agency, progress_percent, status,
+            start_date, end_date, beneficiaries_count, attachment_filename, notes, user_id
+        ))
+        conn.commit()
+
+        flash(f"បានបន្ថែមគម្រោងអភិវឌ្ឍន៍ «{project_name}» ដោយជោគជ័យ!", "success")
+        return redirect(url_for("development_list", year=project_year, sector=sector))
+
+    # GET
+    cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+    villages = cursor.fetchall()
+
+    preset_year = request.args.get("year", str(current_year)).strip()
+    preset_sector = request.args.get("sector", "economic").strip()
+
+    try:
+        yr = int(preset_year)
+    except ValueError:
+        yr = current_year
+    cursor.execute("SELECT COUNT(*) FROM development_projects WHERE project_year = ?", (yr,))
+    next_seq = (cursor.fetchone()[0] or 0) + 1
+    suggested_code = f"CIP-{yr}-{next_seq:03d}"
+
+    return render_template(
+        "development/form.html",
+        is_edit=False,
+        villages=villages,
+        suggested_code=suggested_code,
+        preset_year=yr,
+        preset_sector=preset_sector
+    )
+
+
+@app.route('/development/<int:project_id>')
+@login_required
+def development_detail(project_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT p.*, v.village_name_kh, v.village_name_en, u.full_name as creator_name
+        FROM development_projects p
+        LEFT JOIN villages v ON p.village_id = v.id
+        LEFT JOIN users u ON p.created_by = u.id
+        WHERE p.id = ?
+    """, (project_id,))
+    project = cursor.fetchone()
+
+    if not project:
+        flash("រកមិនឃើញគម្រោងអភិវឌ្ឍន៍ដែលលោកអ្នកស្នើសុំឡើយ!", "danger")
+        return redirect(url_for("development_list"))
+
+    return render_template("development/detail.html", project=project)
+
+
+@app.route('/development/<int:project_id>/edit', methods=['GET', 'POST'])
+@clerk_or_admin_required
+def development_edit(project_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM development_projects WHERE id = ?", (project_id,))
+    project = cursor.fetchone()
+    if not project:
+        flash("រកមិនឃើញគម្រោងអភិវឌ្ឍន៍ដែលត្រូវកែប្រែឡើយ!", "danger")
+        return redirect(url_for("development_list"))
+
+    if request.method == "POST":
+        project_year_raw = request.form.get("project_year", str(project["project_year"])).strip()
+        try:
+            project_year = int(project_year_raw)
+        except ValueError:
+            project_year = project["project_year"]
+
+        sector = request.form.get("sector", project["sector"]).strip()
+        project_name = request.form.get("project_name", "").strip()
+        village_id_raw = request.form.get("village_id", "").strip()
+        village_id = int(village_id_raw) if village_id_raw.isdigit() else None
+        target_location = request.form.get("target_location", "").strip()
+
+        planned_budget_raw = request.form.get("planned_budget", "0").strip().replace(",", "")
+        try:
+            planned_budget = float(planned_budget_raw)
+        except ValueError:
+            planned_budget = 0.0
+
+        actual_expense_raw = request.form.get("actual_expense", "0").strip().replace(",", "")
+        try:
+            actual_expense = float(actual_expense_raw)
+        except ValueError:
+            actual_expense = 0.0
+
+        funding_source = request.form.get("funding_source", "commune_fund").strip()
+        contractor_agency = request.form.get("contractor_agency", "").strip()
+
+        progress_raw = request.form.get("progress_percent", "0").strip()
+        try:
+            progress_percent = max(0, min(100, int(progress_raw)))
+        except ValueError:
+            progress_percent = 0
+
+        status = request.form.get("status", "in_progress").strip()
+        start_date = request.form.get("start_date", "").strip() or None
+        end_date = request.form.get("end_date", "").strip() or None
+
+        beneficiaries_raw = request.form.get("beneficiaries_count", "0").strip().replace(",", "")
+        try:
+            beneficiaries_count = int(beneficiaries_raw)
+        except ValueError:
+            beneficiaries_count = 0
+
+        notes = request.form.get("notes", "").strip()
+        project_code = request.form.get("project_code", project["project_code"]).strip()
+
+        if not project_name:
+            flash("សូមបញ្ចូលឈ្មោះគម្រោង ឬសកម្មភាពអភិវឌ្ឍន៍!", "danger")
+            cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+            villages = cursor.fetchall()
+            return render_template("development/form.html", is_edit=True, project=project, villages=villages)
+
+        # Check unique code if changed
+        if project_code != project["project_code"]:
+            cursor.execute("SELECT id FROM development_projects WHERE project_code = ? AND id != ?", (project_code, project_id))
+            if cursor.fetchone():
+                flash(f"កូដគម្រោង {project_code} ត្រូវបានប្រើប្រាស់ដោយគម្រោងផ្សេងរួចហើយ!", "danger")
+                cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+                villages = cursor.fetchall()
+                return render_template("development/form.html", is_edit=True, project=project, villages=villages)
+
+        attachment_filename = project["attachment"]
+        if "attachment" in request.files:
+            file = request.files["attachment"]
+            if file and file.filename != "":
+                orig_filename = secure_filename(file.filename)
+                ext = os.path.splitext(orig_filename)[1].lower()
+                if ext in [".pdf", ".png", ".jpg", ".jpeg", ".webp"]:
+                    timestamp = int(datetime.now().timestamp())
+                    safe_code = project_code.replace("-", "_")
+                    attachment_filename = f"cip_{safe_code}_{timestamp}{ext}"
+                    save_path = os.path.join(app.config["UPLOAD_FOLDER"], attachment_filename)
+                    file.save(save_path)
+
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("""
+            UPDATE development_projects SET
+                project_code = ?, project_year = ?, sector = ?, project_name = ?,
+                village_id = ?, target_location = ?, planned_budget = ?, actual_expense = ?,
+                funding_source = ?, contractor_agency = ?, progress_percent = ?, status = ?,
+                start_date = ?, end_date = ?, beneficiaries_count = ?, attachment = ?,
+                notes = ?, updated_at = ?
+            WHERE id = ?
+        """, (
+            project_code, project_year, sector, project_name,
+            village_id, target_location, planned_budget, actual_expense,
+            funding_source, contractor_agency, progress_percent, status,
+            start_date, end_date, beneficiaries_count, attachment_filename,
+            notes, now_str, project_id
+        ))
+        conn.commit()
+
+        flash(f"បានកែប្រែព័ត៌មានគម្រោង «{project_name}» ដោយជោគជ័យ!", "success")
+        return redirect(url_for("development_detail", project_id=project_id))
+
+    cursor.execute("SELECT id, village_name_kh FROM villages ORDER BY id ASC")
+    villages = cursor.fetchall()
+    return render_template("development/form.html", is_edit=True, project=project, villages=villages)
+
+
+@app.route('/development/<int:project_id>/delete', methods=['POST'])
+@clerk_or_admin_required
+def development_delete(project_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT project_name, project_year FROM development_projects WHERE id = ?", (project_id,))
+    row = cursor.fetchone()
+    if row:
+        p_name = row["project_name"]
+        p_year = row["project_year"]
+        cursor.execute("DELETE FROM development_projects WHERE id = ?", (project_id,))
+        conn.commit()
+        flash(f"បានលុបគម្រោង «{p_name}» ចេញពីប្រព័ន្ធរួចរាល់!", "info")
+        return redirect(url_for("development_list", year=p_year))
+    else:
+        flash("រកមិនឃើញគម្រោងដែលត្រូវលុបឡើយ!", "danger")
+        return redirect(url_for("development_list"))
+
+
+@app.route('/development/<int:project_id>/progress', methods=['POST'])
+@clerk_or_admin_required
+def development_update_progress(project_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, project_name, planned_budget, actual_expense FROM development_projects WHERE id = ?", (project_id,))
+    project = cursor.fetchone()
+    if not project:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"success": False, "message": "Project not found"}), 404
+        flash("រកមិនឃើញគម្រោង!", "danger")
+        return redirect(url_for("development_list"))
+
+    progress_raw = request.form.get("progress_percent", "").strip()
+    status = request.form.get("status", "").strip()
+    actual_expense_raw = request.form.get("actual_expense", "").strip().replace(",", "")
+
+    updates = []
+    params = []
+
+    if progress_raw != "":
+        try:
+            prog = max(0, min(100, int(progress_raw)))
+            updates.append("progress_percent = ?")
+            params.append(prog)
+            if prog >= 100 and not status:
+                status = "completed"
+        except ValueError:
+            pass
+
+    if status:
+        updates.append("status = ?")
+        params.append(status)
+
+    if actual_expense_raw != "":
+        try:
+            act_exp = float(actual_expense_raw)
+            updates.append("actual_expense = ?")
+            params.append(act_exp)
+        except ValueError:
+            pass
+
+    if updates:
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(project_id)
+        cursor.execute(f"UPDATE development_projects SET {', '.join(updates)} WHERE id = ?", tuple(params))
+        conn.commit()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({"success": True, "message": "បានកែសម្រួលវឌ្ឍនភាពរួចរាល់!"})
+
+    flash("បានធ្វើបច្ចុប្បន្នភាពវឌ្ឍនភាពគម្រោងរួចរាល់!", "success")
+    return redirect(request.referrer or url_for("development_detail", project_id=project_id))
+
+
+@app.route('/development/export')
+@login_required
+def export_development_excel_route():
+    year = request.args.get("year", "").strip()
+    sector = request.args.get("sector", "").strip()
+    status = request.args.get("status", "").strip()
+    village_id = request.args.get("village_id", "").strip()
+
+    stream = export_development_excel(year=year, sector=sector, status=status, village_id=village_id)
+
+    yr_tag = year if year and year.lower() != "all" else "AllYears"
+    sec_tag = f"_{sector}" if sector and sector.lower() != "all" else ""
+    filename = f"Nokor_Pheas_CIP_{yr_tag}{sec_tag}.xlsx"
 
     return send_file(
         stream,

@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if is_edit %}កែប្រែគម្រោងអភិវឌ្ឍន៍{% else %}បន្ថែមគម្រោងអភិវឌ្ឍន៍ថ្មី{% endif %} - រដ្ឋបាលឃុំនគរភាស
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>
+      <i class="fa-solid fa-chart-line text-gold"></i>
+      <span>{% if is_edit %}កែប្រែព័ត៌មានគម្រោងអភិវឌ្ឍន៍ (Edit CIP Project){% else %}បន្ថែមគម្រោងអភិវឌ្ឍន៍ថ្មី (New CIP Project){% endif %}</span>
+    </h1>
+    <p>បញ្ចូលព័ត៌មានលម្អិតនៃគម្រោងវិនិយោគឃុំ (CIP) តាមឆ្នាំ និង ៤ វិស័យអភិវឌ្ឍន៍</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('development_list') }}" class="btn btn-outline">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>ត្រឡប់ទៅបញ្ជីគម្រោង</span>
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center" style="max-width: 960px; margin: 0 auto;">
+  <div class="card" style="border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+    <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 24px;">
+      <h3 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-folder-open" style="color: var(--primary);"></i>
+        <span>ទម្រង់ព័ត៌មានគម្រោងវិនិយោគឃុំ (CIP)</span>
+      </h3>
+    </div>
+
+    <div class="card-body" style="padding: 24px;">
+      <form method="POST" action="{% if is_edit %}{{ url_for('development_edit', project_id=project.id) }}{% else %}{{ url_for('development_create') }}{% endif %}" enctype="multipart/form-data">
+        
+        <!-- Section 1: Year & 4 Sectors Selector -->
+        <div style="margin-bottom: 26px;">
+          <h4 style="font-size: 14.5px; font-weight: 700; margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-1"></i>
+            <span>ឆ្នាំ និងវិស័យអភិវឌ្ឍន៍ទាំង ៤ (Development Year & 4 Sectors)</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Year input -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                ឆ្នាំអភិវឌ្ឍន៍ <span class="text-danger">*</span>
+              </label>
+              <input type="number" name="project_year" class="form-control" required min="2020" max="2035"
+                value="{% if is_edit %}{{ project.project_year }}{% else %}{{ preset_year or 2026 }}{% endif %}">
+            </div>
+
+            <!-- Project Code -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                កូដសម្គាល់គម្រោង <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="project_code" class="form-control" required
+                value="{% if is_edit %}{{ project.project_code }}{% else %}{{ suggested_code }}{% endif %}" placeholder="ឧ. CIP-2026-001">
+              <small style="color: var(--text-muted); font-size: 11.5px;">ប្រព័ន្ធបង្កើតកូដស្វ័យប្រវត្តិតាមឆ្នាំអភិវឌ្ឍន៍</small>
+            </div>
+          </div>
+
+          <!-- 4 Sectors Radio Cards -->
+          <label class="form-label" style="font-weight: 600; margin-bottom: 10px; display: block;">
+            ជ្រើសរើសវិស័យអភិវឌ្ឍន៍ (៤ ផ្នែក) <span class="text-danger">*</span>
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            {% for s_key, s_info in DEVELOPMENT_SECTORS.items() %}
+            <label class="sector-choice-card" id="card-sector-{{ s_key }}" style="--choice-color: {{ s_info.color }}; --choice-bg: {{ s_info.bg_color }};">
+              <input type="radio" name="sector" value="{{ s_key }}" required
+                {% if (is_edit and project.sector == s_key) or (not is_edit and (preset_sector == s_key or (not preset_sector and loop.first))) %}checked{% endif %}
+                onchange="updateSectorUI('{{ s_key }}')">
+              <div class="choice-icon">
+                <i class="{{ s_info.icon }}"></i>
+              </div>
+              <div class="choice-content">
+                <div class="choice-title">{{ s_info.title_kh }}</div>
+                <div class="choice-desc">{{ s_info.desc }}</div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+        <!-- Section 2: Project Details & Location -->
+        <div style="margin-bottom: 26px;">
+          <h4 style="font-size: 14.5px; font-weight: 700; margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-2"></i>
+            <span>ព័ត៌មានលម្អិត និងទីតាំងគម្រោង (Project Details & Location)</span>
+          </h4>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 600;">
+              ឈ្មោះគម្រោង ឬសកម្មភាពអភិវឌ្ឍន៍ <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="project_name" class="form-control" required
+              value="{% if is_edit %}{{ project.project_name }}{% endif %}"
+              placeholder="ឧ. សាងសង់ផ្លូវបេតុងជនបទ ប្រវែង ៨០០ ម៉ែត្រ">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px;">
+            <!-- Village Dropdown -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                ទីតាំងភូមិអនុវត្ត (១០ ភូមិ)
+              </label>
+              <select name="village_id" class="form-control">
+                <option value="">-- ជ្រើសរើសភូមិ --</option>
+                {% for v in villages %}
+                <option value="{{ v.id }}" {% if is_edit and project.village_id|string == v.id|string %}selected{% endif %}>
+                  ភូមិ{{ v.village_name_kh }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Specific Target Location -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                ទីតាំងជាក់លាក់ក្នុងភូមិ
+              </label>
+              <input type="text" name="target_location" class="form-control"
+                value="{% if is_edit %}{{ project.target_location or '' }}{% endif %}"
+                placeholder="ឧ. ផ្លូវតភ្ជាប់ពីសាលាឃុំទៅភូមិរមៀត">
+            </div>
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+        <!-- Section 3: Budget, Funding & Implementation -->
+        <div style="margin-bottom: 26px;">
+          <h4 style="font-size: 14.5px; font-weight: 700; margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-3"></i>
+            <span>ថវិកា និងការអនុវត្តគម្រោង (Budget & Implementation)</span>
+          </h4>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Planned Budget -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                ថវិកាគ្រោង / ប៉ាន់ស្មាន (រៀល) <span class="text-danger">*</span>
+              </label>
+              <input type="number" name="planned_budget" id="input_planned_budget" class="form-control" required min="0" step="1000"
+                value="{% if is_edit %}{{ project.planned_budget | int }}{% else %}0{% endif %}" oninput="calcRemaining()">
+            </div>
+
+            <!-- Actual Expense -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">
+                ចំណាយជាក់ស្តែង (រៀល)
+              </label>
+              <input type="number" name="actual_expense" id="input_actual_expense" class="form-control" min="0" step="1000"
+                value="{% if is_edit %}{{ project.actual_expense | int }}{% else %}0{% endif %}" oninput="calcRemaining()">
+            </div>
+
+            <!-- Remaining Display -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">តុល្យភាពនៅសល់</label>
+              <div id="display_remaining" style="font-size: 16px; font-weight: 700; color: #059669; padding: 8px 12px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border-color); min-height: 40px; display: flex; align-items: center;">
+                0 រៀល
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Funding Source -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">ប្រភពថវិកា</label>
+              <select name="funding_source" class="form-control">
+                {% for fs_key, fs_info in DEVELOPMENT_FUNDING_SOURCES.items() %}
+                <option value="{{ fs_key }}" {% if is_edit and project.funding_source == fs_key %}selected{% endif %}>
+                  {{ fs_info.title_kh }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Contractor / Agency -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">អ្នកទទួលការ / ក្រុមហ៊ុន / ក្រុមជាង</label>
+              <input type="text" name="contractor_agency" class="form-control"
+                value="{% if is_edit %}{{ project.contractor_agency or '' }}{% endif %}"
+                placeholder="ឧ. ក្រុមហ៊ុន សាងសង់ ពិសិដ្ឋ ឬ គណៈកម្មការលទ្ធកម្មឃុំ">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Progress Slider -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; display: flex; justify-content: space-between;">
+                <span>វឌ្ឍនភាពសម្រេច (% Progress)</span>
+                <span id="label_progress_percent" style="font-weight: 700; color: var(--primary);">
+                  {% if is_edit %}{{ project.progress_percent or 0 }}{% else %}0{% endif %}%
+                </span>
+              </label>
+              <input type="range" name="progress_percent" id="input_progress_percent" class="form-range" min="0" max="100" step="5"
+                value="{% if is_edit %}{{ project.progress_percent or 0 }}{% else %}0{% endif %}"
+                style="width: 100%; accent-color: var(--primary);"
+                oninput="document.getElementById('label_progress_percent').textContent = this.value + '%'">
+            </div>
+
+            <!-- Status -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">ស្ថានភាពគម្រោង</label>
+              <select name="status" class="form-control">
+                {% for st_key, st_info in DEVELOPMENT_STATUSES.items() %}
+                <option value="{{ st_key }}" {% if (is_edit and project.status == st_key) or (not is_edit and st_key == 'in_progress') %}selected{% endif %}>
+                  {{ st_info.title_kh }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Beneficiaries -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">អ្នកទទួលផល (នាក់)</label>
+              <input type="number" name="beneficiaries_count" class="form-control" min="0"
+                value="{% if is_edit %}{{ project.beneficiaries_count or 0 }}{% else %}0{% endif %}" placeholder="0">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Start Date -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">កាលបរិច្ឆេទចាប់ផ្តើម</label>
+              <input type="date" name="start_date" class="form-control"
+                value="{% if is_edit %}{{ project.start_date or '' }}{% endif %}">
+            </div>
+
+            <!-- End Date -->
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600;">កាលបរិច្ឆេទបញ្ចប់</label>
+              <input type="date" name="end_date" class="form-control"
+                value="{% if is_edit %}{{ project.end_date or '' }}{% endif %}">
+            </div>
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+        <!-- Section 4: Attachments & Notes -->
+        <div style="margin-bottom: 26px;">
+          <h4 style="font-size: 14.5px; font-weight: 700; margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-4"></i>
+            <span>ឯកសារភ្ជាប់ និងកំណត់សម្គាល់ (Attachments & Notes)</span>
+          </h4>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 600;">ឯកសារកិច្ចសន្យា / ប្លង់ / វិក្កយបត្រ (PDF ឬ រូបភាព)</label>
+            <input type="file" name="attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.webp">
+            {% if is_edit and project.attachment %}
+            <div style="font-size: 12px; color: #059669; margin-top: 4px;">
+              <i class="fa-solid fa-paperclip"></i> មានឯកសារភ្ជាប់បច្ចុប្បន្ន៖ {{ project.attachment }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 600;">កំណត់សម្គាល់បន្ថែម</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="ព័ត៌មានបន្ថែមអំពីគម្រោង...">{% if is_edit %}{{ project.notes or '' }}{% endif %}</textarea>
+          </div>
+        </div>
+
+        <!-- Submit Actions -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+          <a href="{{ url_for('development_list') }}" class="btn btn-outline">បោះបង់</a>
+          <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{% if is_edit %}រក្សាទុកការកែប្រែ{% else %}បញ្ចូលគម្រោងថ្មី{% endif %}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sector-choice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .sector-choice-card input[type="radio"] {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--choice-color);
+  }
+  .sector-choice-card .choice-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--choice-color);
+    background: var(--choice-bg);
+    flex-shrink: 0;
+  }
+  .sector-choice-card .choice-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--text-color);
+    margin-bottom: 2px;
+    padding-right: 24px;
+  }
+  .sector-choice-card .choice-desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .sector-choice-card:hover {
+    border-color: var(--choice-color);
+    transform: translateY(-1px);
+  }
+  .sector-choice-card input[type="radio"]:checked ~ .choice-content .choice-title {
+    color: var(--choice-color);
+  }
+</style>
+
+<script>
+  function updateSectorUI(selectedKey) {
+    document.querySelectorAll('.sector-choice-card').forEach(function(card) {
+      var radio = card.querySelector('input[type="radio"]');
+      if (radio && radio.checked) {
+        card.style.borderColor = card.style.getPropertyValue('--choice-color');
+        card.style.background = card.style.getPropertyValue('--choice-bg');
+      } else {
+        card.style.borderColor = 'var(--border-color)';
+        card.style.background = 'var(--bg-card)';
+      }
+    });
+  }
+
+  function calcRemaining() {
+    var planned = parseFloat(document.getElementById('input_planned_budget').value) || 0;
+    var actual = parseFloat(document.getElementById('input_actual_expense').value) || 0;
+    var rem = planned - actual;
+    var disp = document.getElementById('display_remaining');
+    disp.textContent = rem.toLocaleString() + ' រៀល';
+    if (rem >= 0) {
+      disp.style.color = '#059669';
+    } else {
+      disp.style.color = '#dc2626';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var checkedRadio = document.querySelector('input[name="sector"]:checked');
+    if (checkedRadio) {
+      updateSectorUI(checkedRadio.value);
+    }
+    calcRemaining();
+  });
+</script>
+{% endblock %}

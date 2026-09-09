@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}ព័ត៌មានលម្អិតគម្រោង {{ project.project_code }} - រដ្ឋបាលឃុំនគរភាស{% endblock %}
+
+{% block content %}
+{% set sec = DEVELOPMENT_SECTORS.get(project.sector, {}) %}
+{% set st = DEVELOPMENT_STATUSES.get(project.status, {}) %}
+{% set fs = DEVELOPMENT_FUNDING_SOURCES.get(project.funding_source, {}) %}
+
+<div class="page-header">
+  <div class="page-header-title">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <a href="{{ url_for('development_list', year=project.project_year, sector=project.sector) }}"
+        style="text-decoration: none; color: var(--text-muted); font-size: 13px;">
+        <i class="fa-solid fa-arrow-left"></i> ត្រឡប់ទៅបញ្ជីគម្រោង
+      </a>
+      <span style="color: var(--text-muted);">/</span>
+      <span style="color: var(--primary); font-weight: 700; font-size: 13px;">{{ project.project_code }}</span>
+    </div>
+    <h1>
+      <i class="fa-solid fa-chart-line text-gold"></i>
+      <span>{{ project.project_name }}</span>
+    </h1>
+    <p>
+      គម្រោងវិនិយោគឃុំ (CIP) ឆ្នាំ {{ project.project_year | kh_num }} |
+      <span class="badge {{ sec.badge_class }}" style="margin-left: 4px;">
+        <i class="{{ sec.icon }}"></i> {{ sec.title_kh }}
+      </span>
+    </p>
+  </div>
+  <div class="page-actions">
+    {% if session.role in ['admin', 'clerk'] %}
+    <a href="{{ url_for('development_edit', project_id=project.id) }}" class="btn btn-primary">
+      <i class="fa-solid fa-pen"></i>
+      <span>កែប្រែគម្រោង</span>
+    </a>
+    <form method="POST" action="{{ url_for('development_delete', project_id=project.id) }}" style="display: inline;"
+      onsubmit="return confirm('តើលោកអ្នកពិតជាចង់លុបគម្រោង «{{ project.project_name|e }}» នេះមែនទេ?');">
+      <button type="submit" class="btn btn-danger">
+        <i class="fa-solid fa-trash"></i>
+        <span>លុប</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Main Detail Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+  
+  <!-- Left Column: Core Info & Budget -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Budget Comparison Card -->
+    <div class="card" style="border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+      <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 20px;">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-scale-balanced" style="color: var(--primary);"></i>
+          <span>ស្ថានភាពថវិកា និងការចំណាយគម្រោង</span>
+        </h3>
+      </div>
+      <div class="card-body" style="padding: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+          
+          <!-- Planned -->
+          <div style="padding: 14px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
+            <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 4px;">ថវិកាគ្រោងសរុប</div>
+            <div style="font-size: 18px; font-weight: 700; color: #1d4ed8;">
+              {{ project.planned_budget | currency }}
+            </div>
+          </div>
+
+          <!-- Actual -->
+          <div style="padding: 14px; background: #fef2f2; border-radius: 12px; border: 1px solid #fecaca;">
+            <div style="font-size: 12px; font-weight: 600; color: #991b1b; margin-bottom: 4px;">ចំណាយជាក់ស្តែង</div>
+            <div style="font-size: 18px; font-weight: 700; color: #dc2626;">
+              {{ project.actual_expense | currency }}
+            </div>
+          </div>
+
+          <!-- Remaining -->
+          {% set remaining = (project.planned_budget or 0) - (project.actual_expense or 0) %}
+          <div style="padding: 14px; background: {% if remaining >= 0 %}#ecfdf5{% else %}#fff7ed{% endif %}; border-radius: 12px; border: 1px solid {% if remaining >= 0 %}#a7f3d0{% else %}#fed7aa{% endif %};">
+            <div style="font-size: 12px; font-weight: 600; color: {% if remaining >= 0 %}#065f46{% else %}#9a3412{% endif %}; margin-bottom: 4px;">
+              តុល្យភាពនៅសល់
+            </div>
+            <div style="font-size: 18px; font-weight: 700; color: {% if remaining >= 0 %}#059669{% else %}#ea580c{% endif %};">
+              {{ remaining | currency }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar in Detail -->
+        <div style="margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 600; font-size: 13px;">វឌ្ឍនភាពអនុវត្តគម្រោង (% Progress)</span>
+            <span style="font-weight: 700; color: {% if (project.progress_percent or 0) >= 100 %}#059669{% else %}var(--primary){% endif %}; font-size: 14px;">
+              {{ project.progress_percent or 0 | kh_num }}%
+            </span>
+          </div>
+          <div style="width: 100%; height: 12px; background: rgba(148, 163, 184, 0.2); border-radius: 8px; overflow: hidden;">
+            <div style="width: {{ project.progress_percent or 0 }}%; height: 100%; background: {% if (project.progress_percent or 0) >= 100 %}#059669{% elif (project.progress_percent or 0) >= 50 %}#0284c7{% else %}#f59e0b{% endif %}; border-radius: 8px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description & Project Data Card -->
+    <div class="card" style="border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+      <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 20px;">
+        <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>
+          <span>ព័ត៌មានបច្ចេកទេស និងទីតាំងអនុវត្ត</span>
+        </h3>
+      </div>
+      <div class="card-body" style="padding: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">ទីតាំងភូមិ</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {% if project.village_name_kh %}
+              ភូមិ{{ project.village_name_kh }} ({{ project.village_name_en }})
+              {% else %}
+              -
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">ទីតាំងជាក់លាក់</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ project.target_location or '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">អ្នកទទួលការ / ក្រុមហ៊ុនអនុវត្ត</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ project.contractor_agency or '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">ប្រភពថវិកា</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ fs.title_kh or project.funding_source }}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">កាលបរិច្ឆេទចាប់ផ្តើម</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ project.start_date or '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">កាលបរិច្ឆេទបញ្ចប់</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ project.end_date or '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">ប្រជាពលរដ្ឋទទួលផល</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {% if project.beneficiaries_count %}
+              {{ project.beneficiaries_count | kh_num }} នាក់
+              {% else %}
+              -
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">អ្នកកត់ត្រាទិន្នន័យ</div>
+            <div style="font-weight: 600; font-size: 14.5px;">
+              {{ project.creator_name or 'រដ្ឋបាលឃុំ' }}
+            </div>
+          </div>
+        </div>
+
+        {% if project.notes %}
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">កំណត់សម្គាល់បន្ថែម</div>
+          <div style="font-size: 13.5px; line-height: 1.6; background: var(--bg-hover); padding: 12px 14px; border-radius: 8px;">
+            {{ project.notes }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Status & Attachment Preview -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Status Card -->
+    <div class="card" style="border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+      <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
+        <h3 style="font-size: 14px; margin: 0; font-weight: 700;">ស្ថានភាពគម្រោង</h3>
+      </div>
+      <div class="card-body" style="padding: 18px; text-align: center;">
+        <div style="margin-bottom: 12px;">
+          <span class="badge {{ st.badge_class }}" style="font-size: 14px; padding: 6px 14px;">
+            {{ st.title_kh }}
+          </span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          បង្កើតនៅ៖ {{ project.created_at }}<br>
+          កែប្រែចុងក្រោយ៖ {{ project.updated_at }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Attachment Card -->
+    <div class="card" style="border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+      <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
+        <h3 style="font-size: 14px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-paperclip" style="color: var(--primary);"></i>
+          <span>ឯកសារភ្ជាប់គម្រោង</span>
+        </h3>
+      </div>
+      <div class="card-body" style="padding: 18px; text-align: center;">
+        {% if project.attachment %}
+          <div style="margin-bottom: 14px;">
+            <i class="fa-solid fa-file-pdf" style="font-size: 38px; color: #dc2626;"></i>
+            <div style="font-size: 12.5px; font-weight: 600; margin-top: 6px; word-break: break-all;">
+              {{ project.attachment }}
+            </div>
+          </div>
+          <a href="{{ url_for('static', filename='uploads/' + project.attachment) }}" target="_blank" class="btn btn-outline" style="width: 100%;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>បើកមើលឯកសារ</span>
+          </a>
+        {% else %}
+          <div style="padding: 20px 0; color: var(--text-muted); font-size: 13px;">
+            <i class="fa-solid fa-file-circle-xmark" style="font-size: 28px; margin-bottom: 8px; opacity: 0.5;"></i>
+            <div>មិនមានឯកសារភ្ជាប់ឡើយ</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
