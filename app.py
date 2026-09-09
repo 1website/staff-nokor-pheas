@@ -3625,6 +3625,19 @@ def development_list():
     )
 
 
+def generate_next_development_code(cursor, year):
+    cursor.execute("SELECT project_code FROM development_projects")
+    rows = cursor.fetchall()
+    existing_codes = set((r["project_code"] or "").strip().upper() for r in rows)
+
+    next_num = 1
+    while True:
+        candidate = f"CIP-{year}-{next_num:03d}"
+        if candidate.upper() not in existing_codes:
+            return candidate
+        next_num += 1
+
+
 @app.route('/development/new', methods=['GET', 'POST'])
 @clerk_or_admin_required
 def development_create():
@@ -3682,9 +3695,7 @@ def development_create():
         # Custom or auto project code
         project_code = request.form.get("project_code", "").strip()
         if not project_code:
-            cursor.execute("SELECT COUNT(*) FROM development_projects WHERE project_year = ?", (project_year,))
-            seq = (cursor.fetchone()[0] or 0) + 1
-            project_code = f"CIP-{project_year}-{seq:03d}"
+            project_code = generate_next_development_code(cursor, project_year)
 
         # Validation
         if not project_name:
@@ -3746,9 +3757,7 @@ def development_create():
         yr = int(preset_year)
     except ValueError:
         yr = current_year
-    cursor.execute("SELECT COUNT(*) FROM development_projects WHERE project_year = ?", (yr,))
-    next_seq = (cursor.fetchone()[0] or 0) + 1
-    suggested_code = f"CIP-{yr}-{next_seq:03d}"
+    suggested_code = generate_next_development_code(cursor, yr)
 
     return render_template(
         "development/form.html",
@@ -3988,6 +3997,52 @@ def export_development_excel_route():
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+
+@app.route('/api/development/check-code')
+@login_required
+def api_development_check_code():
+    code = request.args.get('code', '').strip()
+    exclude_id = request.args.get('exclude_id', '').strip()
+
+    if not code:
+        return jsonify({"exists": False, "message": ""})
+
+    conn = get_db()
+    cursor = conn.cursor()
+    if exclude_id and exclude_id.isdigit():
+        cursor.execute("SELECT id, project_name, project_year FROM development_projects WHERE UPPER(TRIM(project_code)) = UPPER(?) AND id != ?", (code, int(exclude_id)))
+    else:
+        cursor.execute("SELECT id, project_name, project_year FROM development_projects WHERE UPPER(TRIM(project_code)) = UPPER(?)", (code,))
+
+    row = cursor.fetchone()
+    if row:
+        return jsonify({
+            "exists": True,
+            "project_name": row["project_name"],
+            "project_year": row["project_year"],
+            "message": f"កូដ «{code}» ត្រូវបានប្រើប្រាស់រួចហើយលើគម្រោង «{row['project_name']}» (ឆ្នាំ {row['project_year']})!"
+        })
+    else:
+        return jsonify({
+            "exists": False,
+            "message": f"កូដ «{code}» ត្រឹមត្រូវ មិនទាន់មានប្រើប្រាស់ទេ (អាចប្រើបាន)"
+        })
+
+
+@app.route('/api/development/next-code')
+@login_required
+def api_development_next_code():
+    year = request.args.get('year', str(date.today().year)).strip()
+    try:
+        yr = int(year)
+    except ValueError:
+        yr = date.today().year
+
+    conn = get_db()
+    cursor = conn.cursor()
+    suggested = generate_next_development_code(cursor, yr)
+    return jsonify({"code": suggested})
 
 
 @app.route('/favicon.ico')

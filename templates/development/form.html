@@ -31,7 +31,7 @@
     </div>
 
     <div class="card-body" style="padding: 24px;">
-      <form method="POST" action="{% if is_edit %}{{ url_for('development_edit', project_id=project.id) }}{% else %}{{ url_for('development_create') }}{% endif %}" enctype="multipart/form-data">
+      <form id="developmentProjectForm" method="POST" action="{% if is_edit %}{{ url_for('development_edit', project_id=project.id) }}{% else %}{{ url_for('development_create') }}{% endif %}" enctype="multipart/form-data">
         
         <!-- Section 1: Year & 4 Sectors Selector -->
         <div style="margin-bottom: 26px;">
@@ -46,18 +46,66 @@
               <label class="form-label" style="font-weight: 600;">
                 ឆ្នាំអភិវឌ្ឍន៍ <span class="text-danger">*</span>
               </label>
-              <input type="number" name="project_year" class="form-control" required min="2020" max="2035"
+              <input type="number" name="project_year" id="project_year" class="form-control" required min="2020" max="2035"
                 value="{% if is_edit %}{{ project.project_year }}{% else %}{{ preset_year or 2026 }}{% endif %}">
             </div>
 
-            <!-- Project Code -->
+            <!-- Project Code with Duplicate Warning UI -->
             <div class="form-group">
-              <label class="form-label" style="font-weight: 600;">
-                កូដសម្គាល់គម្រោង <span class="text-danger">*</span>
-              </label>
-              <input type="text" name="project_code" class="form-control" required
-                value="{% if is_edit %}{{ project.project_code }}{% else %}{{ suggested_code }}{% endif %}" placeholder="ឧ. CIP-2026-001">
-              <small style="color: var(--text-muted); font-size: 11.5px;">ប្រព័ន្ធបង្កើតកូដស្វ័យប្រវត្តិតាមឆ្នាំអភិវឌ្ឍន៍</small>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 0;">
+                  កូដសម្គាល់គម្រោង <span class="text-danger">*</span>
+                </label>
+                <button type="button" id="btn-auto-code" class="btn btn-outline" style="font-size: 11.5px; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; height: 28px; line-height: 1;" onclick="autoGenerateCode()" title="បង្កើតលេខកូដថ្មីស្វ័យប្រវត្តិតាមឆ្នាំអភិវឌ្ឍន៍">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span>បង្កើតកូដស្វ័យប្រវត្តិ</span>
+                </button>
+              </div>
+
+              <div style="position: relative;">
+                <input type="text" name="project_code" id="project_code" class="form-control" required
+                  value="{% if is_edit %}{{ project.project_code }}{% else %}{{ suggested_code }}{% endif %}"
+                  placeholder="ឧ. CIP-2026-001"
+                  style="font-weight: 600; letter-spacing: 0.5px; padding-right: 38px;"
+                  autocomplete="off">
+                <span id="code_status_icon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; display: none;"></span>
+              </div>
+
+              <!-- Warning / Status Feedback Box -->
+              <div id="code_feedback_box" style="margin-top: 6px;">
+                <!-- Helper text -->
+                <div id="code_helper_text" style="color: var(--text-muted); font-size: 11.5px; display: flex; align-items: center; gap: 5px;">
+                  <i class="fa-solid fa-circle-info" style="color: var(--primary); font-size: 12px;"></i>
+                  <span>ប្រព័ន្ធត្រួតពិនិត្យកូដស្វ័យប្រវត្តិដើម្បីការពារកុំឱ្យស្ទួនកូដចាស់</span>
+                </div>
+
+                <!-- Duplicate Warning Alert Box -->
+                <div id="code_warning_box" style="display: none; margin-top: 8px; padding: 12px 14px; border-radius: 8px; background: #fff1f2; border: 1.5px solid #f87171; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12); animation: fadeIn 0.25s ease-in-out;">
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #fee2e2; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #dc2626; font-size: 16px;">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div style="flex: 1;">
+                      <div style="font-weight: 700; font-size: 13px; color: #991b1b; margin-bottom: 3px;">
+                        ⚠️ កូដគម្រោងនេះមានរួចហើយក្នុងប្រព័ន្ធ! (ស្ទួនកូដចាស់)
+                      </div>
+                      <div id="code_warning_message" style="color: #7f1d1d; font-size: 12px; line-height: 1.4; margin-bottom: 8px;"></div>
+                      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="autoGenerateCode()" class="btn btn-sm" style="background: #dc2626; color: #ffffff; border: none; font-size: 12px; padding: 4px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
+                          <i class="fa-solid fa-wand-magic-sparkles"></i> យកកូដថ្មីស្វ័យប្រវត្តិ
+                        </button>
+                        <span style="font-size: 11.5px; color: #991b1b;">សូមប្តូរកូដថ្មីដើម្បីអាចរក្សាទុកបាន</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Success / Available Alert -->
+                <div id="code_success_box" style="display: none; margin-top: 6px; font-size: 12px; color: #15803d; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 14px;"></i>
+                  <span id="code_success_message">កូដនេះត្រឹមត្រូវ មិនទាន់មានប្រើប្រាស់ទេ (អាចប្រើបាន)</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -330,9 +378,24 @@
   .sector-choice-card input[type="radio"]:checked ~ .choice-content .choice-title {
     color: var(--choice-color);
   }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 
 <script>
+  let checkCodeTimer = null;
+  let isDuplicateCode = false;
+  const currentProjectId = {{ project.id if is_edit else 'null' }};
+  const isEdit = {{ 'true' if is_edit else 'false' }};
+
   function updateSectorUI(selectedKey) {
     document.querySelectorAll('.sector-choice-card').forEach(function(card) {
       var radio = card.querySelector('input[type="radio"]');
@@ -359,12 +422,142 @@
     }
   }
 
+  function checkProjectCode(code) {
+    const trimmed = (code || '').trim();
+    const statusIcon = document.getElementById('code_status_icon');
+    const warningBox = document.getElementById('code_warning_box');
+    const warningMsg = document.getElementById('code_warning_message');
+    const successBox = document.getElementById('code_success_box');
+    const successMsg = document.getElementById('code_success_message');
+    const helperText = document.getElementById('code_helper_text');
+    const codeInput = document.getElementById('project_code');
+
+    if (!trimmed) {
+      isDuplicateCode = false;
+      codeInput.style.borderColor = 'var(--border-color)';
+      codeInput.style.boxShadow = 'none';
+      if (statusIcon) statusIcon.style.display = 'none';
+      if (warningBox) warningBox.style.display = 'none';
+      if (successBox) successBox.style.display = 'none';
+      if (helperText) helperText.style.display = 'flex';
+      return;
+    }
+
+    if (statusIcon) {
+      statusIcon.style.display = 'inline-block';
+      statusIcon.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--text-muted); font-size: 14px;"></i>';
+    }
+
+    let url = '/api/development/check-code?code=' + encodeURIComponent(trimmed);
+    if (currentProjectId) {
+      url += '&exclude_id=' + encodeURIComponent(currentProjectId);
+    }
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data.exists) {
+          isDuplicateCode = true;
+          codeInput.style.borderColor = '#ef4444';
+          codeInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+          if (statusIcon) {
+            statusIcon.style.display = 'inline-block';
+            statusIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 16px;"></i>';
+          }
+          if (helperText) helperText.style.display = 'none';
+          if (successBox) successBox.style.display = 'none';
+          if (warningBox) {
+            warningBox.style.display = 'block';
+            warningMsg.textContent = data.message;
+          }
+        } else {
+          isDuplicateCode = false;
+          codeInput.style.borderColor = '#10b981';
+          codeInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
+          if (statusIcon) {
+            statusIcon.style.display = 'inline-block';
+            statusIcon.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 16px;"></i>';
+          }
+          if (helperText) helperText.style.display = 'none';
+          if (warningBox) warningBox.style.display = 'none';
+          if (successBox) {
+            successBox.style.display = 'flex';
+            successMsg.textContent = data.message || 'កូដ «' + trimmed + '» ត្រឹមត្រូវ មិនទាន់មានប្រើប្រាស់ទេ (អាចប្រើបាន)';
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error checking code:', err);
+        if (statusIcon) statusIcon.style.display = 'none';
+      });
+  }
+
+  function onCodeInputChanged() {
+    clearTimeout(checkCodeTimer);
+    checkCodeTimer = setTimeout(function() {
+      const codeInput = document.getElementById('project_code');
+      checkProjectCode(codeInput.value);
+    }, 250);
+  }
+
+  function autoGenerateCode() {
+    const yr = document.getElementById('project_year').value || new Date().getFullYear();
+    const btn = document.getElementById('btn-auto-code');
+    const icon = btn ? btn.querySelector('i') : null;
+    if (icon) icon.classList.add('fa-spin');
+
+    fetch('/api/development/next-code?year=' + encodeURIComponent(yr))
+      .then(res => res.json())
+      .then(data => {
+        if (data.code) {
+          const codeInput = document.getElementById('project_code');
+          codeInput.value = data.code;
+          checkProjectCode(data.code);
+        }
+      })
+      .catch(err => console.error('Error fetching next code:', err))
+      .finally(() => {
+        if (icon) icon.classList.remove('fa-spin');
+      });
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     var checkedRadio = document.querySelector('input[name="sector"]:checked');
     if (checkedRadio) {
       updateSectorUI(checkedRadio.value);
     }
     calcRemaining();
+
+    const codeInput = document.getElementById('project_code');
+    if (codeInput) {
+      codeInput.addEventListener('input', onCodeInputChanged);
+      codeInput.addEventListener('paste', function() { setTimeout(onCodeInputChanged, 50); });
+      if (codeInput.value) {
+        checkProjectCode(codeInput.value);
+      }
+    }
+
+    const yearInput = document.getElementById('project_year');
+    if (yearInput && !isEdit) {
+      yearInput.addEventListener('change', function() {
+        autoGenerateCode();
+      });
+    }
+
+    const devForm = document.getElementById('developmentProjectForm');
+    if (devForm) {
+      devForm.addEventListener('submit', function(e) {
+        if (isDuplicateCode) {
+          e.preventDefault();
+          codeInput.focus();
+          codeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          codeInput.style.animation = 'none';
+          codeInput.offsetHeight; // trigger reflow
+          codeInput.style.animation = 'shake 0.4s ease';
+          alert('សូមប្តូរកូដសម្គាល់គម្រោង! កូដ «' + codeInput.value + '» មានរួចហើយក្នុងប្រព័ន្ធ សូមចុច «យកកូដថ្មីស្វ័យប្រវត្តិ» ដើម្បីកុំឱ្យស្ទួន។');
+        }
+      });
+    }
   });
 </script>
 {% endblock %}
