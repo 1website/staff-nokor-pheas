@@ -307,68 +307,73 @@
   <div class="card-body" style="padding: 0;">
     {% if projects %}
     <div class="table-responsive">
-      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <table class="data-table dev-modern-table" style="width: 100%; border-collapse: collapse;">
         <thead>
           <tr>
-            <th style="width: 50px; text-align: center;">ល.រ</th>
-            <th style="width: 120px;">កូដគម្រោង</th>
-            <th>ឈ្មោះគម្រោង / សកម្មភាពចំណាយ</th>
-            <th style="width: 180px;">វិស័យអភិវឌ្ឍន៍</th>
-            <th style="width: 130px;">ទីតាំងភូមិ</th>
-            <th style="width: 130px; text-align: right;">ថវិកាគ្រោង</th>
-            <th style="width: 130px; text-align: right;">ចំណាយជាក់ស្តែង</th>
-            <th style="width: 140px;">វឌ្ឍនភាព</th>
-            <th style="width: 110px; text-align: center;">ស្ថានភាព</th>
-            <th style="width: 110px; text-align: center;">សកម្មភាព</th>
+            <th style="width: 55px; text-align: center;">ល.រ</th>
+            <th style="min-width: 280px;">ឈ្មោះគម្រោង / សកម្មភាពចំណាយ</th>
+            <th style="width: 150px;">ទីតាំងភូមិ</th>
+            <th style="width: 160px; text-align: right;">ថវិកាគ្រោង</th>
+            <th style="width: 160px; text-align: right;">ចំណាយជាក់ស្តែង</th>
+            <th style="width: 175px;">វឌ្ឍនភាព</th>
+            <th style="width: 125px; text-align: center;">ស្ថានភាព</th>
+            <th style="width: 115px; text-align: center;">សកម្មភាព</th>
           </tr>
         </thead>
         <tbody>
           {% for p in projects %}
           {% set sec = DEVELOPMENT_SECTORS.get(p.sector, {}) %}
           {% set st = DEVELOPMENT_STATUSES.get(p.status, {}) %}
-          <tr>
-            <td style="text-align: center; color: var(--text-muted); font-size: 13px;">
-              {{ loop.index | kh_num }}
+          <tr class="dev-table-row">
+            <!-- 1. Row Index -->
+            <td style="text-align: center; vertical-align: middle;">
+              <span class="row-num-pill">{{ loop.index | kh_num }}</span>
             </td>
-            <td>
-              <span class="code-badge" style="font-family: monospace; font-size: 12px; font-weight: 700; color: var(--primary);">
-                {{ p.project_code }}
-              </span>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                ឆ្នាំ {{ p.project_year | kh_num }}
-              </div>
-            </td>
-            <td>
-              <a href="{{ url_for('development_detail', project_id=p.id) }}" style="font-weight: 600; color: var(--text-color); text-decoration: none;" class="project-title-link">
+
+            <!-- 2. Project Name & Location Meta -->
+            <td style="vertical-align: middle; padding: 14px 16px;">
+              <a href="{{ url_for('development_detail', project_id=p.id) }}" class="project-title-link"
+                style="font-weight: 600; font-size: 14px; color: var(--text-color); text-decoration: none; display: block; line-height: 1.45;">
                 {{ p.project_name }}
               </a>
               {% if p.target_location %}
-              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-                <i class="fa-solid fa-location-dot" style="font-size: 10px; color: #ef4444;"></i>
-                {{ p.target_location }}
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                <i class="fa-solid fa-location-dot" style="font-size: 11px; color: #ef4444;"></i>
+                <span>{{ p.target_location }}</span>
               </div>
               {% endif %}
             </td>
-            <td>
-              <span class="badge {{ sec.badge_class }}" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px;">
-                <i class="{{ sec.icon }}"></i>
-                <span>{{ sec.short_kh }}</span>
+
+            <!-- 3. Village -->
+            <td style="vertical-align: middle;">
+              {% if p.village_name_kh %}
+              <span class="village-pill-tag">
+                <i class="fa-solid fa-tree-city"></i>
+                <span>ភូមិ{{ p.village_name_kh }}</span>
               </span>
+              {% else %}
+              <span style="color: var(--text-muted); font-size: 13px;">-</span>
+              {% endif %}
             </td>
-            <td>
-              <span style="font-weight: 500;">
-                {% if p.village_name_kh %}ភូមិ{{ p.village_name_kh }}{% else %}-{% endif %}
-              </span>
+
+            <!-- 4. Planned Budget -->
+            <td style="text-align: right; vertical-align: middle;">
+              <div style="font-weight: 600; font-size: 13.5px; color: var(--text-color); font-feature-settings: 'tnum';">
+                {{ p.planned_budget | currency }}
+              </div>
             </td>
-            <td style="text-align: right; font-weight: 600; color: var(--primary);">
-              {{ p.planned_budget | currency }}
+
+            <!-- 5. Actual Expense -->
+            <td style="text-align: right; vertical-align: middle;">
+              <div style="font-weight: 700; font-size: 14px; color: {% if (p.progress_percent or 0) >= 100 %}#059669{% else %}#dc2626{% endif %}; font-feature-settings: 'tnum';">
+                {{ p.actual_expense | currency }}
+              </div>
             </td>
-            <td style="text-align: right; font-weight: 700; color: #dc2626;">
-              {{ p.actual_expense | currency }}
-            </td>
-            <td>
-              <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
-                <span style="font-weight: 600; color: {% if (p.progress_percent or 0) >= 100 %}#059669{% else %}var(--primary){% endif %};">
+
+            <!-- 6. Progress -->
+            <td style="vertical-align: middle; padding: 14px 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-weight: 700; font-size: 13px; color: {% if (p.progress_percent or 0) >= 100 %}#059669{% elif (p.progress_percent or 0) >= 50 %}var(--primary){% else %}#d97706{% endif %};">
                   {{ (p.progress_percent or 0) | kh_num }}%
                 </span>
                 {% if session.role in ['admin', 'clerk'] %}
@@ -378,16 +383,20 @@
                 </button>
                 {% endif %}
               </div>
-              <div class="progress-bar-bg" style="width: 100%; height: 7px; background: rgba(148, 163, 184, 0.2); border-radius: 6px; overflow: hidden;">
-                <div class="progress-bar-fill" style="width: {{ p.progress_percent or 0 }}%; height: 100%; background: {% if (p.progress_percent or 0) >= 100 %}#059669{% elif (p.progress_percent or 0) >= 50 %}#0284c7{% else %}#f59e0b{% endif %}; border-radius: 6px; transition: width 0.4s ease;"></div>
+              <div class="progress-bar-bg" style="width: 100%; height: 8px; background: rgba(148, 163, 184, 0.2); border-radius: 999px; overflow: hidden;">
+                <div class="progress-bar-fill" style="width: {{ p.progress_percent or 0 }}%; height: 100%; background: {% if (p.progress_percent or 0) >= 100 %}linear-gradient(90deg, #10b981, #059669){% elif (p.progress_percent or 0) >= 50 %}linear-gradient(90deg, #38bdf8, #2563eb){% else %}linear-gradient(90deg, #fbbf24, #d97706){% endif %}; border-radius: 999px; transition: width 0.4s ease;"></div>
               </div>
             </td>
-            <td style="text-align: center;">
-              <span class="badge {{ st.badge_class }}" style="font-size: 11px;">
+
+            <!-- 7. Status -->
+            <td style="text-align: center; vertical-align: middle;">
+              <span class="badge {{ st.badge_class }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600; display: inline-block;">
                 {{ st.title_kh }}
               </span>
             </td>
-            <td style="text-align: center;">
+
+            <!-- 8. Actions -->
+            <td style="text-align: center; vertical-align: middle;">
               <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <a href="{{ url_for('development_detail', project_id=p.id) }}" class="btn-action-icon view" title="មើលព័ត៌មានលម្អិត">
                   <i class="fa-solid fa-eye"></i>
@@ -397,7 +406,7 @@
                   <i class="fa-solid fa-pen"></i>
                 </a>
                 <form method="POST" action="{{ url_for('development_delete', project_id=p.id) }}" style="display: inline;"
-                  onsubmit="return confirm('តើលោកអ្នកពិតជាចង់លុបគម្រោង «{{ p.project_name|e }}» នេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ!');">
+                  onsubmit="return confirm('តើលោកអ្នកពិតជាចង់លុបគម្រោង «{{ p.project_name|e }}» នេះមែនទេ?');">
                   <button type="submit" class="btn-action-icon delete" title="លុបគម្រោង">
                     <i class="fa-solid fa-trash"></i>
                   </button>
@@ -572,11 +581,61 @@
     color: var(--tab-color);
   }
 
-  /* Action Icons */
-  .btn-action-icon {
+  /* Modern Clean Table Styling */
+  .dev-modern-table th {
+    background: var(--bg-hover) !important;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--border-color);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+  .dev-modern-table td {
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13.5px;
+  }
+  .dev-table-row {
+    transition: background-color 0.15s ease;
+  }
+  .dev-table-row:hover {
+    background-color: rgba(59, 130, 246, 0.04) !important;
+  }
+  .row-num-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 50%;
+    background: rgba(148, 163, 184, 0.12);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  .village-pill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+  }
+  .project-title-link:hover {
+    color: var(--primary) !important;
+  }
+
+  /* Action Icons */
+  .btn-action-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -588,18 +647,20 @@
     cursor: pointer;
     transition: all 0.15s ease;
   }
-  .btn-action-icon.view:hover { color: var(--primary); border-color: var(--primary); }
-  .btn-action-icon.edit:hover { color: #d97706; border-color: #d97706; }
-  .btn-action-icon.delete:hover { color: #dc2626; border-color: #dc2626; }
+  .btn-action-icon.view:hover { color: var(--primary); border-color: var(--primary); background: rgba(37, 99, 235, 0.08); }
+  .btn-action-icon.edit:hover { color: #d97706; border-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+  .btn-action-icon.delete:hover { color: #dc2626; border-color: #dc2626; background: rgba(220, 38, 38, 0.08); }
   .btn-icon-xs {
-    background: none;
+    background: rgba(148, 163, 184, 0.12);
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 3px 6px;
     font-size: 11px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
   }
-  .btn-icon-xs:hover { color: var(--primary); }
+  .btn-icon-xs:hover { color: var(--primary); background: rgba(37, 99, 235, 0.15); }
 
   /* Modal Backdrop */
   .modal-backdrop {
