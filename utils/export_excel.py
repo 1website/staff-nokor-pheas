@@ -1745,12 +1745,12 @@ def export_social_services_excel(year=None, sub_sector=None, status=None, villag
     conn = get_db()
     cursor = conn.cursor()
 
-    # Query projects in social and environmental sanitation sectors
+    # Query projects in social, environmental sanitation & admin security sectors
     query = """
         SELECT p.*, v.village_name_kh
         FROM development_projects p
         LEFT JOIN villages v ON p.village_id = v.id
-        WHERE p.sector IN ('social', 'natural_resources')
+        WHERE p.sector IN ('social', 'natural_resources', 'admin_security')
     """
     params = []
 

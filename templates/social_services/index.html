@@ -34,7 +34,7 @@
       <span>នាំចេញជា Excel</span>
     </a>
     {% if session.role in ['admin', 'clerk'] %}
-    <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector=selected_subsector if selected_subsector in ['social', 'natural_resources'] else 'social') }}"
+    <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector=selected_subsector if selected_subsector in ['social', 'natural_resources', 'admin_security'] else 'social') }}"
       class="btn btn-primary" style="background: #059669; border-color: #059669;">
       <i class="fa-solid fa-plus-circle"></i>
       <span>+ បន្ថែមសកម្មភាពថ្មី</span>
@@ -75,15 +75,15 @@
   </div>
 </div>
 
-<!-- 2. Sub-Sector Filter Tabs (សេវាសង្គមកិច្ច & អនាម័យបរិស្ថាន) -->
+<!-- 2. Sub-Sector Filter Tabs (សេវាសង្គមកិច្ច, អនាម័យបរិស្ថាន & រដ្ឋបាល សន្តិសុខ) -->
 <div class="dev-sector-tabs-container">
-  <div class="dev-sector-tabs" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="dev-sector-tabs" style="grid-template-columns: repeat(4, 1fr);">
     <!-- All Subsectors -->
     <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='all', status=selected_status, village_id=selected_village_id, search=search_query) }}"
       class="dev-sector-tab {% if selected_subsector == 'all' %}active{% endif %}" style="--tab-color: #059669;">
       <i class="fa-solid fa-layer-group"></i>
       <div class="tab-text-group">
-        <span class="tab-title">សរុបទាំង ២ ផ្នែក</span>
+        <span class="tab-title">សរុបទាំង ៣ ផ្នែក</span>
         <span class="tab-counter">{{ subsector_counts['all'] | kh_num }} សកម្មភាព</span>
       </div>
     </a>
@@ -107,6 +107,17 @@
       <div class="tab-text-group">
         <span class="tab-title">២. ផ្នែកអនាម័យបរិស្ថាន & អាកាសធាតុ</span>
         <span class="tab-counter">{{ subsector_counts['natural_resources'] | kh_num }} សកម្មភាព</span>
+      </div>
+    </a>
+
+    <!-- Subsector 3: Administration & Security -->
+    {% set sec_adm = DEVELOPMENT_SECTORS.get('admin_security', {}) %}
+    <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='admin_security', status=selected_status, village_id=selected_village_id, search=search_query) }}"
+      class="dev-sector-tab {% if selected_subsector == 'admin_security' %}active{% endif %}" style="--tab-color: {{ sec_adm.color or '#7c3aed' }};">
+      <i class="fa-solid fa-shield-halved"></i>
+      <div class="tab-text-group">
+        <span class="tab-title">៣. ផ្នែករដ្ឋបាល & សន្តិសុខ</span>
+        <span class="tab-counter">{{ subsector_counts['admin_security'] | kh_num }} សកម្មភាព</span>
       </div>
     </a>
   </div>
@@ -368,7 +379,7 @@
             <h4 style="font-size: 16px; font-weight: 700; color: var(--text-color); margin-bottom: 6px;">មិនមានទិន្នន័យសកម្មភាពសេវាសង្គម ឬអនាម័យបរិស្ថានទេ</h4>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">សូមជ្រើសរើសឆ្នាំផ្សេង ឬចុចបន្ថែមសកម្មភាពថ្មីដើម្បីកត់ត្រា</p>
             {% if session.role in ['admin', 'clerk'] %}
-            <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector='social') }}" class="btn btn-primary" style="background: #059669; border-color: #059669;">
+            <a href="{{ url_for('social_services_create', year=selected_year if selected_year != 'all' else '', sector=selected_subsector if selected_subsector in ['social', 'natural_resources', 'admin_security'] else 'social') }}" class="btn btn-primary" style="background: #059669; border-color: #059669;">
               <i class="fa-solid fa-plus-circle"></i>
               <span>+ បន្ថែមសកម្មភាពថ្មី</span>
             </a>
@@ -656,10 +667,11 @@
 
   @media (max-width: 1024px) {
     .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .dev-sector-tabs { grid-template-columns: 1fr; }
+    .dev-sector-tabs { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 640px) {
     .stats-grid-4 { grid-template-columns: 1fr; }
+    .dev-sector-tabs { grid-template-columns: 1fr; }
   }
 </style>
 

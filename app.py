@@ -4012,11 +4012,11 @@ def social_services_list():
 
     current_year = date.today().year
 
-    # Get available years for social & natural_resources sectors
+    # Get available years for social, natural_resources & admin_security sectors
     cursor.execute("""
         SELECT DISTINCT project_year 
         FROM development_projects 
-        WHERE sector IN ('social', 'natural_resources')
+        WHERE sector IN ('social', 'natural_resources', 'admin_security')
         ORDER BY project_year DESC
     """)
     years_rows = cursor.fetchall()
@@ -4033,7 +4033,7 @@ def social_services_list():
     search_query = request.args.get("search", "").strip()
 
     # Build SQL
-    where_clauses = ["p.sector IN ('social', 'natural_resources')"]
+    where_clauses = ["p.sector IN ('social', 'natural_resources', 'admin_security')"]
     params = []
 
     if selected_year and selected_year.lower() != "all":
@@ -4044,7 +4044,7 @@ def social_services_list():
         except ValueError:
             pass
 
-    if selected_subsector in ['social', 'natural_resources']:
+    if selected_subsector in ['social', 'natural_resources', 'admin_security']:
         where_clauses.append("p.sector = ?")
         params.append(selected_subsector)
 
@@ -4089,9 +4089,10 @@ def social_services_list():
             COALESCE(SUM(p.beneficiaries_count), 0) as total_beneficiaries,
             SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_count,
             SUM(CASE WHEN p.sector = 'social' THEN 1 ELSE 0 END) as social_count,
-            SUM(CASE WHEN p.sector = 'natural_resources' THEN 1 ELSE 0 END) as env_count
+            SUM(CASE WHEN p.sector = 'natural_resources' THEN 1 ELSE 0 END) as env_count,
+            SUM(CASE WHEN p.sector = 'admin_security' THEN 1 ELSE 0 END) as admin_count
         FROM development_projects p
-        WHERE p.sector IN ('social', 'natural_resources') {year_clause}
+        WHERE p.sector IN ('social', 'natural_resources', 'admin_security') {year_clause}
     """, year_params)
     stats = cursor.fetchone()
 
@@ -4106,7 +4107,8 @@ def social_services_list():
     subsector_counts = {
         "all": total_count,
         "social": stats["social_count"] or 0,
-        "natural_resources": stats["env_count"] or 0
+        "natural_resources": stats["env_count"] or 0,
+        "admin_security": stats["admin_count"] or 0
     }
 
     # Fetch all villages
