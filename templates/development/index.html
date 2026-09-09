@@ -718,12 +718,24 @@
     document.getElementById('quickProgressModal').style.display = 'none';
   }
 
-  // Visual Charts
-  document.addEventListener("DOMContentLoaded", function () {
+  // Visual Charts with Theme Adaptation (Dark & Light Mode Support)
+  let devSectorChartInstance = null;
+  let devStatusChartInstance = null;
+
+  function renderDevCharts() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#f8fafc' : '#1e293b';
+    const subTextColor = isDark ? '#cbd5e1' : '#64748b';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+    const sliceBorderColor = isDark ? '#1e293b' : '#ffffff';
+
     // 1. Sector Bar Chart
-    var ctxSector = document.getElementById('devSectorChart');
+    const ctxSector = document.getElementById('devSectorChart');
     if (ctxSector) {
-      new Chart(ctxSector, {
+      if (devSectorChartInstance) {
+        devSectorChartInstance.destroy();
+      }
+      devSectorChartInstance = new Chart(ctxSector, {
         type: 'bar',
         data: {
           labels: ['ផ្នែកសេដ្ឋកិច្ច', 'ផ្នែកសង្គមកិច្ច', 'ធនធានធម្មជាតិ & បរិស្ថាន', 'រដ្ឋបាល & សន្តិសុខ'],
@@ -735,7 +747,12 @@
               {{ sector_expenses['natural_resources'] }},
               {{ sector_expenses['admin_security'] }}
             ],
-            backgroundColor: ['#0284c7', '#059669', '#0d9488', '#7c3aed'],
+            backgroundColor: [
+              isDark ? '#38bdf8' : '#0284c7',
+              isDark ? '#34d399' : '#059669',
+              isDark ? '#2dd4bf' : '#0d9488',
+              isDark ? '#a78bfa' : '#7c3aed'
+            ],
             borderRadius: 6
           }]
         },
@@ -745,6 +762,13 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              titleFont: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12 },
+              bodyFont: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12 },
+              padding: 10,
+              cornerRadius: 8,
               callbacks: {
                 label: function (ctx) {
                   return 'ចំណាយ៖ ' + Number(ctx.raw).toLocaleString() + ' រៀល';
@@ -755,16 +779,23 @@
           scales: {
             y: {
               beginAtZero: true,
+              grid: { color: gridColor },
               ticks: {
+                color: subTextColor,
+                font: { family: "'Kantumruy Pro', 'Outfit', sans-serif", size: 11, weight: '500' },
                 callback: function (val) {
-                  if (val >= 1000000) return (val / 1000000) + ' លាន';
+                  if (val >= 1000000000) return (val / 1000000000).toFixed(1) + ' ពាន់លាន';
+                  if (val >= 1000000) return (val / 1000000).toLocaleString() + ' លាន';
                   return val.toLocaleString();
-                },
-                font: { family: 'Kantumruy Pro, Battambang, sans-serif' }
+                }
               }
             },
             x: {
-              ticks: { font: { family: 'Kantumruy Pro, Battambang, sans-serif', size: 11 } }
+              grid: { display: false },
+              ticks: {
+                color: textColor,
+                font: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12, weight: '600' }
+              }
             }
           }
         }
@@ -772,21 +803,32 @@
     }
 
     // 2. Status Doughnut Chart
-    var ctxStatus = document.getElementById('devStatusChart');
+    const ctxStatus = document.getElementById('devStatusChart');
     if (ctxStatus) {
+      if (devStatusChartInstance) {
+        devStatusChartInstance.destroy();
+      }
+
       {% set count_planning = projects | selectattr("status", "equalto", "planning") | list | length %}
       {% set count_bidding = projects | selectattr("status", "equalto", "bidding") | list | length %}
       {% set count_in_progress = projects | selectattr("status", "equalto", "in_progress") | list | length %}
       {% set count_completed = projects | selectattr("status", "equalto", "completed") | list | length %}
       {% set count_delayed = projects | selectattr("status", "equalto", "delayed") | list | length %}
 
-      new Chart(ctxStatus, {
+      devStatusChartInstance = new Chart(ctxStatus, {
         type: 'doughnut',
         data: {
           labels: ['គ្រោងទុក', 'កំពុងដេញថ្លៃ', 'កំពុងអនុវត្ត', 'បានបញ្ចប់', 'ពន្យារពេល'],
           datasets: [{
             data: [{{ count_planning }}, {{ count_bidding }}, {{ count_in_progress }}, {{ count_completed }}, {{ count_delayed }}],
-            backgroundColor: ['#64748b', '#d97706', '#0284c7', '#059669', '#dc2626'],
+            backgroundColor: [
+              isDark ? '#94a3b8' : '#64748b',
+              isDark ? '#f59e0b' : '#d97706',
+              isDark ? '#38bdf8' : '#0284c7',
+              isDark ? '#10b981' : '#059669',
+              isDark ? '#f87171' : '#dc2626'
+            ],
+            borderColor: sliceBorderColor,
             borderWidth: 2
           }]
         },
@@ -797,15 +839,46 @@
             legend: {
               position: 'right',
               labels: {
+                color: textColor,
                 boxWidth: 12,
-                font: { family: 'Kantumruy Pro, Battambang, sans-serif', size: 11 }
+                boxHeight: 12,
+                padding: 12,
+                font: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12, weight: '600' }
+              }
+            },
+            tooltip: {
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              titleFont: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12 },
+              bodyFont: { family: "'Kantumruy Pro', 'Battambang', sans-serif", size: 12 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: function (ctx) {
+                  return ' ' + ctx.label + ': ' + ctx.raw + ' គម្រោង';
+                }
               }
             }
           },
-          cutout: '65%'
+          cutout: '68%'
         }
       });
     }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    renderDevCharts();
+
+    // Listen for theme changes (light <-> dark) to dynamically adapt colors
+    const observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.attributeName === 'data-theme') {
+          renderDevCharts();
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
   });
 </script>
 {% endblock %}
