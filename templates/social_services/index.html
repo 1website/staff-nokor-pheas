@@ -77,7 +77,7 @@
 
 <!-- 2. Sub-Sector Filter Tabs (សេវាសង្គមកិច្ច, អនាម័យបរិស្ថាន & រដ្ឋបាល សន្តិសុខ) -->
 <div class="dev-sector-tabs-container">
-  <div class="dev-sector-tabs" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="dev-sector-tabs">
     <!-- All Subsectors -->
     <a href="{{ url_for('social_services_list', year=selected_year, sub_sector='all', status=selected_status, village_id=selected_village_id, search=search_query) }}"
       class="dev-sector-tab {% if selected_subsector == 'all' %}active{% endif %}" style="--tab-color: #059669;">
@@ -480,16 +480,19 @@
 
   .dev-sector-tabs-container {
     margin-bottom: 16px;
+    width: 100%;
   }
   .dev-sector-tabs {
     display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
+    width: 100%;
   }
   .dev-sector-tab {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 13px 15px;
     border-radius: 12px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -497,26 +500,43 @@
     color: var(--text-color);
     transition: all 0.2s ease;
     box-shadow: var(--shadow-sm);
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+  .dev-sector-tab:active {
+    transform: scale(0.98);
   }
   .dev-sector-tab i {
-    font-size: 22px;
+    font-size: 20px;
     color: var(--tab-color);
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 10px;
     background: rgba(5, 150, 105, 0.08);
+    background: color-mix(in srgb, var(--tab-color) 12%, transparent);
+    flex-shrink: 0;
+  }
+  .dev-sector-tab .tab-text-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
   }
   .dev-sector-tab .tab-title {
     font-weight: 700;
-    font-size: 13.5px;
+    font-size: 13px;
     display: block;
+    line-height: 1.35;
+    word-break: break-word;
   }
   .dev-sector-tab .tab-counter {
     font-size: 11.5px;
     color: var(--text-muted);
+    margin-top: 2px;
   }
   .dev-sector-tab:hover {
     transform: translateY(-2px);
@@ -666,12 +686,71 @@
   }
 
   @media (max-width: 1024px) {
-    .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .dev-sector-tabs { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dev-sector-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
   }
-  @media (max-width: 640px) {
-    .stats-grid-4 { grid-template-columns: 1fr; }
-    .dev-sector-tabs { grid-template-columns: 1fr; }
+  @media (max-width: 768px) {
+    .stats-grid-4 {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+    .dev-sector-tabs {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    .dev-sector-tab {
+      padding: 10px 10px !important;
+      gap: 8px !important;
+      min-height: 52px !important;
+      border-radius: 10px !important;
+      box-sizing: border-box !important;
+    }
+    .dev-sector-tab i {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 15px !important;
+      border-radius: 8px !important;
+    }
+    .dev-sector-tab .tab-title {
+      font-size: 12px !important;
+      line-height: 1.3 !important;
+    }
+    .dev-sector-tab .tab-counter {
+      font-size: 10.5px !important;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+    .dev-sector-tabs {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+    .dev-sector-tab {
+      padding: 9px 8px !important;
+      gap: 7px !important;
+    }
+    .dev-sector-tab i {
+      width: 30px !important;
+      height: 30px !important;
+      font-size: 14px !important;
+    }
+    .dev-sector-tab .tab-title {
+      font-size: 11.5px !important;
+    }
+    .dev-sector-tab .tab-counter {
+      font-size: 10px !important;
+    }
+  }
+  @media (max-width: 340px) {
+    .dev-sector-tabs {
+      grid-template-columns: 1fr !important;
+    }
   }
 </style>
 
